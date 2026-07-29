@@ -1,10 +1,30 @@
 rules_version = '2';
 
-// Foundation-phase baseline: deny every read and write. Opened up per-path
-// once each feature (product images, avatars, CMS assets, ...) defines its
-// real access pattern.
+// Phase 3 defines the first real Storage access pattern: product images
+// under `products/{productId}/{imageId}.{ext}` (see
+// apps/web/src/infrastructure/firebase/product-image-storage.ts). Uploads,
+// deletes, and signed-URL generation all go through the Admin SDK from
+// `services/catalog/{upload,delete}-product-image.ts` — which the same
+// way as every Phase 2 Firestore collection, bypasses Storage Security
+// Rules entirely — after `requirePermission(actor, "products:edit")` has
+// already run. There is no client-side Firebase Storage SDK usage
+// anywhere in this app, so these rules are defense-in-depth (a backstop
+// against a hypothetical future client-side integration, or a
+// misconfigured public bucket setting) rather than the primary
+// enforcement boundary, exactly like Phase 2's Firestore rules. The real,
+// load-bearing constraints are: (a) the storage path is always generated
+// server-side from `productId`/a random image id and a fixed extension —
+// never taken from client input — and (b) every mutating call is gated by
+// an RBAC permission check before it reaches Storage at all.
+//
+// Every other path stays on the Phase 1 default-deny baseline until that
+// feature designs its own real access pattern.
 service firebase.storage {
   match /b/{bucket}/o {
+    match /products/{productId}/{imageFile} {
+      allow read, write: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

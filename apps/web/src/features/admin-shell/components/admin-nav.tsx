@@ -14,6 +14,10 @@ export function AdminNav({ session }: { session: Session }) {
     { href: "/admin", label: "Dashboard", visible: true },
     { href: "/admin/staff", label: "Staff", visible: hasPermission(session, "staff:view") },
     { href: "/admin/roles", label: "Roles", visible: hasPermission(session, "staff:view") },
+    { href: "/admin/products", label: "Products", visible: hasPermission(session, "products:view") },
+    { href: "/admin/categories", label: "Categories", visible: hasPermission(session, "categories:view") },
+    { href: "/admin/brands", label: "Brands", visible: hasPermission(session, "brands:view") },
+    { href: "/admin/inventory", label: "Inventory", visible: hasPermission(session, "inventory:view") },
   ];
 
   return (

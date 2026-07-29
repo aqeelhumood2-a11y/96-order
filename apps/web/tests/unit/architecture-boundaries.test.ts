@@ -36,13 +36,21 @@ afterEach(() => {
 });
 
 describe("architecture boundaries", () => {
+  // ESLint's own cold start (loading eslint-plugin-boundaries and building
+  // its dependency graph over every source file) dominates the first
+  // lintFiles() call in this suite — as the codebase has grown (Phase 3's
+  // catalog module added a few hundred more files under `src/`), that
+  // first call alone can exceed Vitest's 5s default. Every subsequent call
+  // in this file reuses the same warmed-up `eslint` instance and finishes
+  // in well under a second, so only this first test needs the longer
+  // timeout.
   it("blocks features from importing infrastructure directly", async () => {
     const messages = await lintFixture(
       "features/__boundary_fixture_features.ts",
       'import { getAdminFirestore } from "@/infrastructure/firebase/admin";\nexport const x = getAdminFirestore;\n',
     );
     expect(messages.length).toBeGreaterThan(0);
-  });
+  }, 30_000);
 
   it("blocks app routes from importing infrastructure directly", async () => {
     const messages = await lintFixture(

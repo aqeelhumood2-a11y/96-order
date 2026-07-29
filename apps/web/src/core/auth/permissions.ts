@@ -20,7 +20,14 @@ export const PERMISSION_NAMESPACES = [
   "audit_logs",
 ] as const;
 
-export const PERMISSION_ACTIONS = ["view", "create", "edit", "delete", "export", "manage"] as const;
+/**
+ * `adjust` was added in Phase 3 for inventory: adjusting stock levels is a
+ * distinct, more sensitive action than editing a product/variant's
+ * descriptive fields (`edit`), so `inventory:adjust` is granted separately
+ * from `inventory:edit` — a role can be given one without the other. The
+ * `manage` wildcard still covers it like every other action in a namespace.
+ */
+export const PERMISSION_ACTIONS = ["view", "create", "edit", "delete", "export", "manage", "adjust"] as const;
 
 export type PermissionNamespace = (typeof PERMISSION_NAMESPACES)[number];
 export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];

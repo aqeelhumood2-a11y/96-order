@@ -23,7 +23,7 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm run build:shared && pnpm -r typecheck",
     "test": "pnpm run build:shared && pnpm -r test",
-    "test:integration": "firebase emulators:exec --project demo-96order --only firestore,auth \"pnpm --filter web run test:integration\"",
+    "test:integration": "firebase emulators:exec --project demo-96order --only firestore,auth,storage \"pnpm --filter web run test:integration\"",
     "test:e2e": "pnpm run build:shared && pnpm --filter web test:e2e",
     "test:e2e:auth": "pnpm run build:shared && firebase emulators:exec --project demo-96order --only firestore,auth \"pnpm --filter web run test:e2e:auth\"",
     "emulators": "firebase emulators:start",

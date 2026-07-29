@@ -9,10 +9,12 @@ multi-tenant, ...) plugs in without restructuring what already exists.
 **Stack:** Next.js (App Router) · React · TypeScript · Firebase (Firestore,
 Auth, Storage, Cloud Functions) · Tailwind CSS · GitHub · Vercel.
 
-**Status:** Phase 1 (Foundation) and Phase 2 (Authentication, Admin Access &
-RBAC) are complete. No catalog, orders, CMS, payments, or other business
-modules exist yet — Phase 2 built the auth/RBAC foundation those modules
-will sit behind, not the modules themselves.
+**Status:** Phase 1 (Foundation), Phase 2 (Authentication, Admin Access &
+RBAC), and Phase 3 (Catalog and Inventory Foundation) are complete. No cart,
+checkout, orders, payments, shipping, customer accounts, CMS, promotions,
+reviews, or public storefront exist yet — Phase 3 built the product,
+category, brand, and inventory data model and admin tooling those future
+modules will sit behind, not the modules themselves.
 
 ## Repository layout
 
@@ -133,9 +135,9 @@ Before any of this can talk to a real project, update `.firebaserc`'s
 | `pnpm run lint` | Lints every workspace package (includes the Clean Architecture boundary check) |
 | `pnpm run typecheck` | Type-checks every workspace package |
 | `pnpm run test` | Runs Vitest unit tests in every workspace package (mocked ports, no emulator) |
-| `pnpm run test:integration` | Firestore adapter + security-rules tests against the Emulator Suite (`firebase emulators:exec`) |
+| `pnpm run test:integration` | Firestore/Storage adapter + security-rules tests against the Emulator Suite (`firebase emulators:exec`, now including `storage`) |
 | `pnpm run test:e2e` | Playwright smoke test against a production build (no emulator) |
-| `pnpm run test:e2e:auth` | Playwright auth/RBAC e2e suite against the Emulator Suite |
+| `pnpm run test:e2e:auth` | Playwright auth/RBAC (Phase 2) **and** catalog admin (Phase 3) e2e suites against the Emulator Suite |
 | `pnpm run emulators` | Starts the Firebase Emulator Suite |
 | `pnpm run bootstrap:super-admin` | One-time super-admin bootstrap — see below |
 
@@ -147,10 +149,12 @@ It does not deploy anything — deploy wiring is a later-phase concern.
 
 - `firestore.rules` and `storage.rules` default-deny **everything** except
   explicit, narrow rules for the Phase 2 collections (`users`, `roles`,
-  `auditLogs`, `system`, `rateLimits`), which are also deny-all — see
-  Phase 2's data model section for why. No other collection or storage path
-  is opened up until its real access pattern is designed in the phase that
-  introduces it.
+  `auditLogs`, `system`, `rateLimits`) and the Phase 3 collections/paths
+  (`products`, `categories`, `brands`, `inventory`, `inventoryAdjustments`,
+  `catalogUniqueKeys`, and `products/{productId}/{imageFile}` in Storage),
+  all of which are also deny-all — see Phase 2's and Phase 3's data-model
+  sections for why. No other collection or storage path is opened up until
+  its real access pattern is designed in the phase that introduces it.
 - No secrets are committed anywhere in this repo; `.gitignore` covers `.env*`
   and any file matching `*service-account*`/`*serviceAccountKey*`.
 - Images are restricted in `next.config.ts` to this project's own Firebase
@@ -705,6 +709,507 @@ introduced later without a schema rewrite — not implemented now.
   responsibility that no application code change can substitute for (see
   Audit-log immutability above).
 
+## Phase 3 — Catalog and Inventory Foundation
+
+Adds the product/variant/category/brand/inventory data model, a Firestore
+transaction-backed uniqueness and stock-adjustment layer, product image
+storage, and the admin UI to manage all of it — no cart, checkout, orders,
+payments, shipping, customer accounts, CMS, promotions, reviews, or public
+storefront yet. Every write still goes through the Admin SDK from
+`services/catalog/*`, gated by RBAC, the same architecture Phase 2
+established for auth.
+
+### Catalog architecture
+
+Same four layers as Phase 1/2, extended with a `catalog` slice at each:
+
+```
+core/catalog/            entities.ts, schemas.ts (Zod), rules.ts (pure domain functions)
+core/interfaces/          product-repository.ts, category-repository.ts, brand-repository.ts,
+                           inventory-repository.ts, inventory-adjustment-repository.ts,
+                           product-image-storage-port.ts
+infrastructure/firebase/   repositories/firestore-{product,category,brand,inventory,
+                           inventory-adjustment}-repository.ts, repositories/catalog-unique-keys.ts,
+                           product-image-storage.ts
+services/catalog/         dependencies.ts (composition root) + one file per use case
+                           (create/update/archive-product, create/update/delete-category,
+                           create/update/delete-brand, adjust-inventory, upload/delete-product-image,
+                           list-*, inventory-overview.ts, product-image-urls.ts)
+features/catalog/         products/, categories/, brands/, inventory/ — admin UI + Server Actions
+app/admin/(protected)/    products/, products/new/, products/[productId]/, categories/, brands/,
+                           inventory/ — thin route composition only
+```
+
+No route, UI component, or feature imports Firestore, Firebase Admin, or
+Storage directly — the same `eslint-plugin-boundaries` rule from Phase 1/2
+enforces this unchanged; nothing in `eslint.config.mjs` needed to change for
+Phase 3, only new files inside already-allowed directories. `services/catalog`
+reuses `services/auth/session.ts`'s `requireSession()`/`requirePermission()`
+directly rather than duplicating a second session mechanism.
+
+### Product/variant model and the embedded-variants decision
+
+A `Product` document carries every field the spec asked for directly:
+name, slug, short/full description, `brandId`, `primaryCategoryId` +
+`additionalCategoryIds`, a free-form `productType` string (deliberately not
+a fixed enum — see below), `status` (`draft`/`active`/`archived`),
+`visibility` (`visible`/`hidden`), `featured`, `sku`, optional `barcode`,
+`basePrice`/`compareAtPrice`/`costPrice` (smallest currency unit, e.g.
+cents — no currency or tax calculation exists, `taxClass` is a placeholder
+string only), `trackInventory`/`allowBackorder`/`lowStockThreshold`,
+`weightGrams`/`dimensions`, `tags`, SEO title/description, `hasVariants`,
+an embedded `variants: ProductVariant[]`, an optional `attributes` bag (see
+below), an embedded `images: ProductImage[]` (metadata only, never bytes —
+see Image storage design), a `version` counter for optimistic concurrency,
+and the usual timestamps/actor ids.
+
+**Variants are embedded in the product document, not a separate
+collection.** This was a deliberate choice, weighed against the
+alternative:
+
+- Firestore has no native cross-document uniqueness constraint and no way
+  to query "does any variant across the whole catalog have SKU X" cheaply
+  — that problem is solved the same way regardless of storage shape (the
+  `catalogUniqueKeys` collection, see below), so splitting variants into
+  their own collection wouldn't simplify uniqueness at all.
+- A product's variants are always read and written together with their
+  parent (the admin UI edits a product and its full variant list as one
+  form; `ProductRepository.update()` needs the whole variant array to
+  diff old vs. new unique-key claims in one transaction anyway). Keeping
+  them in the same document means that transaction is a single-document
+  read+write, not a multi-document fan-out.
+- Realistic variant counts for coffee/equipment products (bag size ×
+  grind, color × capacity, ...) are a handful to a few dozen, nowhere near
+  Firestore's 1 MiB document limit.
+- The tradeoff accepted: a product with an unusually large number of
+  variants would eventually approach that document-size limit. Revisit
+  with a separate `variants` collection if any product family's variant
+  count grows enough to make that a real concern — not needed for Phase 3.
+
+`ProductVariant` carries its own `id`, `sku`, optional `barcode`, price/
+compare-at/cost/weight *overrides* (falling back to the parent product's
+values when unset — the override fields are optional precisely so a
+variant that doesn't change price doesn't need to repeat it),
+`attributeSelections` (a free-form `{ [attributeName]: value }` map, e.g.
+`{ bagSize: "500g", grind: "wholeBean" }` — not a fixed set of attribute
+names, so the same variant model covers bag size, grind, equipment color,
+voltage, or any future family's variant axis), `status`, `trackInventory`,
+`allowBackorder`, and `lowStockThreshold`.
+
+`productType` is a plain string (e.g. `"coffee_beans"`, `"grinder"`), not
+an enum, and the catalog has no hardcoded list of product families anywhere
+in `core/`. The families in the original scope (coffee beans, ground
+coffee, capsules/pods, machines, grinders, brewers, filters, kettles,
+scales, accessories, cleaning supplies) exist only as example values an
+admin types into that field — adding a new family later needs zero code
+changes.
+
+### Coffee and equipment attribute strategy
+
+Rather than flattening `roastLevel`, `originCountry`, `manufacturer`,
+`voltage`, etc. directly onto every `Product` document (which would leave
+equipment products with a dozen unused nullable coffee fields and vice
+versa), both families' structured data live under one optional,
+independently-typed `attributes` bag:
+
+```ts
+attributes?: {
+  coffee?: CoffeeAttributes;     // beanType, roastLevel, originCountry, region,
+                                  // farmOrProducer, processingMethod, altitudeMeters,
+                                  // variety, tastingNotes, grindType, roastDate,
+                                  // bestBeforeDate, netWeightGrams
+  equipment?: EquipmentAttributes; // manufacturer, model, material, color, capacity,
+                                    // voltage, wattage, plugType, warrantyPeriod, compatibility
+}
+```
+
+Every field in both groups is optional, and the groups themselves are
+independent — a coffee product simply never populates `equipment`, and
+vice versa; nothing about one affects the other. Adding a future family
+(say, `tea?: TeaAttributes`) means adding one more optional key to this
+object, touching zero existing products. Equipment's general `weight`/
+`dimensions` reuse the product-level fields rather than duplicating them a
+second time inside `EquipmentAttributes` — the spec listed both, but a
+product only needs one weight and one set of dimensions regardless of
+family.
+
+### Variants: uniqueness and duplicate-combination prevention
+
+Three distinct checks, at two different layers:
+
+1. **Duplicate SKU/barcode/attribute-combination *within one product's own
+   variant list*** — `services/catalog/product-validation.ts`'s
+   `validateVariantsInput()`, a pure in-memory check over the incoming
+   array before any repository call. This exists as a separate layer from
+   #2 below because claiming the same Firestore unique-key document twice
+   for the *same* product in one transaction is a no-op, not a conflict —
+   two variants with an identical SKU in the same request would otherwise
+   silently both succeed.
+2. **Duplicate SKU/barcode *across the whole catalog*** (a variant's SKU
+   colliding with any other product's or variant's SKU/barcode) — enforced
+   transactionally by the Firestore repository via `catalogUniqueKeys` (see
+   below), which throws `ConflictError` on collision.
+3. **Duplicate attribute *combination* within one product** (e.g. two
+   variants both selecting `{ bagSize: "500g", grind: "wholeBean" }`) —
+   `core/catalog/rules.ts#variantSelectionsKey()` produces an
+   order-independent, case/whitespace-normalized key for a variant's
+   `attributeSelections`; `hasDuplicateVariantCombination()` and the
+   in-request check in `validateVariantsInput()` both use it.
+
+### Inventory model
+
+`InventoryRecord` is one document per `(productId, variantId | null)` pair
+— `variantId: null` means a simple (no-variant) product tracked at the
+product level. Fields are just `{ productId, variantId, onHand, reserved,
+lowStockThreshold?, updatedAt, updatedBy }`. **`available` is deliberately
+never stored** — `core/catalog/rules.ts#computeAvailableQuantity()` computes
+`onHand - reserved` on every read instead. Storing a third field that's
+purely a function of the other two would let it drift out of sync (an
+adjustment that updates `onHand` but forgets to recompute `available`);
+computing it is cheap and can never be wrong.
+
+`InventoryAdjustment` is an append-only ledger entry: `{ inventoryId,
+productId, variantId, reason, quantityDelta, onHandBefore, onHandAfter,
+note?, actorId, createdAt }`. `reason` is one of the seven values the spec
+listed (`initial_stock`, `stock_in`, `stock_out`, `correction`, `damaged`,
+`returned`, `manual_adjustment`) — a fixed enum here, unlike `productType`,
+because these are operational categories the business actually reports on,
+not an open-ended taxonomy.
+
+**`InventoryRepository.adjust()` is the only way `onHand` ever changes.**
+It's a single Firestore transaction that reads the current record, checks
+the backorder rule (`core/catalog/rules.ts#canDecreaseStock()` — a decrease
+that would take `onHand - reserved` negative throws `ConflictError`
+*unless* the product/variant's `allowBackorder` is `true`), writes the
+updated record, and appends the ledger entry, all together. Concurrent
+adjustments to the same record serialize through Firestore's own
+transaction retry — proven by an integration test that fires 10 concurrent
+`-1` adjustments at a record seeded with 100 units and asserts the final
+count is exactly 90, not something less (a lost-update bug would show up
+as a wrong final total, not a crash, which is why this needs a real
+concurrency test against the emulator rather than a mocked one).
+
+Order-reservation workflows (actually incrementing `reserved` when an order
+is placed, releasing it on fulfillment/cancellation) are explicitly **not**
+implemented in Phase 3 — only the data model (`reserved` exists as a field,
+`computeAvailableQuantity()` already accounts for it) and the safe
+`InventoryRepository.adjust()` seam a future orders module can call. No
+UI, service, or test exercises reservation in this phase.
+
+### Firestore model (Phase 3 collections)
+
+All server/Admin-SDK-only, same pattern as Phase 2 — `firestore.rules`
+denies all client access to every one of these as a defense-in-depth
+backstop (Admin SDK bypasses rules entirely, so this documents intent, it
+isn't the real enforcement; see Phase 2's Audit-log immutability section
+for the same point made about IAM being the actual boundary).
+
+- **`products/{productId}`** — see Product/variant model above. Composite
+  indexes: `(status ASC, createdAt DESC)`, `(primaryCategoryId ASC,
+  createdAt DESC)`, `(brandId ASC, createdAt DESC)` — one per admin-UI
+  list filter, since the list view filters by exactly one of status/
+  category/brand at a time, never combined.
+- **`categories/{categoryId}`** — `{ name, slug, description?, parentId:
+  string|null, sortOrder, isActive, imageRef?, seoTitle?, seoDescription?,
+  createdAt, updatedAt, createdBy, updatedBy }`. Composite index:
+  `(parentId ASC, sortOrder ASC)`. `CategoryRepository.listAll()`
+  intentionally returns the whole collection un-paginated — category trees
+  are admin-curated, not user-generated, so this is a safe simplification
+  at Phase 3's expected size; it's what backs both the circular-reference
+  walk and the admin tree UI.
+- **`brands/{brandId}`** — `{ name, slug, description?, logoRef?, website?,
+  isActive, seoTitle?, seoDescription?, createdAt, updatedAt, createdBy,
+  updatedBy }`.
+- **`inventory/{productId}:{variantId|-}`** — see Inventory model above.
+  Deterministic doc id (`${productId}:${variantId ?? "-"}`) so a lookup or
+  the adjust transaction never needs a query, just `.doc(id)`.
+- **`inventoryAdjustments/{autoId}`** — the append-only ledger. Composite
+  indexes: `(productId ASC, createdAt DESC)` and `(productId ASC, variantId
+  ASC, createdAt DESC)`, matching the two ways the admin history view
+  filters.
+- **`catalogUniqueKeys/{type}:{value}`** — see Unique-key strategy below.
+
+No `tenantId` field exists anywhere in Phase 3, per scope — see Future
+integration seams below for how multi-tenancy could be introduced later
+without a schema rewrite.
+
+### Unique-key strategy
+
+Firestore has no native mechanism for uniqueness across documents (a
+`where` query racing against a concurrent write can't be made atomic with
+that write). `catalogUniqueKeys` is the mechanism Phase 3 uses instead: one
+document per claimed value, doc id `${type}:${value}` (e.g.
+`product-slug:ethiopia-yirgacheffe`, `sku:ETH-YIRG-250`,
+`barcode:0123456789012`, `category-slug:coffee-beans`,
+`brand-slug:acme`), contents `{ type, value, ownerId, ownerKind,
+createdAt }`.
+
+- **Namespaces**: `product-slug`, `category-slug`, and `brand-slug` are
+  each scoped to their own entity kind (a product and a category can share
+  a slug; two products can't). `sku` and `barcode` are each one *global*
+  namespace across the whole catalog — a variant's SKU can't collide with
+  another product's top-level SKU either, since both are sellable-unit
+  identifiers in the same real-world sense.
+- **Claim/release is transactional and atomic with the document write it
+  protects.** `infrastructure/firebase/repositories/catalog-unique-keys.ts`'s
+  `reconcileUniqueKeys()` reads every claimed key's doc (inside the
+  caller's already-open transaction), throws `ConflictError` if any is held
+  by a *different* owner, then writes the claims and releases in the same
+  transaction as the product/category/brand document itself —
+  `FirestoreProductRepository.create()`/`update()` (and the category/brand
+  equivalents) never persist a document whose slug/SKU/barcode turned out
+  to be taken, because the whole thing commits or fails together.
+- **Updates diff old vs. new claims** (`diffUniqueKeyClaims()`) so
+  changing a product's SKU releases the old key and claims the new one in
+  the same transaction, rather than leaking a permanently-reserved stale
+  key. Proven by an integration test: changing a product's SKU frees the
+  old one for a different new product to claim immediately after.
+- **Why this shape over alternatives**: a `where("slug", "==", ...)`
+  existence-check query before writing is not atomic with the write itself
+  — two concurrent creates could both pass the check and then both write,
+  producing a real duplicate. A dedicated collection where the *document id
+  itself* is the uniqueness constraint, claimed inside the same transaction
+  as the real write, is the standard Firestore pattern for this — it turns
+  "check then act" into a single atomic operation.
+
+### Transactions and concurrency
+
+Every mutation that has a uniqueness or read-modify-write hazard runs
+inside a single `db.runTransaction()`:
+
+- **Product create/update**: claims/releases unique keys and writes the
+  product document together; `update()` additionally checks
+  `expectedVersion` against the document's current `version` field first,
+  throwing `ConflictError` on mismatch (optimistic concurrency — two admins
+  editing the same product at once get a clear "reload and try again"
+  instead of one silently overwriting the other's change) and increments
+  `version` on success.
+- **Category/brand create/update/delete**: same unique-key transaction
+  pattern, scoped to their own slug namespace.
+- **Inventory adjust**: reads the current record, enforces the backorder
+  rule, writes the updated record and the ledger entry together (see
+  Inventory model above) — this is the one covered by a real concurrency
+  integration test, not just a unit test with mocked Firestore, since
+  transaction-retry-under-contention is exactly the kind of behavior a
+  mock can't meaningfully fake.
+
+### Image storage design
+
+Product images are Firebase Storage objects; Firestore only ever stores
+metadata (`ProductImage`: `id`, `storagePath`, `contentType`, `sizeBytes`,
+`altText`, `sortOrder`, `isPrimary`, `uploadedAt`, `uploadedBy`) — never
+image bytes, never base64, and never a long-lived public URL persisted
+anywhere.
+
+- **Server-generated paths only.** `products/{productId}/{imageId}.{ext}`
+  is built entirely from the product's own id, a server-generated random
+  image id, and a fixed extension derived from the validated content type
+  (`infrastructure/firebase/product-image-storage.ts#buildStoragePath()`)
+  — there is no code path anywhere that accepts a path or filename from the
+  caller, which is what makes "no user-controlled arbitrary paths" hold.
+- **Validation happens before any byte reaches Storage.**
+  `services/catalog/upload-product-image.ts` only trusts `bytes.byteLength`
+  (what was actually received), never a caller-claimed `sizeBytes` — a lie
+  about size can't smuggle an oversized upload past the 5MB limit. Content
+  type is restricted to `image/jpeg`, `image/png`, `image/webp` via a fixed
+  Zod enum (`PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES`).
+- **Admin preview uses Firebase Storage "download tokens", not
+  cryptographically signed GCS URLs.** This was a deliberate correction made
+  during Phase 3, not the original design: a GCS signed URL
+  (`file.getSignedUrl()`) requires the calling identity to hold
+  `iam.serviceAccounts.signBlob` on itself — an IAM grant beyond plain
+  Application Default Credentials, with no equivalent at all against the
+  Storage emulator (which has no real IAM to check — it fails with "Could
+  not load the default credentials", not a rules error). Firebase's
+  download-token mechanism (a random token stored in the object's custom
+  metadata, embedded in the URL as `?alt=media&token=...`) works
+  identically via the Admin SDK in both production and the emulator, with
+  zero extra IAM configuration required of whoever deploys this. The
+  tradeoff: unlike a signed URL, a download token does not expire on its
+  own — anyone who obtains the URL can view that image indefinitely until
+  the token is rotated (rotation isn't implemented). For Phase 3's
+  admin-only product photography — no customer PII, no public storefront
+  yet — this is an accepted tradeoff; revisit if these URLs are ever
+  exposed anywhere less controlled than the admin UI.
+- **Delete order matters.** `deleteProductImage()` removes the image from
+  the product's Firestore metadata *first*, then deletes the Storage
+  object. That order (not the reverse) means a failure partway through
+  leaves at worst an unreferenced orphan file in the bucket (harmless,
+  nothing points to it) — never a product still listing an image whose
+  bytes are already gone. The same logic runs in reverse for a *failed*
+  upload: if the Storage write succeeds but the Firestore metadata update
+  fails (e.g. a concurrent edit bumped the product's `version`), the
+  just-uploaded object is deleted rather than left orphaned
+  (`upload-product-image.ts`'s `catch` block).
+- **`storage.rules`** denies all direct client access to
+  `products/{productId}/{imageFile}` (and everything else) — there is no
+  client-side Firebase Storage SDK usage anywhere in this app; every
+  upload/delete/preview goes through an Admin-SDK-mediated Server Action
+  gated by `requirePermission(actor, "products:edit")` first. Like
+  Firestore rules, this is defense-in-depth, not the primary boundary — see
+  the rules file's own comment for the parallel to Phase 2's Firestore
+  rules.
+
+### RBAC permissions
+
+Reuses the `products`, `categories`, `brands`, `inventory` namespaces
+Phase 2 already reserved (`core/auth/permissions.ts`'s
+`PERMISSION_NAMESPACES`) — Phase 3 activates them for the first time, adds
+no new namespace. One new **action** was added: `adjust`, alongside the
+existing `view`/`create`/`edit`/`delete`/`export`/`manage`. Inventory
+adjustment is a distinct, more sensitive action than editing a product's
+descriptive fields, so `inventory:adjust` can be granted to a role
+independently of `inventory:edit` — the `manage` wildcard still covers it
+like every other action in a namespace, and `super_admin` still bypasses
+every check unconditionally, unchanged from Phase 2.
+
+Activated permissions: `products:view/create/edit/delete`,
+`categories:view/create/edit/delete`, `brands:view/create/edit/delete`,
+`inventory:view`, `inventory:adjust`. Product image upload/delete are
+gated behind `products:edit` (images are a facet of editing a product, not
+a separate namespace the spec's permission list didn't ask for).
+
+The admin nav (`features/admin-shell/components/admin-nav.tsx`) shows
+Products/Categories/Brands/Inventory links only when the session holds the
+matching `:view` permission — UX only, exactly like Phase 2's Staff/Roles
+links; every page and Server Action independently calls
+`requirePermission()` regardless of what the nav renders.
+
+Category and brand editing happens in-place on `/admin/categories` and
+`/admin/brands` (client-side state toggling the same form between create
+and edit) rather than a `/admin/categories/[id]` or `/admin/brands/[id]`
+route — the Phase 3 admin route list is deliberately just the six routes
+named in scope (`/admin/products`, `/admin/products/new`,
+`/admin/products/[productId]`, `/admin/categories`, `/admin/brands`,
+`/admin/inventory`), and an edit form doesn't need its own route when it
+already renders on the page that lists everything.
+
+### Deletion policy
+
+- **Products are never hard-deleted** — `archiveProduct()` only ever sets
+  `status: "archived"` (still gated behind `products:delete`, since it's
+  the operation that removes a product from the active catalog, even
+  though it's a status change rather than a document delete).
+- **Categories and brands in use cannot be deleted.**
+  `deleteCategory()`/`deleteBrand()` check `ProductRepository.countByCategory()`/
+  `countByBrand()` first and throw `ForbiddenError` if any product
+  references them (a category also can't be deleted while it has
+  subcategories). Only a genuinely unused category/brand reaches
+  `repository.delete()`, which also releases its slug from
+  `catalogUniqueKeys` so the slug becomes available again.
+- **A product's `additionalCategoryIds` can never repeat its own
+  `primaryCategoryId`** (`assertNoDuplicateCategoryAssignment()`) — besides
+  being a redundant assignment, it would let `countByCategory()`'s two
+  separate `count()` queries (Firestore has no single query expressing
+  "primaryCategoryId == X OR additionalCategoryIds contains X" with an
+  aggregate count) double-count the same product.
+- **Image cleanup**: deleting an image removes it from the product's
+  metadata and its Storage object (see Image storage design above); an
+  image belonging to a deleted-but-previously-unused category/brand has no
+  separate cleanup path in Phase 3, since categories/brands don't own
+  Storage objects — only their `imageRef`/`logoRef` string fields, which
+  are just placeholders for a future asset-picker feature, not yet wired
+  to Storage themselves.
+- **Audit events**: `product_created`, `product_updated`,
+  `product_archived`, `category_created/updated/deleted`,
+  `brand_created/updated/deleted`, `product_image_uploaded/deleted`,
+  `inventory_adjusted` — all recorded the same way Phase 2 established:
+  `actorUid`/`actorEmail` from the verified session, never from request
+  input, via the same append-only `AuditLogRepository` port (no new port
+  needed — Phase 3 reuses it directly).
+
+### Emulator setup (Phase 3 additions)
+
+```bash
+pnpm run test:integration    # now starts firestore, auth, AND storage (was firestore, auth only)
+pnpm run test:e2e:auth       # now runs tests/e2e/auth.spec.ts AND tests/e2e/catalog.spec.ts
+```
+
+The Storage emulator was added to `test:integration`'s `firebase
+emulators:exec --only` list specifically for
+`tests/integration/product-image-storage.test.ts`. The Admin SDK Storage
+client needs `FIREBASE_STORAGE_EMULATOR_HOST` (added to `apps/web/.env.test`)
+to talk to the emulator — unlike Firestore/Auth, this isn't inferred from
+`NEXT_PUBLIC_USE_FIREBASE_EMULATORS` alone.
+`playwright.auth.config.ts`'s `testMatch` now includes both
+`auth.spec.ts` and `catalog.spec.ts`, since both need the same
+Firestore+Auth-backed login flow and fixture accounts from
+`global-setup.ts` — the Phase 2 super-admin fixture already has every
+`{namespace}:manage` permission (`allManagePermissions()`), so it needs no
+changes to also cover the catalog namespaces.
+
+### Test totals (Phase 3 additions)
+
+- Unit: catalog domain rules (`catalog-rules.test.ts`), variant/category
+  validation, and one test file per service use case (create/update/
+  archive product, create/update/delete category, create/update/delete
+  brand, adjust inventory, upload/delete product image) — all with mocked
+  `CatalogDeps`, no emulator.
+- Integration (real emulator): Firestore product/category/brand/inventory
+  repository adapters (including slug/SKU/barcode conflict tests, the
+  optimistic-concurrency version check, and the SKU-release-on-change
+  test), the concurrent-inventory-adjustment test, the Storage adapter
+  (upload/delete/download-token tests), and the Phase 3
+  `firestore.rules` denial tests.
+- Playwright: `tests/e2e/catalog.spec.ts` — one ordered flow (create
+  category → brand → product → adjust inventory → archive) as the super
+  admin, plus permission-denial and nav-visibility checks for a
+  no-permission staff account.
+
+See the final verification report for exact current pass counts.
+
+### Known limitations (Phase 3)
+
+- Order-reservation workflows are not implemented — only the data model
+  (`reserved` field, `computeAvailableQuantity()`) and the
+  `InventoryRepository.adjust()` seam exist for a future orders module to
+  build on.
+- Product image download-token URLs do not expire on their own (see Image
+  storage design above) — acceptable for admin-only photography today, not
+  suitable as-is if these URLs were ever exposed somewhere less controlled.
+- `CategoryRepository.listAll()` and `InventoryRepository.listLowStock()`
+  both read their entire collection (bounded to 2000 for low-stock)
+  un-paginated — a reasonable simplification at Phase 3's expected catalog
+  size, revisit if either collection grows enough to matter.
+- No tax calculation, currency conversion, or pricing-rule engine —
+  `basePrice`/`compareAtPrice`/`costPrice` are plain numbers in the
+  smallest currency unit, and `taxClass` is a placeholder string with no
+  behavior behind it.
+- Clearing an optional field back to "unset" (rather than replacing it with
+  a new value) is only explicitly supported for `barcode` (via
+  `FieldValue.delete()`); other optional string/number fields follow the
+  same convention Phase 2 already established (blank the value via an
+  empty string/0 from the form; a key simply omitted from a patch means
+  "unchanged", not "clear").
+- No image reordering drag-and-drop in the admin UI yet — `sortOrder` exists
+  on `ProductImage` and is respected on render, but is only ever set at
+  upload time (append to the end), not editable afterward.
+
+### Future integration seams for orders, POS, ERP, wholesale, and multi-tenant support
+
+- **Orders**: `InventoryRepository.adjust()` already exists as the one
+  transactional stock-mutation seam; an orders module's checkout flow would
+  call it with `reason: "stock_out"` (or extend the reason enum with an
+  order-specific value) and use the existing `reserved` field for
+  hold-during-checkout semantics, which `computeAvailableQuantity()`
+  already accounts for everywhere it's read.
+- **POS**: the same `adjust()` seam and `InventoryAdjustment` ledger would
+  serve a point-of-sale integration identically — POS-originated
+  adjustments are just another `actorId`/`reason` on the same append-only
+  ledger, no new data model needed.
+- **ERP/wholesale**: `Product.costPrice` and the `taxClass` placeholder are
+  already present for a future ERP sync or wholesale pricing tier to read
+  from; a wholesale price-list feature would most naturally add its own
+  collection referencing `productId`/`variantId` rather than growing the
+  `Product` document further.
+- **Multi-tenant**: no `tenantId` field exists anywhere in Phase 3,
+  matching the explicit scope instruction. Every Phase 3 collection is
+  flat and singular today, designed so a future `tenants/{tenantId}/...`
+  nesting (or a `tenantId` field plus composite indexes including it)
+  could be introduced later without a schema rewrite — the same
+  tenant-readiness posture Phase 2 documented for its own collections, not
+  yet implemented, not pretended to be implemented.
+
 ## Backlog (ideas noted, not implemented)
 
 - Firebase App Check / reCAPTCHA in front of Identity Platform, as an
@@ -728,3 +1233,20 @@ introduced later without a schema rewrite — not implemented now.
 - Analytics (GA4 / PostHog).
 - Edge middleware for auth session refresh + RBAC route guards (once auth exists).
 - Secret Manager wiring for the first server-side secret an integration needs.
+- Order-reservation workflow (actually incrementing/releasing `reserved`)
+  once an orders module exists — see Phase 3's Future integration seams.
+- Product image download-token rotation/expiry, if these URLs are ever
+  exposed anywhere less controlled than the admin UI.
+- A separate `variants` collection, if any product family's variant count
+  grows large enough that embedding stops being the right tradeoff.
+- Category/brand `imageRef`/`logoRef` asset-picker UI wired to actual
+  Storage uploads (currently placeholder string fields only).
+- Drag-and-drop product image reordering in the admin UI.
+- A denormalized `isLowStock` flag on `InventoryRecord` (or a dedicated
+  low-stock index), if `listLowStock()`'s bounded in-memory scan stops
+  scaling with catalog size.
+- A public storefront, product pages, search/filtering, and the customer-
+  facing side of the catalog generally — Phase 3 is admin-only.
+- Real tax/currency/pricing-rule engine behind `taxClass`/`costPrice`.
+- Wholesale price-list and ERP sync collections referencing `productId`/
+  `variantId`.

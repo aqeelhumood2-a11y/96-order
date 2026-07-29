@@ -43,6 +43,19 @@ export const AUDIT_LOG_EVENT_TYPES = [
   "permissions_changed",
   "session_revoked",
   "bootstrap_completed",
+  // Phase 3 (catalog and inventory foundation)
+  "product_created",
+  "product_updated",
+  "product_archived",
+  "category_created",
+  "category_updated",
+  "category_deleted",
+  "brand_created",
+  "brand_updated",
+  "brand_deleted",
+  "product_image_uploaded",
+  "product_image_deleted",
+  "inventory_adjusted",
 ] as const;
 
 export type AuditLogEventType = (typeof AUDIT_LOG_EVENT_TYPES)[number];

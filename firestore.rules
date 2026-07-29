@@ -13,6 +13,20 @@ rules_version = '2';
 // listed per collection (rather than relying only on the wildcard below)
 // so each Phase-2 collection's access decision is visible on its own.
 //
+// Phase 3 (catalog and inventory foundation) collections: `products`,
+// `categories`, `brands`, `inventory`, `inventoryAdjustments`, and
+// `catalogUniqueKeys` follow the exact same pattern — read and written
+// exclusively by server-side code through the Admin SDK (see
+// apps/web/src/infrastructure/firebase/repositories/*.ts), gated by RBAC
+// permission checks in `services/catalog/*` before any repository call.
+// There is no public storefront yet, so there's no reason for the client
+// SDK to read these either — every catalog read in the admin UI goes
+// through a Server Component/Action that calls these repositories
+// server-side. `inventoryAdjustments` is append-only the same way
+// `auditLogs` is: `InventoryAdjustmentRepository` exposes no update/delete
+// method, and the only path that creates an entry is
+// `InventoryRepository.adjust()`'s own transaction.
+//
 // Every other collection — anything belonging to a future module — stays
 // on the Phase 1 default-deny baseline until that module designs its own
 // real access pattern.
@@ -35,6 +49,30 @@ service cloud.firestore {
     }
 
     match /rateLimits/{key} {
+      allow read, write: if false;
+    }
+
+    match /products/{productId} {
+      allow read, write: if false;
+    }
+
+    match /categories/{categoryId} {
+      allow read, write: if false;
+    }
+
+    match /brands/{brandId} {
+      allow read, write: if false;
+    }
+
+    match /inventory/{inventoryId} {
+      allow read, write: if false;
+    }
+
+    match /inventoryAdjustments/{adjustmentId} {
+      allow read, write: if false;
+    }
+
+    match /catalogUniqueKeys/{keyId} {
       allow read, write: if false;
     }
 

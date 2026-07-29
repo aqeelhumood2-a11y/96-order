@@ -54,7 +54,10 @@ describe("firestore.rules — Phase 2 collections", () => {
   });
 
   it("still denies an arbitrary future-module collection under the Phase 1 wildcard baseline", async () => {
+    // `products` now has its own explicit Phase 3 rule (see
+    // firestore-security-rules-catalog.test.ts) — `orders` is Phase 4 and
+    // still genuinely falls through to the wildcard.
     const db = testEnv.authenticatedContext("arbitrary-uid").firestore();
-    await assertFails(db.collection("products").doc("some-product").get());
+    await assertFails(db.collection("orders").doc("some-order").get());
   });
 });
