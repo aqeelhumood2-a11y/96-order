@@ -13,7 +13,7 @@ export async function createStaffAction(input: {
   email: string;
   displayName?: string;
   roleIds: string[];
-}): Promise<ActionResult<{ uid: string; passwordResetLink: string }>> {
+}): Promise<ActionResult<{ uid: string }>> {
   const result = await runAction(async () => {
     const actor = await requireSession();
     return createStaff(actor, input);
@@ -50,10 +50,10 @@ export async function revokeStaffSessionsAction(targetUid: string): Promise<Acti
   });
 }
 
-export async function initiatePasswordResetAction(targetUid: string): Promise<ActionResult<{ link: string }>> {
+export async function initiatePasswordResetAction(targetUid: string): Promise<ActionResult<null>> {
   return runAction(async () => {
     const actor = await requireSession();
-    const link = await initiatePasswordReset(actor, targetUid);
-    return { link };
+    await initiatePasswordReset(actor, targetUid);
+    return null;
   });
 }

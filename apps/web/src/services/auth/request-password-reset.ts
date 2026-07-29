@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { RATE_LIMITS } from "@/config/auth";
 import { RateLimitedError } from "@/core/errors";
 import { defaultAuthDeps, type AuthDeps } from "./dependencies";
@@ -8,21 +9,34 @@ export interface RequestPasswordResetInput {
 }
 
 /**
- * Forgot-password use case. This is the server-side gate only: it
- * rate-limits and audit-logs, then always succeeds so the response never
- * reveals whether an account exists for this email (paired with enabling
- * "Email Enumeration Protection" in the Firebase Auth console). The actual
- * email delivery happens client-side via the Firebase SDK's
- * `sendPasswordResetEmail` immediately after this call succeeds — there is
- * no server-side "send email" API in this stack; Admin SDK's
- * `generatePasswordResetLink` only creates the URL, it doesn't deliver it.
+ * Forgot-password use case, fully server-side. Rate-limits by IP and by
+ * normalized email, audit-logs the attempt, then triggers Firebase's own
+ * hosted password-reset email delivery via `AuthSessionPort.sendPasswordResetEmail`
+ * — a server-side call to the same Identity Toolkit endpoint the client
+ * SDK uses internally (see infrastructure/firebase/identity-toolkit-rest.ts).
+ * The client is never involved in triggering delivery, which is what
+ * closes the earlier bypass: previously the client called
+ * `sendPasswordResetEmail` itself after this gate succeeded, so a caller
+ * could skip the gate and invoke it directly. Now this function is the
+ * *only* way delivery happens at all.
  *
- * Documented limitation: a caller could skip this gate and invoke
- * `sendPasswordResetEmail` directly from the browser, bypassing our rate
- * limit — the same inherent limitation as the login flow. See the Phase 2
- * README's security assumptions.
+ * The send is scheduled via Next.js's `after()` rather than awaited or
+ * left as a bare un-awaited promise: awaiting it would leak its latency
+ * (and thus whether the account exists) into the response time, but a
+ * bare fire-and-forget promise isn't safe on a serverless platform, which
+ * can freeze the function as soon as the response is sent and silently
+ * drop it mid-flight. `after()` is Next's own guarantee that the platform
+ * keeps this invocation alive long enough to finish, without the response
+ * waiting for it. The response is always the same generic success,
+ * never revealing whether an account exists (pair this with enabling
+ * "Email Enumeration Protection" in the Firebase Auth console — see README).
+ *
+ * The reset link itself is never returned, logged, or recorded anywhere in
+ * this codebase — see `AuthSessionPort.sendPasswordResetEmail`'s contract.
  */
 export async function requestPasswordReset(input: RequestPasswordResetInput, deps: AuthDeps = defaultAuthDeps): Promise<void> {
+  const normalizedEmail = input.email.trim().toLowerCase();
+
   const ipLimit = RATE_LIMITS.forgotPasswordByIp;
   const ipResult = await deps.rateLimiter.consume(`forgot-password:ip:${input.ip}`, ipLimit.limit, ipLimit.windowSeconds);
   if (!ipResult.allowed) {
@@ -33,7 +47,7 @@ export async function requestPasswordReset(input: RequestPasswordResetInput, dep
 
   const emailLimit = RATE_LIMITS.forgotPasswordByEmail;
   const emailResult = await deps.rateLimiter.consume(
-    `forgot-password:email:${input.email}`,
+    `forgot-password:email:${normalizedEmail}`,
     emailLimit.limit,
     emailLimit.windowSeconds,
   );
@@ -46,7 +60,10 @@ export async function requestPasswordReset(input: RequestPasswordResetInput, dep
   await deps.auditLogs.record({
     type: "password_reset_requested",
     actorUid: null,
-    actorEmail: input.email,
+    actorEmail: normalizedEmail,
     metadata: {},
   });
+
+  // Scheduled after the response, not awaited — see the doc comment above.
+  after(() => deps.authSession.sendPasswordResetEmail(normalizedEmail).catch(() => undefined));
 }

@@ -56,15 +56,15 @@ The dependency direction is enforced by `eslint-plugin-boundaries`
 `infrastructure` directly — they go through `services`. Run `pnpm lint` to
 see it in action; violating the rule is a lint error, not a suggestion.
 
-Two narrow, deliberate exceptions were added in Phase 2, both only to
-`lib`: `lib` may import `core` (so `lib/action-result.ts` can map thrown
-`AppError`s to a typed Server Action result) and `lib` may import
-`infrastructure` (so `lib/firebase-client-auth.ts` can wrap the Firebase
-**client** Auth SDK singleton for browser-side use by
-`features/admin-auth`'s client components — a browser SDK call, not a
-Firestore/Admin SDK access, so this doesn't weaken "UI and routes must not
-directly access Firestore or Firebase Admin"). `features`/`ui`/`app` still
-cannot import `infrastructure` directly.
+One narrow, deliberate exception exists, from `lib` only: `lib` may import
+`core`, so `lib/action-result.ts` can map thrown `AppError`s to a typed
+Server Action result. A second exception (`lib` → `infrastructure`, for a
+client-side Firebase Auth SDK wrapper) existed briefly in Phase 2 and has
+since been removed along with the client-side auth code it supported — see
+"ESLint boundary exceptions" under Phase 2 below for the full history.
+`lib`, `features`, `ui`, and `app` all cannot import `infrastructure`
+directly; only `services` (the composition root) and `infrastructure`
+itself can.
 
 **Adding a future feature module** (e.g. a coffee product catalog): add
 `core/interfaces/product-repository.ts` (the port), an implementation under
@@ -177,16 +177,24 @@ no catalog, orders, CMS, payments, or other business modules.
 
 ### Auth architecture
 
-- **Login** (`/admin/login`, public): a client component calls the Firebase
-  client SDK's `signInWithEmailAndPassword` directly against Identity
-  Toolkit (never our server), then POSTs the resulting ID token to
-  `POST /api/auth/session`.
-- **Session creation** (`services/auth/create-session.ts`): rate-limits by
-  IP and by email, verifies the ID token via the Admin SDK, confirms the
-  uid has an **active** `users/{uid}` staff record (a valid Firebase Auth
+- **Login** (`/admin/login`, public): a client component POSTs the raw
+  `{ email, password }` directly to `POST /api/auth/session` — it no longer
+  calls the Firebase client SDK at all. This closed the original gap where
+  a caller could invoke `signInWithEmailAndPassword` straight from the
+  browser and skip our rate limiter entirely: now our server is the *only*
+  path that ever verifies a password, so nothing can bypass the limiter in
+  front of it.
+- **Session creation** (`services/auth/create-session.ts`): consumes the
+  IP and email rate limits **before** any password verification is
+  attempted, then verifies the password server-side against Identity
+  Toolkit's REST API (`infrastructure/firebase/identity-toolkit-rest.ts` —
+  the Admin SDK has no password-verification method, so this is a thin,
+  server-only REST call, never exposed to the browser), confirms the uid
+  has an **active** `users/{uid}` staff record (a valid Firebase Auth
   account alone is not authorization), mints a session cookie via
   `createSessionCookie`, records `lastLoginAt`, and writes a
-  `login_success`/`login_failure` audit log entry.
+  `login_success`/`login_failure` audit log entry. See "Rate limiting
+  design" below for the full mechanics.
 - **Verification** (`services/auth/session.ts`): `getSession()` reads the
   `__Host-session` cookie and calls `verifySessionCookie(cookie, true)` —
   the `true` (`checkRevoked`) is mandatory, not optional: without it,
@@ -298,9 +306,11 @@ never a service-account JSON.
 
 - Only `staff:create` (or `staff:manage`, via the namespace wildcard) can
   create a staff account (`create-staff.ts`). Creation never sets a
-  password: the Auth user is created with none, and a password-setup link
-  (`generatePasswordResetLink`) is returned once to the creating admin —
-  see the email-delivery limitation below.
+  password: the Auth user is created with none, and the server
+  automatically triggers a password-setup email via
+  `AuthSessionPort.sendPasswordResetEmail` (see "Password-reset delivery"
+  below) — the admin UI shows only a confirmation that an email was sent,
+  never a link.
 - `staff:edit` (or `staff:manage`) is required to activate/deactivate
   (`set-staff-status.ts`), reassign roles (`assign-roles.ts`), force-logout
   (`revoke-staff-sessions.ts`), or initiate a password reset for an
@@ -339,7 +349,289 @@ Phase-2-specific needs a service-account JSON or any other secret env var;
 session cookies, custom claims, and rate limiting are all built from ADC +
 Firestore.
 
-### Security assumptions (read this before relying on rate limiting)
+### Rate-limiting design
+
+Every public, pre-auth, state-changing Route Handler consumes a rate limit
+**before** doing anything password- or token-related, and there is no
+client-reachable path that skips it — this was the central Phase 2
+correction, so it's documented in full here.
+
+- **Why the old design was bypassable, and what changed.** The original
+  login flow had the browser call the Firebase client SDK's
+  `signInWithEmailAndPassword` directly against Identity Toolkit, then hand
+  our server an already-minted ID token. Our rate limiter sat *after* that
+  point (at session-cookie creation), so a caller could skip our UI/API
+  entirely, call Identity Toolkit straight from a script, and guess
+  passwords with no exposure to our limiter at all. The fix was
+  architectural, not a tweak: the password is now verified **only**
+  server-side. `POST /api/auth/session` accepts `{ email, password }`
+  directly; `create-session.ts` consumes both rate limits, and only then
+  calls `AuthSessionPort.signInWithPassword`, which proxies to Identity
+  Toolkit's REST API from the server
+  (`infrastructure/firebase/identity-toolkit-rest.ts`). The browser has no
+  way to reach Identity Toolkit on its own anymore for this flow, so there
+  is no longer a code path that reaches password verification without
+  passing through the limiter first. The same restructuring applies to
+  forgot-password (see below).
+- **What's rate-limited, by what key, with what limits**
+  (`config/auth.ts`'s `RATE_LIMITS`, all fixed 15-minute windows):
+  - `POST /api/auth/session`: by IP (`sessionCreateByIp`, 10/15m) **and**
+    by normalized email (`sessionCreateByEmail`, 5/15m) — both consumed,
+    in that order, before `signInWithPassword` is ever called.
+  - `POST /api/auth/forgot-password`: by IP (`forgotPasswordByIp`, 5/15m)
+    and by normalized email (`forgotPasswordByEmail`, 3/15m), before the
+    audit log is written or delivery is scheduled.
+  - Bootstrapping the first super admin is not an HTTP endpoint at all
+    (`apps/web/scripts/bootstrap-super-admin.ts`, invoked by an operator's
+    shell, never a route) — there is no public request path to rate-limit
+    because there is no public request path, full stop. `system/bootstrap`
+    also enforces that it can only ever run its write once (see "First
+    super-admin bootstrap" above), which is the actual replay protection
+    for that flow.
+- **Keys are hashed, not stored raw.** `firestore-rate-limiter.ts` never
+  writes an IP address or email in the clear to `rateLimits/{key}` — the
+  document id is `sha256(key)` (`hashKey()`), computed inside `consume()`
+  so every call site is automatically covered. The counter document itself
+  is just `{ count, windowStartMs, expiresAt }`; there is nothing in
+  Firestore that reveals which email or IP a given counter belongs to.
+- **Enumeration-safety.** Every failure branch inside `create-session.ts` —
+  IP limit exceeded, email limit exceeded, wrong password, unknown email,
+  correct password but the account is deactivated or isn't staff at all —
+  throws the same error type with the same message
+  (`"Invalid email or password."`, or the rate-limit message when that's
+  the branch, which is itself the *same* generic text on both the IP and
+  email limit). The real reason is recorded in the audit log (admin-only,
+  never client-visible), not in the HTTP response. The whole call is
+  wrapped in `finally { await padToMinimumDuration(startedAt,
+  MINIMUM_LOGIN_RESPONSE_MS) }` (300ms floor) so that the extra Firestore
+  read on the "valid credentials but not an active staff account" branch
+  doesn't respond measurably faster or slower than a plain wrong-password
+  rejection — without this, timing alone would leak which branch executed
+  even with identical status codes and bodies.
+- **How this complements Firebase's own abuse protection, and where the
+  line is.** Identity Toolkit has its own backend throttling independent
+  of us — `IdentityToolkitError` with code `TOO_MANY_ATTEMPTS_TRY_LATER`
+  is mapped to the same `RateLimitedError` our own limiter throws
+  (`infrastructure/firebase/auth-session.ts`), so a caller can't
+  distinguish "our limiter tripped" from "Google's tripped." The two are
+  complementary, not redundant: our Firestore-backed limiter is the
+  primary, fast, cheap gate tuned to our own thresholds and is what the
+  regression tests below prove can't be bypassed; Firebase's own
+  protection is a second, coarser backstop against sustained abuse that
+  keeps working even if our limiter were ever misconfigured or disabled,
+  and it also covers surfaces we don't proxy (e.g. token refresh). Neither
+  one substitutes for the other.
+- **App Check stays in the backlog, correctly scoped.** App Check /
+  reCAPTCHA (still Backlog, not built) would add device/browser attestation
+  on top of both of the above — it is not "the fix" for the bypass
+  described above, because that bypass was about *which code path* password
+  verification could take, not about distinguishing bot traffic from human
+  traffic. It remains a good future layer against scripted abuse generally,
+  independent of this correction.
+- **Regression tests proving no bypass**
+  (`apps/web/tests/integration/rate-limiting.test.ts`, run against the real
+  emulator): calls the real, exported `POST` handlers directly — not the
+  service layer with mocked ports — `limit + 2` times for session creation
+  and `limit + 1` times for forgot-password with the same email/IP, and
+  asserts every attempt past the configured limit gets `429` with
+  `{ code: "RATE_LIMITED" }`, while attempts within the limit are still
+  let through to the real (failing, since the account doesn't exist)
+  auth/delivery call. A third test confirms a cross-origin request is
+  rejected by CSRF regardless of rate-limit state, so the two checks are
+  proven independent of each other.
+- **`rateLimits/{key}` has no automatic expiry wired up yet.** A Firestore
+  TTL policy needs to be configured out-of-band (not expressible in
+  `firebase.json`): `gcloud firestore fields ttl-policies create --collection-group=rateLimits --field=expiresAt --database='(default)'`.
+  The `expiresAt` field is already written; this command just needs to be
+  run once against your real project. This is a cost/storage-hygiene
+  cleanup task, not a security gap — expired windows are already correctly
+  ignored by `consume()`'s own logic regardless of whether the stale
+  documents are physically deleted yet.
+
+### Password-reset delivery
+
+Forgot-password is now fully server-side, end to end — the client never
+calls Firebase directly, and no reset link is ever exposed anywhere outside
+Firebase's own hosted email.
+
+- **Flow**: `/admin/forgot-password` (public UI) POSTs `{ email }` to
+  `POST /api/auth/forgot-password`. The route
+  (`services/auth/request-password-reset.ts`) checks the same-origin CSRF
+  guard, consumes the IP and email rate limits, records a
+  `password_reset_requested` audit entry (`actorEmail` only — no token,
+  no link, no secret in the metadata), and always returns the identical
+  `{ ok: true }` response whether or not the account exists. Delivery
+  itself is scheduled via `after(() => authSession.sendPasswordResetEmail(...))`
+  — Next's `after()` API, not an awaited call (which would leak delivery
+  latency into the response, reopening enumeration) and not a bare
+  un-awaited promise (which a serverless platform can freeze mid-flight
+  the instant the response is sent, silently dropping it). `after()` is
+  Next's own guarantee that the function stays alive long enough to finish
+  the send without the client waiting on it.
+- **How delivery actually happens**: `sendPasswordResetEmail` calls
+  Identity Toolkit's `sendOobCode` REST endpoint directly from the server
+  (`infrastructure/firebase/identity-toolkit-rest.ts`), which is Firebase's
+  own normal password-reset email flow — the same one the client SDK's
+  `sendPasswordResetEmail` triggers, just invoked server-side instead of
+  from the browser, so it is gated by our rate limiter and CSRF check
+  first. No third-party email provider, secret, or API key is involved or
+  hardcoded — the only credential in play is the same `NEXT_PUBLIC_FIREBASE_API_KEY`
+  already used elsewhere.
+- **The link is never exposed.** `AuthSessionPort` has no method that
+  returns a reset link at all anymore (`generatePasswordResetLink` was
+  removed from the port entirely) — `sendPasswordResetEmail` returns
+  `Promise<void>`, and its Firestore/infrastructure implementation
+  swallows delivery errors (`.catch(() => undefined)`) rather than
+  surfacing them, specifically so there is no code path, response, log
+  line, or admin-UI state that could ever carry the link. `create-staff.ts`
+  and `initiate-password-reset.ts` both call this same method and both
+  return only `{ uid }` / nothing to the caller — never a link.
+- **Required post-deployment configuration** (not code — this must be set
+  in the Firebase Console for the real project before this flow works in
+  production): configure the Auth email template's action URL/domain under
+  **Authentication → Templates → Password reset**, add your real
+  production domain to **Authentication → Settings → Authorized domains**,
+  and enable **Email enumeration protection** under **Authentication →
+  Settings** so Identity Toolkit's own response shape doesn't leak account
+  existence either (our application-level response was already generic
+  regardless, but this closes the same gap at Google's layer too).
+- **Test-only visibility, not production.** The Auth emulator exposes
+  sent OOB codes via its own inspection REST endpoint
+  (`http://localhost:9099/emulator/v1/projects/{projectId}/oobCodes`) purely
+  for local/CI test inspection — production code never calls or exposes
+  this endpoint, and it doesn't exist against a real Firebase project.
+
+### Audit-log immutability
+
+Because the Admin SDK bypasses Firestore Security Rules entirely (rules
+only constrain client SDK access), "the repository interface only exposes
+`record()`" needed verification that it actually holds everywhere in the
+app, not just by inspection:
+
+- **No update or delete method exists anywhere in the path.**
+  `AuditLogRepository` (`core/interfaces/audit-log-repository.ts`) defines
+  only `record()` and `list()` — there has never been an `update`/`delete`
+  signature to accidentally wire up. `FirestoreAuditLogRepository`
+  implements exactly those two methods and nothing else.
+- **No application code can reach the raw collection another way.**
+  `apps/web/tests/unit/audit-log-immutability.test.ts` recursively scans
+  every file under `src/` for the string literal `"auditLogs"` and asserts
+  the only match is inside the repository implementation itself — so
+  nothing in `services/`, `features/`, or `app/` holds a second, informal
+  handle on the collection that could sidestep the port.
+  It further scans every `services/` call made against something matching
+  the `auditLogs`/`AuditLogRepository` shape and asserts it's always
+  `.record(...)` or `.list(...)`, never anything else — this is checked
+  with a "the scan actually found calls to check" assertion so the test
+  can't pass vacuously by matching nothing.
+- **Server-controlled fields, not attacker-controlled.** `record()`'s
+  Firestore write sets `createdAt: FieldValue.serverTimestamp()` — the
+  server's clock, never a client-supplied timestamp — and the method
+  signature only accepts `{ type, actorUid, actorEmail?, targetUid?,
+  metadata }`; there is no code path where an arbitrary request body is
+  spread directly into the write, so a caller cannot inject a forged
+  `createdAt`, override `actorUid`, or add trusted-looking fields the audit
+  reader would trust. Every call site constructs this object from
+  server-derived values (the verified session, the verified token, or a
+  hardcoded literal) — never from `req.body` directly.
+- **This is defense the application layer actually owns; Firestore Rules
+  are not, and cannot be, part of that boundary for Admin SDK writes.**
+  `firestore.rules` denies all client access to `auditLogs` as a
+  defense-in-depth backstop against a misconfigured or compromised
+  client-facing surface, but it has **zero effect** on what the Admin SDK
+  itself can do — rules only evaluate for the client SDKs. The real,
+  load-bearing boundary against a compromised server process or a rogue
+  operator with direct Admin SDK access is **operational IAM**: whoever
+  can deploy code or run `gcloud`/console actions against the real Firebase
+  project with Editor/Owner (or a custom role with `datastore.entities.*`)
+  can bypass every guarantee described above, because none of them are
+  enforced by Firestore itself. Restricting which service accounts and
+  humans hold that IAM role in the real GCP project is a deployment/ops
+  responsibility outside this codebase, not something any amount of
+  application code can substitute for.
+
+### ESLint boundary exceptions
+
+The Phase 2 review asked for the exact exceptions and justification for
+each. There is now **one**, not two — the second was eliminated by the
+same architectural change that fixed rate-limiting (removing all
+client-side Firebase Auth SDK usage removed the only reason browser code
+needed to touch `infrastructure` at all):
+
+1. **`{ from: "lib", allow: ["lib", "core", "types"] }`** (`lib` → `core`).
+   `core` is the innermost ring (depends on nothing else in the app), so
+   this can never create a cycle. It exists because
+   `lib/action-result.ts` maps a thrown `AppError` (defined in
+   `core/errors`) to a typed Server Action result (`{ ok: false, error }`)
+   — every feature's Server Actions reuse this one mapping instead of each
+   duplicating `error instanceof ForbiddenError ? ... : ...` chains. This
+   exception is narrow (one specific, one-directional, acyclic edge) and
+   still in place.
+2. **`{ from: "lib", allow: [..., "infrastructure"] }`** (`lib` →
+   `infrastructure`) — **removed.** This existed only to let a client-side
+   wrapper (`lib/firebase-client-auth.ts`) call the Firebase client Auth
+   SDK for login and password reset. Once login and password-reset
+   delivery moved entirely server-side (see Rate-limiting design and
+   Password-reset delivery above), no browser-executed code needed to
+   import Firebase at all, so that file was deleted rather than kept
+   around unused, and the exception was deleted with it — not narrowed,
+   eliminated. `lib`, `features`, `ui`, and `app` all now get a flat
+   `disallow` on `infrastructure`; only `services` (the composition root,
+   `services/auth/dependencies.ts`) and `infrastructure` itself may import
+   `infrastructure`.
+3. **Regression tests**
+   (`apps/web/tests/unit/architecture-boundaries.test.ts`) run ESLint's own
+   Node API (`new ESLint({ cwd: ... })`) against real fixture files written
+   to each layer at test time, and assert `boundaries/element-types`
+   violations fire for: `features`, `app`, `ui`, and `lib` all importing
+   `infrastructure` directly; `core` importing `services`. They also assert
+   the *allowed* edges don't false-positive: `services` importing
+   `infrastructure`, and `lib` importing `core`. This means a future
+   attempt to reintroduce a direct infrastructure import from outside the
+   composition root — or to accidentally invert `core`'s purity — fails CI
+   immediately, not just at manual review.
+
+### Super-admin safety model
+
+- **The `super_admin` role cannot be deleted or edited.** `update-role.ts`
+  and `delete-role.ts` refuse any mutation where the target role has
+  `isSystemRole === true` — today, only `super_admin` — regardless of the
+  caller's permissions, including another super admin.
+- **The last active super admin cannot be deactivated or lose the role.**
+  `set-staff-status.ts` and `assign-roles.ts` both call
+  `assertNotRemovingLastActiveSuperAdmin()`
+  (`services/auth/super-admin-guard.ts`) whenever the operation would
+  deactivate an account holding `super_admin`, or would remove
+  `super_admin` from an account's `roleIds`. The guard runs
+  `UserRepository.countActiveUsersWithRole(SUPER_ADMIN_ROLE_ID)` — a real
+  Firestore `count()` aggregate query, backed by a new composite index
+  (`users` on `status ASC, roleIds ARRAY_CONTAINS` in
+  `firestore.indexes.json`) — and throws `ForbiddenError` if the count is
+  `≤ 1`, i.e. the target is the only active super admin left. When at
+  least one other active super admin exists, the operation is allowed —
+  Phase 2 doesn't block *all* changes to a super admin's role/status, only
+  the one that would leave zero.
+  - This replaced an earlier, blunter rule ("never touch a super admin at
+    all") once it was clear that rule would make even legitimate
+    multi-super-admin operation impossible; the guard is called only on
+    the specific state transition that's actually dangerous (going from
+    "has the role/is active" to "doesn't/isn't"), not on every write to a
+    super-admin account.
+- **Session revocation after deactivation.** `set-staff-status.ts` calls
+  `AuthSessionPort.revokeRefreshTokens(uid)` whenever an account is set to
+  `deactivated` (super admin or not) — combined with `getSession()`'s
+  mandatory `verifySessionCookie(cookie, /* checkRevoked */ true)`, an
+  already-open browser session for that account stops working on its very
+  next request, not just on next login.
+- **Tests** (`tests/unit/services/set-staff-status.test.ts`,
+  `assign-roles.test.ts`): explicit `countActiveUsersWithRole` mock
+  overrides prove both directions — `count = 1` blocks the operation and
+  never calls the underlying repository write; `count = 2` allows it and
+  still triggers `revokeRefreshTokens`/audit logging as normal. A dedicated
+  test also proves the guard isn't even invoked when a target keeps
+  `super_admin` (only checked on removal/deactivation, not on every call).
+
+### Security assumptions
 
 - **CSRF**: `/api/auth/session` and `/api/auth/forgot-password` (the only
   public, pre-auth, state-changing routes) check `Origin` against the
@@ -349,31 +641,11 @@ Firestore.
   sent, which would make every legitimate request look cross-origin.
   Authenticated mutations use Server Actions, which Next.js already
   protects with its own Origin/Host check on every invocation.
-- **Rate limiting has a real, documented scope limit**:
-  `signInWithEmailAndPassword` and `sendPasswordResetEmail` are Firebase
-  client-SDK calls that talk to Identity Toolkit directly — they never
-  touch our server. The Firestore-backed rate limiter
-  (`infrastructure/firebase/repositories/firestore-rate-limiter.ts`) only
-  throttles what actually reaches our backend: session-cookie creation and
-  the forgot-password gate. It does **not** throttle raw password-guessing
-  against Firebase Auth itself. If that's needed, Firebase App Check /
-  reCAPTCHA in front of Identity Platform is the real fix — see Backlog.
-- **No transactional email service in this stack.** `generatePasswordResetLink`
-  (Admin SDK) creates a valid reset URL but does not deliver it — there is
-  no server-side "send email" API. `create-staff` and
-  `initiate-password-reset` return the link once for the admin to relay
-  manually; the public `/admin/forgot-password` flow instead calls the
-  client SDK's `sendPasswordResetEmail` (Firebase's own hosted delivery)
-  after our server-side rate-limit gate succeeds. A determined caller could
-  skip that gate and call `sendPasswordResetEmail` directly from the
-  browser — the same inherent limitation applies to `signInWithEmailAndPassword`
-  above. Enable "Email Enumeration Protection" in the Firebase Auth console
-  so the response never reveals whether an account exists either way.
-- **`rateLimits/{key}` has no automatic expiry wired up.** A Firestore TTL
-  policy needs to be configured out-of-band (not expressible in
-  `firebase.json`): `gcloud firestore fields ttl-policies create --collection-group=rateLimits --field=expiresAt --database='(default)'`.
-  The `expiresAt` field is already written; this command just needs to be
-  run once against your real project.
+- **Rate limiting now covers every server-reachable, pre-auth path** (see
+  "Rate-limiting design" above) — the previous documented gap (client SDK
+  calls bypassing our limiter) was closed by removing all client-side
+  Firebase Auth SDK usage, not by adding a second, weaker mitigation on
+  top of a still-bypassable path.
 
 ### Collections and indexes (Phase 2 additions)
 
@@ -414,32 +686,38 @@ introduced later without a schema rewrite — not implemented now.
 
 ### Known limitations
 
-- Rate limiting doesn't cover client-SDK-direct calls (see Security
-  assumptions above) — accepted for this phase, App Check noted in Backlog.
 - No automated Firestore TTL policy for `rateLimits` — one manual `gcloud`
-  command, documented above, not yet run against a real project.
+  command, documented above, not yet run against a real project (a
+  storage-hygiene cleanup item, not a security gap — see Rate-limiting
+  design above).
 - No super-admin demotion path — a `super_admin` role can only be added to
-  an account, never removed, in Phase 2.
+  an account, never removed, in Phase 2 (removal is only blocked when it
+  would leave zero active super admins; a broader demotion workflow with
+  re-authentication is Backlog).
 - `staff:manage` is a broad, near-super-admin-trust permission (see RBAC
   model above) — a narrower split is Backlog, not yet built.
-- Password-reset/staff-invite links are relayed manually by the admin who
-  triggered them; there's no transactional email integration yet.
+- Firebase App Check / reCAPTCHA (bot/device attestation layered on top of
+  the application rate limiter) remains Backlog, as an additional future
+  layer — not a substitute for the rate-limiting fix already shipped.
+- Operational IAM on the real GCP project (who can run the Admin SDK or
+  console actions directly) is the true boundary for audit-log
+  immutability and Admin SDK access generally; this is a deployment/ops
+  responsibility that no application code change can substitute for (see
+  Audit-log immutability above).
 
 ## Backlog (ideas noted, not implemented)
 
-- Firebase App Check / reCAPTCHA in front of Identity Platform, for actual
-  brute-force protection on login (the Firestore rate limiter's real,
-  documented scope is narrower — see Phase 2's security assumptions).
+- Firebase App Check / reCAPTCHA in front of Identity Platform, as an
+  additional bot/device-attestation layer on top of the application-level
+  rate limiter documented above (not a replacement for it).
 - Split `staff:assign_roles` from role-definition permissions, narrowing
   what a `staff:manage` holder can do to the `super_admin` role's neighbors.
 - Denormalize `effectivePermissions` onto `users/{uid}` if role/user counts
   grow enough that the current per-request resolution's N+1 role reads
   become a real latency/cost concern.
-- A safe super-admin demotion path (re-authentication and/or
-  multi-approval), once more than one super admin exists in practice.
-- Transactional email provider (e.g. via a Cloud Function trigger) so
-  staff-invite and password-reset links are delivered automatically instead
-  of relayed manually by the triggering admin.
+- A safe super-admin demotion-to-zero workaround (re-authentication and/or
+  multi-approval) for the rare legitimate case of intentionally retiring
+  the very last super admin account.
 - Turborepo build caching once the package count grows.
 - Feature-flag system (e.g. Firebase Remote Config).
 - Multi-tenant `tenantId` partitioning strategy — decide when the first

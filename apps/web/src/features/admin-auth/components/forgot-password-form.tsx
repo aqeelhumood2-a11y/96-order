@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { z } from "zod";
-import { sendPasswordResetEmail } from "@/lib/firebase-client-auth";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -11,7 +10,7 @@ const formSchema = z.object({
   email: z.string().min(1, "Email is required.").email("Enter a valid email address."),
 });
 
-const GENERIC_SUCCESS_MESSAGE = "If an account exists for this email, a password reset link has been sent.";
+const GENERIC_SUCCESS_MESSAGE = "If an account exists for this email, a password reset email has been sent.";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -34,6 +33,9 @@ export function ForgotPasswordForm() {
 
     setIsSubmitting(true);
     try {
+      // The server does the whole job — rate limit, audit log, and
+      // trigger Firebase's hosted delivery — so there's nothing for the
+      // client to call afterward (and nothing it could bypass).
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,10 +52,6 @@ export function ForgotPasswordForm() {
         return;
       }
 
-      // Firebase's own hosted delivery — errors here (e.g. no such account,
-      // when Email Enumeration Protection is off) are swallowed on purpose
-      // so the response never reveals whether the account exists.
-      await sendPasswordResetEmail(parsed.data.email).catch(() => undefined);
       setSuccessMessage(GENERIC_SUCCESS_MESSAGE);
     } finally {
       setIsSubmitting(false);

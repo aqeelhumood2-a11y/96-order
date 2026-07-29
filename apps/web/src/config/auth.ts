@@ -16,3 +16,14 @@ export const RATE_LIMITS = {
   forgotPasswordByIp: { limit: 5, windowSeconds: 15 * 60 },
   forgotPasswordByEmail: { limit: 3, windowSeconds: 15 * 60 },
 } as const;
+
+/**
+ * Floor for the login response time, regardless of which branch (wrong
+ * password, unknown email, correct password but not staff, deactivated,
+ * success) was taken — without this, the extra Firestore read on the
+ * "credentials fine but not an authorized staff account" path would
+ * respond measurably slower than a plain wrong-password rejection,
+ * reopening the enumeration gap that collapsing error messages/status
+ * codes closes everywhere else.
+ */
+export const MINIMUM_LOGIN_RESPONSE_MS = 300;

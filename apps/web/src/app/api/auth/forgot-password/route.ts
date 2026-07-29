@@ -8,9 +8,10 @@ import { requestPasswordReset } from "@/services/auth/request-password-reset";
 const bodySchema = z.object({ email: z.string().email() });
 
 /**
- * Rate-limits and audit-logs a forgot-password request. Always responds
- * `{ ok: true }` on valid input, regardless of whether the account exists —
- * see request-password-reset.ts for why, and its documented limitation.
+ * Rate-limits, audit-logs, and triggers delivery of a forgot-password
+ * request entirely server-side (see request-password-reset.ts). Always
+ * responds `{ ok: true }` on valid input, regardless of whether the
+ * account exists — never returns a reset link or any other detail.
  */
 export async function POST(request: Request) {
   if (!verifySameOriginRequest(request)) {

@@ -11,8 +11,6 @@ export interface CreateStaffInput {
 
 export interface CreateStaffResult {
   uid: string;
-  /** The one-time password-setup link, shown once to the creating admin — see request-password-reset.ts for why there's no automatic email delivery. */
-  passwordResetLink: string;
 }
 
 /**
@@ -20,6 +18,13 @@ export interface CreateStaffResult {
  * public registration route) — this is the only way a new staff account
  * comes into existence, and it always requires `staff:create` (or
  * `staff:manage`, via the namespace wildcard).
+ *
+ * The new account has no password set; `sendPasswordResetEmail` (Firebase's
+ * hosted delivery, triggered server-side) doubles as the "set your initial
+ * password" email. No link is ever returned to the caller, logged, or
+ * shown in the admin UI — the only observable effect is that an email may
+ * have been sent, matching the same contract as the public forgot-password
+ * flow.
  */
 export async function createStaff(
   actor: Session,
@@ -55,7 +60,7 @@ export async function createStaff(
     createdBy: actor.uid,
   });
 
-  const passwordResetLink = await deps.authSession.generatePasswordResetLink(input.email);
+  await deps.authSession.sendPasswordResetEmail(input.email);
 
   await deps.auditLogs.record({
     type: "staff_created",
@@ -65,5 +70,5 @@ export async function createStaff(
     metadata: { email: input.email, roleIds: input.roleIds },
   });
 
-  return { uid: authUser.uid, passwordResetLink };
+  return { uid: authUser.uid };
 }

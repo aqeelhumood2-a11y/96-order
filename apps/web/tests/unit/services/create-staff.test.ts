@@ -42,7 +42,7 @@ describe("createStaff", () => {
     );
   });
 
-  it("creates the auth user, the staff record, and returns a password-setup link", async () => {
+  it("creates the auth user, the staff record, and triggers the password-setup email — never returning a link", async () => {
     const deps = createMockDeps();
     deps.roles.findById = vi.fn().mockResolvedValue(ROLE);
     deps.authSession.createUser = vi.fn().mockResolvedValue({ uid: "new-uid", email: "new@example.com", disabled: false });
@@ -50,8 +50,8 @@ describe("createStaff", () => {
 
     const result = await createStaff(actor, { email: "new@example.com", roleIds: ["editor"] }, deps);
 
-    expect(result.uid).toBe("new-uid");
-    expect(result.passwordResetLink).toBe("https://example.com/reset-link");
+    expect(result).toEqual({ uid: "new-uid" });
+    expect(deps.authSession.sendPasswordResetEmail).toHaveBeenCalledWith("new@example.com");
     expect(deps.users.create).toHaveBeenCalledWith(expect.objectContaining({ uid: "new-uid", roleIds: ["editor"] }));
     expect(deps.auditLogs.record).toHaveBeenCalledWith(expect.objectContaining({ type: "staff_created", targetUid: "new-uid" }));
   });

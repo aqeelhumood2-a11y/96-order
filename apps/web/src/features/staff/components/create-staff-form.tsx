@@ -21,7 +21,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [resetLink, setResetLink] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function toggleRole(roleId: string) {
@@ -33,7 +33,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
-    setResetLink(null);
+    setSuccessMessage(null);
 
     const parsed = formSchema.safeParse({ email, displayName: displayName || undefined });
     if (!parsed.success) {
@@ -55,7 +55,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
         return;
       }
 
-      setResetLink(result.data.passwordResetLink);
+      setSuccessMessage(`Staff account created for ${parsed.data.email}. A password-setup email has been sent.`);
       setEmail("");
       setDisplayName("");
       setSelectedRoleIds([]);
@@ -117,10 +117,9 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
         </p>
       )}
 
-      {resetLink && (
-        <p role="status" className="break-all text-sm text-foreground/70">
-          Staff account created. Password setup link (share it with them — no email is sent automatically):{" "}
-          <span className="font-mono">{resetLink}</span>
+      {successMessage && (
+        <p role="status" className="text-sm text-foreground/70">
+          {successMessage}
         </p>
       )}
 

@@ -13,6 +13,10 @@ export function createMockDeps(overrides: Partial<AuthDeps> = {}): AuthDeps {
       assignRoles: vi.fn().mockResolvedValue(undefined),
       setDirectPermissions: vi.fn().mockResolvedValue(undefined),
       recordLogin: vi.fn().mockResolvedValue(undefined),
+      // Defaults to "more than one active super admin exists" so tests
+      // unrelated to the last-admin guard aren't accidentally blocked by
+      // it; tests that specifically exercise the guard override this to 1.
+      countActiveUsersWithRole: vi.fn().mockResolvedValue(2),
     },
     roles: {
       findById: vi.fn().mockResolvedValue(null),
@@ -29,6 +33,7 @@ export function createMockDeps(overrides: Partial<AuthDeps> = {}): AuthDeps {
       consume: vi.fn().mockResolvedValue({ allowed: true }),
     },
     authSession: {
+      signInWithPassword: vi.fn().mockResolvedValue({ idToken: "id-token" }),
       verifyIdToken: vi.fn(),
       createSessionCookie: vi.fn().mockResolvedValue("session-cookie"),
       verifySessionCookie: vi.fn(),
@@ -36,7 +41,7 @@ export function createMockDeps(overrides: Partial<AuthDeps> = {}): AuthDeps {
       getUserByEmail: vi.fn().mockResolvedValue(null),
       createUser: vi.fn(),
       setSuperAdminClaim: vi.fn().mockResolvedValue(undefined),
-      generatePasswordResetLink: vi.fn().mockResolvedValue("https://example.com/reset-link"),
+      sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
     },
   };
 

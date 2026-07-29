@@ -1,14 +1,17 @@
 import type { Session } from "@/core/auth/entities";
 import { SUPER_ADMIN_ROLE_ID } from "@/core/auth/permissions";
 import type { StaffUserStatus } from "@/core/auth/entities";
-import { ForbiddenError, NotFoundError } from "@/core/errors";
+import { NotFoundError } from "@/core/errors";
 import { requirePermission } from "./session";
+import { assertNotRemovingLastActiveSuperAdmin } from "./super-admin-guard";
 import { defaultAuthDeps, type AuthDeps } from "./dependencies";
 
 /**
- * Activates or deactivates a staff account. The super admin can never be
- * deactivated by anyone (including another super admin) — this is the
- * "super admin cannot be stripped of required access" invariant. Deactivating
+ * Activates or deactivates a staff account. The *last* active super admin
+ * can never be deactivated by anyone, including another super admin — this
+ * is the "super admin cannot be stripped of required access" invariant,
+ * scoped to prevent a total lockout rather than treating every super admin
+ * account as permanently untouchable once more than one exists. Deactivating
  * also revokes the account's Firebase refresh tokens so it's force-logged-out
  * immediately, not just blocked from a future login.
  */
@@ -26,7 +29,7 @@ export async function setStaffStatus(
   }
 
   if (status === "deactivated" && target.roleIds.includes(SUPER_ADMIN_ROLE_ID)) {
-    throw new ForbiddenError("The super admin account cannot be deactivated.");
+    await assertNotRemovingLastActiveSuperAdmin(deps);
   }
 
   await deps.users.setStatus(targetUid, status, actor.uid);

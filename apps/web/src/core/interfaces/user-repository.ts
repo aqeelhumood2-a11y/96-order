@@ -20,4 +20,6 @@ export interface UserRepository {
   assignRoles(uid: string, roleIds: string[]): Promise<void>;
   setDirectPermissions(uid: string, permissions: Permission[]): Promise<void>;
   recordLogin(uid: string, at: Date): Promise<void>;
+  /** Used to enforce "the last active super admin cannot be deactivated or stripped of the role" — see services/auth/super-admin-guard.ts. */
+  countActiveUsersWithRole(roleId: string): Promise<number>;
 }

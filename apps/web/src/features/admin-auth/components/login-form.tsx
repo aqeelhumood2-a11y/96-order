@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
-import { signInWithEmailAndPassword } from "@/lib/firebase-client-auth";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -42,12 +41,13 @@ export function LoginForm() {
 
     setIsSubmitting(true);
     try {
-      const idToken = await signInWithEmailAndPassword(parsed.data.email, parsed.data.password);
-
+      // Email/password go straight to our server — never to Firebase
+      // directly — so our rate limiter always sits in front of every
+      // sign-in attempt. See services/auth/create-session.ts.
       const response = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ email: parsed.data.email, password: parsed.data.password }),
       });
 
       if (!response.ok) {
@@ -59,8 +59,6 @@ export function LoginForm() {
       const next = searchParams.get("next");
       router.push(next && next.startsWith("/admin") ? next : "/admin");
       router.refresh();
-    } catch {
-      setFormError("Invalid email or password.");
     } finally {
       setIsSubmitting(false);
     }
@@ -125,8 +123,8 @@ function mapSessionErrorMessage(code: string | undefined): string {
   switch (code) {
     case "RATE_LIMITED":
       return "Too many sign-in attempts. Please try again shortly.";
-    case "FORBIDDEN":
-      return "This account is not authorized for admin access.";
+    case "UNAUTHORIZED":
+      return "Invalid email or password.";
     default:
       return "Something went wrong signing you in. Please try again.";
   }

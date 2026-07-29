@@ -1,6 +1,6 @@
 import "server-only";
 import type { Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
-import { Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import type { AuditLogEntry, NewAuditLogEntry } from "@/core/auth/entities";
 import type { AuditLogRepository, ListAuditLogsRequest } from "@/core/interfaces/audit-log-repository";
 import type { Page } from "@/core/interfaces/repository";
@@ -27,7 +27,21 @@ function toDomain(doc: QueryDocumentSnapshot): AuditLogEntry {
 
 /**
  * Append-only by construction: this class has no update/delete method, and
- * neither does the `AuditLogRepository` port it implements.
+ * neither does the `AuditLogRepository` port it implements — nothing in
+ * `services/` or `features/` can modify or remove an entry through this or
+ * any other application code path, because no such method exists to call.
+ *
+ * `createdAt` uses Firestore's own server clock (`FieldValue.serverTimestamp()`),
+ * not a value computed by this Node process (`Timestamp.now()`), so the
+ * persisted timestamp can't be skewed by the calling machine's clock.
+ *
+ * Firestore Security Rules do not apply to this Admin SDK client at all —
+ * append-only here is an application-code guarantee, not a rules one. The
+ * operational security boundary against someone bypassing the application
+ * entirely (e.g. writing to Firestore directly via `gcloud`/console) is
+ * IAM: whoever has the service account / project role that can write to
+ * this project's Firestore can do so regardless of what this repository
+ * exposes. See the Phase 2 README's audit-immutability section.
  */
 export class FirestoreAuditLogRepository implements AuditLogRepository {
   private db(): Firestore {
@@ -35,17 +49,17 @@ export class FirestoreAuditLogRepository implements AuditLogRepository {
   }
 
   async record(entry: NewAuditLogEntry): Promise<AuditLogEntry> {
-    const now = Timestamp.now();
-    const doc: AuditLogDoc = {
+    const doc = {
       type: entry.type,
       actorUid: entry.actorUid,
       actorEmail: entry.actorEmail,
       targetUid: entry.targetUid,
       metadata: entry.metadata,
-      createdAt: now,
+      createdAt: FieldValue.serverTimestamp(),
     };
     const ref = await this.db().collection(COLLECTION).add(doc);
-    return { id: ref.id, ...entry, createdAt: now.toDate() };
+    const written = await ref.get();
+    return toDomain(written as QueryDocumentSnapshot);
   }
 
   async list(request: ListAuditLogsRequest): Promise<Page<AuditLogEntry>> {

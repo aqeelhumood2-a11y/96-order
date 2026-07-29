@@ -21,7 +21,7 @@ export function StaffRowActions({
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [resetLink, setResetLink] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   if (!canEdit) return null;
 
@@ -68,10 +68,11 @@ export function StaffRowActions({
         onClick={async () => {
           setIsPending(true);
           setMessage(null);
+          setStatusMessage(null);
           try {
             const result = await initiatePasswordResetAction(uid);
             if (result.ok) {
-              setResetLink(result.data.link);
+              setStatusMessage("Password reset email sent.");
             } else {
               setMessage(result.message);
             }
@@ -87,10 +88,9 @@ export function StaffRowActions({
           {message}
         </p>
       )}
-      {resetLink && (
-        <p className="w-full break-all text-xs text-foreground/70">
-          Reset link (share with the staff member — no email is sent automatically):{" "}
-          <span className="font-mono">{resetLink}</span>
+      {statusMessage && (
+        <p role="status" className="text-xs text-foreground/70">
+          {statusMessage}
         </p>
       )}
     </div>

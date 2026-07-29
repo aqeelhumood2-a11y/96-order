@@ -8,13 +8,18 @@ import { createSession } from "@/services/auth/create-session";
 import { destroySession } from "@/services/auth/destroy-session";
 import { getSession } from "@/services/auth/session";
 
-const bodySchema = z.object({ idToken: z.string().min(1) });
+const bodySchema = z.object({ email: z.string().min(1), password: z.string().min(1) });
 
 function forbiddenCrossSite() {
   return NextResponse.json({ code: "FORBIDDEN", message: "Cross-site request blocked." }, { status: 403 });
 }
 
-/** Mints a server-managed session cookie from a Firebase ID token the client already obtained via direct sign-in. */
+/**
+ * Verifies email/password server-side and mints a session cookie on
+ * success. The password is only ever sent here — the client never calls
+ * Firebase Auth directly — so this route (rate-limited before any password
+ * check, see create-session.ts) is the only path into the admin area.
+ */
 export async function POST(request: Request) {
   if (!verifySameOriginRequest(request)) {
     return forbiddenCrossSite();
@@ -26,7 +31,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { cookie, expiresInMs } = await createSession({ idToken: parsed.data.idToken, ip: getClientIp(request) });
+    const { cookie, expiresInMs } = await createSession({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      ip: getClientIp(request),
+    });
     const response = NextResponse.json({ ok: true });
     response.cookies.set(SESSION_COOKIE_NAME, cookie, {
       httpOnly: true,

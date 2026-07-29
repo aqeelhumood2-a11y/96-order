@@ -128,4 +128,14 @@ export class FirestoreUserRepository implements UserRepository {
   async recordLogin(uid: string, at: Date): Promise<void> {
     await this.db().collection(COLLECTION).doc(uid).update({ lastLoginAt: Timestamp.fromDate(at) });
   }
+
+  async countActiveUsersWithRole(roleId: string): Promise<number> {
+    const snap = await this.db()
+      .collection(COLLECTION)
+      .where("status", "==", "active")
+      .where("roleIds", "array-contains", roleId)
+      .count()
+      .get();
+    return snap.data().count;
+  }
 }

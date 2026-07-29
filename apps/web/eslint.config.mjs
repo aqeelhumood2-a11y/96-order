@@ -31,29 +31,28 @@ const eslintConfig = defineConfig([
       // what lets a future module plug in without the existing layers
       // needing to change.
       //
-      // Two narrow, deliberate exceptions added in Phase 2, both to `lib`:
+      // One narrow, deliberate exception added in Phase 2: `lib` may import
+      // `core`. `core` is the innermost ring (it depends on nothing else)
+      // so this can never create a cycle; it exists so
+      // `lib/action-result.ts` can map thrown `AppError`s (`core/errors`)
+      // to a typed Server Action result without every feature duplicating
+      // that mapping.
       //
-      // - `lib` may import `core`. `core` is the innermost ring (it depends
-      //   on nothing else) so this can never create a cycle; it exists so
-      //   `lib/action-result.ts` can map thrown `AppError`s
-      //   (`core/errors`) to a typed Server Action result without every
-      //   feature duplicating that mapping.
-      // - `lib` may import `infrastructure`. It exists solely so
-      //   `lib/firebase-client-auth.ts` can wrap the Firebase *client* SDK
-      //   singleton (`infrastructure/firebase/client.ts`) for browser-side
-      //   use by `features/admin-auth`'s client components — that
-      //   singleton is a browser SDK call, not a Firestore/Admin SDK
-      //   access, so this doesn't weaken "UI and routes must not directly
-      //   access Firestore or Firebase Admin."
-      //
-      // `features`/`ui`/`app` still cannot import `infrastructure` directly.
+      // A second exception (`lib` -> `infrastructure`, for a client-side
+      // Firebase Auth SDK wrapper) existed briefly in Phase 2 but has since
+      // been removed: login and password reset now go through
+      // rate-limited server endpoints instead of the client SDK, so no
+      // browser code needs to touch Firebase directly anymore. `lib`,
+      // `features`, `ui`, and `app` all cannot import `infrastructure`
+      // directly — only `services` and `infrastructure` itself can, which
+      // is the composition-root boundary (see services/auth/dependencies.ts).
       "boundaries/element-types": [
         "error",
         {
           default: "disallow",
           rules: [
             { from: "core", allow: ["core", "types"] },
-            { from: "lib", allow: ["lib", "core", "infrastructure", "types"] },
+            { from: "lib", allow: ["lib", "core", "types"] },
             { from: "config", allow: ["config", "lib", "types"] },
             { from: "types", allow: ["types"] },
             { from: "infrastructure", allow: ["infrastructure", "core", "lib", "config", "types"] },

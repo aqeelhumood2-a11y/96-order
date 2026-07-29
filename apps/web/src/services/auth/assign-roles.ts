@@ -1,15 +1,18 @@
 import type { Session } from "@/core/auth/entities";
 import { SUPER_ADMIN_ROLE_ID } from "@/core/auth/permissions";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/core/errors";
+import { NotFoundError, ValidationError } from "@/core/errors";
 import { requirePermission } from "./session";
+import { assertNotRemovingLastActiveSuperAdmin } from "./super-admin-guard";
 import { defaultAuthDeps, type AuthDeps } from "./dependencies";
 
 /**
- * Replaces a staff account's role assignments. A user currently holding the
- * `super_admin` role can never have it removed through this path — there is
- * no demotion flow in Phase 2 (see Backlog) — which is what makes "super
- * admin cannot be stripped of required access" an actual invariant rather
- * than a UI-only restriction.
+ * Replaces a staff account's role assignments. Removing `super_admin` from
+ * an account that holds it is only blocked when that account is the *last*
+ * active super admin — see super-admin-guard.ts. With more than one active
+ * super admin, any of them can have the role removed; only a total
+ * lockout is prevented. There is still no demotion *flow* (approval,
+ * re-auth, etc.) in Phase 2 — see Backlog — this only stops the specific
+ * "zero super admins left" outcome.
  */
 export async function assignRoles(actor: Session, targetUid: string, roleIds: string[], deps: AuthDeps = defaultAuthDeps): Promise<void> {
   requirePermission(actor, "staff:edit");
@@ -20,7 +23,7 @@ export async function assignRoles(actor: Session, targetUid: string, roleIds: st
   }
 
   if (target.roleIds.includes(SUPER_ADMIN_ROLE_ID) && !roleIds.includes(SUPER_ADMIN_ROLE_ID)) {
-    throw new ForbiddenError("The super_admin role cannot be removed from this account.");
+    await assertNotRemovingLastActiveSuperAdmin(deps);
   }
 
   for (const roleId of roleIds) {

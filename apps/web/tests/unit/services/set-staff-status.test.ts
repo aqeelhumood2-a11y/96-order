@@ -18,13 +18,26 @@ describe("setStaffStatus", () => {
     await expect(setStaffStatus(actor, "ghost", "deactivated", deps)).rejects.toThrow(NotFoundError);
   });
 
-  it("refuses to deactivate a super admin, even for another super admin", async () => {
+  it("refuses to deactivate the last active super admin, even when the actor is a super admin themselves", async () => {
     const deps = createMockDeps();
     deps.users.findByUid = vi.fn().mockResolvedValue({ uid: "target", roleIds: [SUPER_ADMIN_ROLE_ID] });
+    deps.users.countActiveUsersWithRole = vi.fn().mockResolvedValue(1);
     const actor = makeSession({ roleIds: [SUPER_ADMIN_ROLE_ID], effectivePermissions: new Set() });
 
     await expect(setStaffStatus(actor, "target", "deactivated", deps)).rejects.toThrow(ForbiddenError);
     expect(deps.users.setStatus).not.toHaveBeenCalled();
+  });
+
+  it("allows deactivating a super admin when another active super admin still exists, and still revokes sessions", async () => {
+    const deps = createMockDeps();
+    deps.users.findByUid = vi.fn().mockResolvedValue({ uid: "target", roleIds: [SUPER_ADMIN_ROLE_ID] });
+    deps.users.countActiveUsersWithRole = vi.fn().mockResolvedValue(2);
+    const actor = makeSession({ roleIds: [SUPER_ADMIN_ROLE_ID], effectivePermissions: new Set() });
+
+    await setStaffStatus(actor, "target", "deactivated", deps);
+
+    expect(deps.users.setStatus).toHaveBeenCalledWith("target", "deactivated", actor.uid);
+    expect(deps.authSession.revokeRefreshTokens).toHaveBeenCalledWith("target");
   });
 
   it("deactivates a regular staff account and revokes their sessions", async () => {

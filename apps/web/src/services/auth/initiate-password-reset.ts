@@ -5,11 +5,12 @@ import { defaultAuthDeps, type AuthDeps } from "./dependencies";
 
 /**
  * Admin-triggered password reset for an existing staff member (distinct
- * from the public, unauthenticated `request-password-reset` use case). No
- * email is sent automatically — see `create-staff.ts` for the same
- * documented limitation; the link is returned once for the admin to relay.
+ * from the public, unauthenticated `request-password-reset` use case).
+ * Triggers Firebase's hosted delivery server-side, the same as
+ * `create-staff.ts` — no link is ever returned, logged, or shown in the
+ * admin UI.
  */
-export async function initiatePasswordReset(actor: Session, targetUid: string, deps: AuthDeps = defaultAuthDeps): Promise<string> {
+export async function initiatePasswordReset(actor: Session, targetUid: string, deps: AuthDeps = defaultAuthDeps): Promise<void> {
   requirePermission(actor, "staff:edit");
 
   const target = await deps.users.findByUid(targetUid);
@@ -17,7 +18,7 @@ export async function initiatePasswordReset(actor: Session, targetUid: string, d
     throw new NotFoundError("Staff account not found.");
   }
 
-  const link = await deps.authSession.generatePasswordResetLink(target.email);
+  await deps.authSession.sendPasswordResetEmail(target.email);
 
   await deps.auditLogs.record({
     type: "password_reset_requested",
@@ -26,6 +27,4 @@ export async function initiatePasswordReset(actor: Session, targetUid: string, d
     targetUid,
     metadata: { initiatedByAdmin: true },
   });
-
-  return link;
 }
