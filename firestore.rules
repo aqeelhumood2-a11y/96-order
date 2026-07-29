@@ -1,13 +1,43 @@
 rules_version = '2';
 
-// Foundation-phase baseline: deny every read and write. No collections or
-// access patterns are defined yet, so the safest and cheapest default is to
-// allow nothing until each collection's real access pattern is designed
-// (auth/RBAC phase, catalog phase, orders phase, etc.). Opening this up
-// collection-by-collection, rather than starting permissive, is what keeps
-// both security and Firestore cost under control from day one.
+// Phase 2 (auth/RBAC foundation) collections: `users`, `roles`, `auditLogs`,
+// `system/bootstrap`, and `rateLimits` are all read and written exclusively
+// by server-side code through the Firebase Admin SDK (see
+// apps/web/src/infrastructure/firebase/repositories/*.ts and
+// apps/web/scripts/bootstrap-super-admin.ts) — the Admin SDK bypasses
+// Security Rules entirely, so these rules are defense-in-depth, not the
+// real enforcement. Real enforcement is: (a) the client Firestore SDK is
+// never used for these collections anywhere in the app, and (b) the
+// `AuditLogRepository` port exposes no update/delete method at all, which
+// is what actually makes audit logs append-only. Explicit deny blocks are
+// listed per collection (rather than relying only on the wildcard below)
+// so each Phase-2 collection's access decision is visible on its own.
+//
+// Every other collection — anything belonging to a future module — stays
+// on the Phase 1 default-deny baseline until that module designs its own
+// real access pattern.
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, write: if false;
+    }
+
+    match /roles/{roleId} {
+      allow read, write: if false;
+    }
+
+    match /auditLogs/{entryId} {
+      allow read, write: if false;
+    }
+
+    match /system/{docId} {
+      allow read, write: if false;
+    }
+
+    match /rateLimits/{key} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

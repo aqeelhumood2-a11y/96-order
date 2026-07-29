@@ -9,6 +9,18 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Fixed, non-secret values so the plain "Build" step below has something
+  # to inline into the client bundle even though it never talks to a real
+  # or emulated Firebase project. The emulator-backed steps further down
+  # load their own values from apps/web/.env.test instead.
+  NEXT_PUBLIC_FIREBASE_API_KEY: ci-placeholder-api-key
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ci-placeholder.firebaseapp.com
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: ci-placeholder
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ci-placeholder.appspot.com
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+  NEXT_PUBLIC_FIREBASE_APP_ID: "1:000000000000:web:0000000000000000000000"
+
 jobs:
   verify:
     name: Lint, typecheck, test, build
@@ -26,6 +38,12 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Setup Java (Firestore emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -38,6 +56,9 @@ jobs:
       - name: Unit tests
         run: pnpm run test
 
+      - name: Integration tests (Firebase Emulator)
+        run: pnpm run test:integration
+
       - name: Build
         run: pnpm run build
 
@@ -49,10 +70,23 @@ jobs:
         env:
           CI: true
 
+      - name: Auth end-to-end tests (Firebase Emulator)
+        run: pnpm run test:e2e:auth
+        env:
+          CI: true
+
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: apps/web/playwright-report/
+          retention-days: 14
+
+      - name: Upload auth Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-auth
+          path: apps/web/playwright-report-auth/
           retention-days: 14

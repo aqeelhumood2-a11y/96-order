@@ -28,7 +28,9 @@ next-env.d.ts
 # Testing
 coverage/
 playwright-report/
+playwright-report-auth/
 test-results/
+test-results-auth/
 blob-report/
 
 # Editor / OS
