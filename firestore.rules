@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// Foundation-phase baseline: deny every read and write. No collections or
+// access patterns are defined yet, so the safest and cheapest default is to
+// allow nothing until each collection's real access pattern is designed
+// (auth/RBAC phase, catalog phase, orders phase, etc.). Opening this up
+// collection-by-collection, rather than starting permissive, is what keeps
+// both security and Firestore cost under control from day one.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
