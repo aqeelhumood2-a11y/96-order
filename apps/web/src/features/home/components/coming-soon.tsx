@@ -16,8 +16,8 @@ export function ComingSoon() {
         96 Order
       </h1>
       <p className="max-w-md text-base text-foreground/70">
-        A premium agricultural marketplace is being built here. This page will
-        become the storefront once the catalog and admin modules ship.
+        A premium coffee and equipment store is being built here. This page
+        will become the storefront once the catalog and admin modules ship.
       </p>
     </Container>
   );

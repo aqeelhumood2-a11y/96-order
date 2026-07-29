@@ -1,24 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf8;
-  --foreground: #1a1f1a;
+  --background: #faf9f7;
+  --foreground: #1c1917;
 
-  /* Brand: earthy, premium agricultural green. Generated for a perceptually
-     even light->dark ramp; used via bg-brand-*, text-brand-*, etc. */
-  --color-brand-50: #f2f8f1;
-  --color-brand-100: #e0eedd;
-  --color-brand-200: #c1ddbb;
-  --color-brand-300: #98c68d;
-  --color-brand-400: #6da75d;
-  --color-brand-500: #4c8a3c;
-  --color-brand-600: #396f2c;
-  --color-brand-700: #2e5824;
-  --color-brand-800: #26461f;
-  --color-brand-900: #1f3a1b;
-  --color-brand-950: #10200e;
+  /* Brand: neutral warm-stone placeholder ramp. Deliberately not a
+     finalized brand color — swap these values for the real coffee brand
+     palette once visual design is decided; every component already
+     consumes them via bg-brand-*, text-brand-*, etc., so no component code
+     changes when that happens. */
+  --color-brand-50: #fafaf9;
+  --color-brand-100: #f5f5f4;
+  --color-brand-200: #e7e5e4;
+  --color-brand-300: #d6d3d1;
+  --color-brand-400: #a8a29e;
+  --color-brand-500: #78716c;
+  --color-brand-600: #57534e;
+  --color-brand-700: #44403c;
+  --color-brand-800: #292524;
+  --color-brand-900: #1c1917;
+  --color-brand-950: #0c0a09;
 
-  /* Accent: warm harvest amber, used sparingly for offers/highlights. */
+  /* Accent: muted gold, used sparingly for offers/highlights. Also a
+     placeholder — not a finalized brand accent. */
   --color-accent-50: #fdf6ec;
   --color-accent-100: #faebce;
   --color-accent-200: #f3d49b;
@@ -72,8 +76,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f130f;
-    --foreground: #edf1ec;
+    --background: #14100e;
+    --foreground: #f3efec;
   }
 }
 

@@ -1,9 +1,10 @@
-# 96 Order — Agricultural E-commerce Platform
+# 96 Order — Premium Coffee & Equipment E-commerce Platform
 
-A production-grade, enterprise agricultural e-commerce platform, built phase
-by phase on Clean Architecture so every future module (catalog, admin, CMS,
-auth/RBAC, orders, ERP, POS, wholesale, multi-tenant, ...) plugs in without
-restructuring what already exists.
+A production-grade, enterprise e-commerce platform for coffee beans, coffee
+products, brewing equipment, machines, grinders, filters, accessories, and
+related supplies — built phase by phase on Clean Architecture so every
+future module (catalog, admin, CMS, auth/RBAC, orders, ERP, POS, wholesale,
+multi-tenant, ...) plugs in without restructuring what already exists.
 
 **Stack:** Next.js (App Router) · React · TypeScript · Firebase (Firestore,
 Auth, Storage, Cloud Functions) · Tailwind CSS · GitHub · Vercel.
@@ -46,7 +47,7 @@ The dependency direction is enforced by `eslint-plugin-boundaries`
 `infrastructure` directly — they go through `services`. Run `pnpm lint` to
 see it in action; violating the rule is a lint error, not a suggestion.
 
-**Adding a future feature module** (e.g. a catalog): add
+**Adding a future feature module** (e.g. a coffee product catalog): add
 `core/interfaces/product-repository.ts` (the port), an implementation under
 `infrastructure/repositories/firestore-product-repository.ts`, a use case in
 `services/`, and the UI in `features/catalog/`. Nothing in `app/`, `ui/`, or
