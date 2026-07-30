@@ -50,9 +50,22 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm run build && pnpm run start",
+    // Next.js's Data Cache (what `unstable_cache`, used throughout
+    // services/storefront/*, is backed by in a self-hosted `next start`
+    // deployment) is a *filesystem* cache under `.next/cache/`, not purely
+    // in-memory — `next build` does not clear it, by design, so it survives
+    // both a rebuild and a fresh server process. This run always pairs a
+    // freshly-started Firestore emulator (no import/export configured in
+    // firebase.json, so every `emulators:exec` invocation starts empty)
+    // with the Next.js server; without clearing `.next/cache` first, a
+    // second local run would pair that empty emulator with a cache still
+    // remembering a *previous* run's (now-gone) data — exactly the kind of
+    // stale-read bug this suite exists to catch, not reproduce by accident.
+    command: "rm -rf .next/cache && pnpm run build && pnpm run start",
     url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
+    // Also always fresh, for the same reason — a reused server process
+    // would keep its in-memory request-level caches from a prior run too.
+    reuseExistingServer: false,
     timeout: 120_000,
     env: definedProcessEnv,
   },
