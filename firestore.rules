@@ -27,6 +27,29 @@ rules_version = '2';
 // method, and the only path that creates an entry is
 // `InventoryRepository.adjust()`'s own transaction.
 //
+// Phase 5 (cart, checkout, delivery, pickup, payments, and order creation)
+// collections: `carts`, `orders`, `orderEvents`, `payments`, `paymentEvents`,
+// `inventoryReservations`, `checkoutIdempotency`, and `emailOutbox` follow
+// the exact same pattern as every collection above — read and written
+// exclusively by server-side code through the Admin SDK (see
+// apps/web/src/infrastructure/firebase/repositories/*.ts), gated by
+// service-layer validation/permission checks (`services/cart/*`,
+// `services/checkout/*`, `services/payments/*`, `services/inventory/*`)
+// before any repository call. There is no client-side Firestore access to
+// a shopper's own cart or order anywhere in this app — even the guest
+// cart cookie only carries an unforgeable id (see `lib/cart-cookie.ts`);
+// the actual cart contents are always read/written server-side. `orders`
+// and `payments` additionally hold private customer data (name, mobile,
+// email, address), which is exactly why they stay fully denied here
+// rather than being opened to "the owning shopper" — Phase 5 has no
+// concept of an authenticated customer session to scope such a rule to
+// (see README's Known limitations); public order tracking instead goes
+// through `services/orders/track-order.ts`, a server-side use case that
+// enforces its own mobile/email verification factor before returning only
+// a redacted public-safe view. `orderEvents` and `paymentEvents` are
+// append-only the same way `auditLogs`/`inventoryAdjustments` are — their
+// repositories expose no update/delete method for the event itself.
+//
 // Every other collection — anything belonging to a future module — stays
 // on the Phase 1 default-deny baseline until that module designs its own
 // real access pattern.
@@ -73,6 +96,38 @@ service cloud.firestore {
     }
 
     match /catalogUniqueKeys/{keyId} {
+      allow read, write: if false;
+    }
+
+    match /carts/{cartId} {
+      allow read, write: if false;
+    }
+
+    match /orders/{orderId} {
+      allow read, write: if false;
+    }
+
+    match /orderEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /payments/{paymentId} {
+      allow read, write: if false;
+    }
+
+    match /paymentEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /inventoryReservations/{reservationId} {
+      allow read, write: if false;
+    }
+
+    match /checkoutIdempotency/{key} {
+      allow read, write: if false;
+    }
+
+    match /emailOutbox/{entryId} {
       allow read, write: if false;
     }
 

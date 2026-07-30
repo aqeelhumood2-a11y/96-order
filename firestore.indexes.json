@@ -631,6 +631,28 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "inventoryReservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "productId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "variantId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "expiresAt",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -93,7 +93,7 @@ test.describe("search", () => {
 });
 
 test.describe("product detail", () => {
-  test("renders name, price, SKU, breadcrumb, and a disabled purchase placeholder", async ({ page }) => {
+  test("renders name, price, SKU, breadcrumb, and a working Add to cart button", async ({ page }) => {
     await page.goto(`/products/${fixtures.published.slug}`);
 
     await expect(page.getByRole("heading", { name: fixtures.published.name })).toBeVisible();
@@ -102,8 +102,7 @@ test.describe("product detail", () => {
 
     const addToCart = page.getByRole("button", { name: "Add to cart" });
     await expect(addToCart).toBeVisible();
-    await expect(addToCart).toBeDisabled();
-    await expect(page.getByText(/coming in a future update/i)).toBeVisible();
+    await expect(addToCart).toBeEnabled();
   });
 
   test("includes Product and BreadcrumbList structured data", async ({ page }) => {

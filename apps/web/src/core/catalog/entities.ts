@@ -208,6 +208,8 @@ export const INVENTORY_ADJUSTMENT_REASONS = [
   "damaged",
   "returned",
   "manual_adjustment",
+  /** Phase 5: an `InventoryReservation` was committed (the reserved quantity became a permanent `onHand` deduction) — see `services/inventory/reservations.ts`. */
+  "order_fulfilled",
 ] as const;
 export type InventoryAdjustmentReason = (typeof INVENTORY_ADJUSTMENT_REASONS)[number];
 
@@ -224,4 +226,41 @@ export interface InventoryAdjustment {
   note?: string;
   actorId: string;
   createdAt: Date;
+}
+
+// --- Phase 5 inventory reservations ---
+//
+// `InventoryRecord.reserved` (above) has existed since Phase 3 but nothing
+// wrote to it until now — this is the "previously deferred order-
+// reservation workflow" the Phase 5 spec calls out. One `InventoryReservation`
+// document exists per (orderId, productId, variantId): `reserve()` both
+// creates this row and increments the matching `InventoryRecord.reserved`
+// inside the same transaction, so the aggregate `reserved` count can never
+// drift from the sum of live reservations. See
+// `services/inventory/reservations.ts` for the full reserve/release/commit
+// lifecycle and README's Stock reservation lifecycle section.
+
+export const INVENTORY_RESERVATION_STATUSES = ["reserved", "released", "committed"] as const;
+export type InventoryReservationStatus = (typeof INVENTORY_RESERVATION_STATUSES)[number];
+
+export interface InventoryReservation {
+  /** `${orderId}:${productId}:${variantId ?? "-"}` — see `core/cart/rules.ts#cartLineKey` for the same convention. Doubles as the idempotency key: reserving twice for the same order+line is a no-op, not a double reservation. */
+  id: string;
+  orderId: string;
+  productId: string;
+  variantId: string | null;
+  quantity: number;
+  status: InventoryReservationStatus;
+  /**
+   * Reservations are reclaimed lazily, not by a background sweep — the
+   * next `reserve()` attempt for this same productId+variantId releases
+   * any of its own expired-but-still-"reserved" rows first, inside the
+   * same transaction, before checking whether new stock is available. A
+   * proactive Cloud Scheduler sweep would reclaim capacity sooner for an
+   * unrelated product waiting on it, but isn't required for correctness —
+   * see README's Known limitations.
+   */
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }

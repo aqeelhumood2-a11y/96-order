@@ -6,10 +6,10 @@ import { PriceDisplay } from "@/features/storefront/shared/price-display";
 import { AvailabilityBadge } from "@/features/storefront/shared/availability-badge";
 import { ProductCard } from "@/features/storefront/shared/product-card";
 import { StructuredData } from "@/features/storefront/shared/structured-data";
+import { AddToCartButton } from "@/features/cart/components/add-to-cart-button";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
 import { AttributesTable } from "./attributes-table";
-import { PurchasePlaceholder } from "./purchase-placeholder";
 import { resolveVariantSelection } from "./resolve-variant-selection";
 
 export interface ProductDetailProps {
@@ -76,7 +76,12 @@ export function ProductDetail({ product, rawSelections, relatedProducts, structu
             <VariantSelector basePath={basePath} variants={product.variants} attributeNames={attributeNames} selections={selections} />
           )}
 
-          <PurchasePlaceholder available={purchaseAvailable} />
+          <AddToCartButton
+            productId={product.id}
+            variantId={matchedVariant?.id ?? null}
+            disabled={!purchaseAvailable}
+            disabledReason={product.hasVariants && !matchedVariant ? "Select an available option to continue." : !availability.inStock ? "Out of stock." : undefined}
+          />
 
           <AttributesTable coffee={product.attributes?.coffee} equipment={product.attributes?.equipment} weightGrams={weightGrams} dimensions={product.dimensions} />
 

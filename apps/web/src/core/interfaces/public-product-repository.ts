@@ -37,6 +37,8 @@ export interface PublicProductListFilter {
 export interface PublicProductRepository {
   list(filter: PublicProductListFilter): Promise<Page<PublicProductSummary>>;
   findBySlug(slug: string): Promise<PublicProduct | null>;
+  /** Phase 5: revalidating a cart line (keyed by product id, not slug) against live catalog data. Same active+visible-only guarantee as every other method here. */
+  findById(id: string): Promise<PublicProduct | null>;
   listFeatured(limit: number): Promise<PublicProductSummary[]>;
   listNewArrivals(limit: number): Promise<PublicProductSummary[]>;
   listByCategoryId(categoryId: string, excludeProductId: string, limit: number): Promise<PublicProductSummary[]>;

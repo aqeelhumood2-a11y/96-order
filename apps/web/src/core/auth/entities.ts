@@ -56,6 +56,17 @@ export const AUDIT_LOG_EVENT_TYPES = [
   "product_image_uploaded",
   "product_image_deleted",
   "inventory_adjusted",
+  // Phase 5 (cart, checkout, delivery, pickup, payments, and order creation)
+  "cart_checkout_started",
+  "order_created",
+  "order_cancelled",
+  "inventory_reserved",
+  "inventory_reservation_released",
+  "payment_started",
+  "payment_succeeded",
+  "payment_failed",
+  "payment_webhook_received",
+  "cash_payment_confirmed",
 ] as const;
 
 export type AuditLogEventType = (typeof AUDIT_LOG_EVENT_TYPES)[number];

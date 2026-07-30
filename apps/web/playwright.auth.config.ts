@@ -20,17 +20,21 @@ const definedProcessEnv = Object.fromEntries(
 /**
  * For the specs that need a real Firebase Auth + Firestore backend:
  * auth.spec.ts (Phase 2), catalog.spec.ts (Phase 3 admin catalog flows),
- * and storefront.spec.ts (Phase 4 public storefront — every storefront
+ * storefront.spec.ts (Phase 4 public storefront — every storefront
  * page reads from Firestore, so it needs this backend just as much as the
- * admin specs do). All three share this one config rather than each
- * needing their own. Run via `pnpm run test:e2e:auth` at the repo root,
- * which wraps this in `firebase emulators:exec`. The plain
- * `tests/e2e/not-found.spec.ts` is the only spec that needs no Firebase
- * backend at all, so it alone keeps using playwright.config.ts.
+ * admin specs do), and checkout.spec.ts (Phase 5 — cart/checkout/order
+ * tracking, all backed by Firestore; card payment uses `FakeTapProvider`
+ * automatically, since `TAP_SECRET_KEY` is deliberately absent from
+ * `.env.test`, so no real Tap sandbox account is needed here either). All
+ * four share this one config rather than each needing their own. Run via
+ * `pnpm run test:e2e:auth` at the repo root, which wraps this in
+ * `firebase emulators:exec`. The plain `tests/e2e/not-found.spec.ts` is
+ * the only spec that needs no Firebase backend at all, so it alone keeps
+ * using playwright.config.ts.
  */
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: ["auth.spec.ts", "catalog.spec.ts", "storefront.spec.ts"],
+  testMatch: ["auth.spec.ts", "catalog.spec.ts", "storefront.spec.ts", "checkout.spec.ts"],
   outputDir: "./test-results-auth",
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,

@@ -10,11 +10,13 @@ multi-tenant, ...) plugs in without restructuring what already exists.
 Auth, Storage, Cloud Functions) · Tailwind CSS · GitHub · Vercel.
 
 **Status:** Phase 1 (Foundation), Phase 2 (Authentication, Admin Access &
-RBAC), and Phase 3 (Catalog and Inventory Foundation) are complete. No cart,
-checkout, orders, payments, shipping, customer accounts, CMS, promotions,
-reviews, or public storefront exist yet — Phase 3 built the product,
-category, brand, and inventory data model and admin tooling those future
-modules will sit behind, not the modules themselves.
+RBAC), Phase 3 (Catalog and Inventory Foundation), Phase 4 (Public
+Storefront, Search, and Product Discovery), and Phase 5 (Cart, Checkout,
+Delivery, Pickup, Payments, and Order Creation) are complete. Guest
+checkout, Bahrain delivery/pickup scheduling, cash and Tap-card payments,
+and public order tracking now exist end-to-end. No customer accounts,
+wishlist, reviews, CMS editor, advanced promotions/coupons, refund
+execution, ERP sync, POS, or wholesale modules exist yet.
 
 ## Repository layout
 
@@ -137,7 +139,7 @@ Before any of this can talk to a real project, update `.firebaserc`'s
 | `pnpm run test` | Runs Vitest unit tests in every workspace package (mocked ports, no emulator) |
 | `pnpm run test:integration` | Firestore/Storage adapter + security-rules tests against the Emulator Suite (`firebase emulators:exec`, now including `storage`) |
 | `pnpm run test:e2e` | Playwright not-found-page smoke test against a production build (no emulator — the only page left that needs no Firebase backend at all) |
-| `pnpm run test:e2e:auth` | Playwright auth/RBAC (Phase 2), catalog admin (Phase 3), **and** public storefront (Phase 4) e2e suites against the Emulator Suite |
+| `pnpm run test:e2e:auth` | Playwright auth/RBAC (Phase 2), catalog admin (Phase 3), public storefront (Phase 4), **and** cart/checkout/tracking (Phase 5) e2e suites against the Emulator Suite |
 | `pnpm run emulators` | Starts the Firebase Emulator Suite |
 | `pnpm run bootstrap:super-admin` | One-time super-admin bootstrap — see below |
 
@@ -1591,6 +1593,466 @@ already provide — both noted in Known limitations.
   need per-slug tag construction (a wrapped-function-per-slug, or a
   different cache primitive) — noted, not built.
 
+## Phase 5 — Cart, Checkout, Delivery, Pickup, Payments, and Order Creation
+
+Adds the transactional core the storefront was missing: a guest cart,
+server-validated checkout, Bahrain delivery/pickup scheduling, cash and Tap
+card payments, inventory reservation (the "previously deferred" workflow
+Phase 3 modeled but never wired up), order creation, and public order
+tracking. No customer accounts, wishlist, reviews, CMS editor, advanced
+promotions/coupons, refund execution, ERP sync, POS, or wholesale — those
+stay Backlog. `purchase-placeholder.tsx`, Phase 4's disabled "Add to cart"
+button, is gone, replaced by a real, working one.
+
+### Architecture
+
+Same layering as every prior phase, with new slices at each layer:
+
+```
+core/money/                money.ts — Money value object (integer minor units, never a float)
+core/shipping/              rules.ts — Bahrain tier fee + free-shipping upsell (single-sourced)
+core/cart/                  entities.ts, rules.ts — CartLine/Cart, priceCart (server-rebuilt pricing)
+core/customer/               phone.ts (Bahrain mobile), email.ts
+core/delivery/               entities.ts (DeliveryAddress/PickupSelection/FulfillmentSchedule),
+                              rules.ts (country/address validation)
+core/scheduling/              rules.ts — fixed time-window slots, cutoff/capacity seams
+core/payments/                entities.ts — Payment, PaymentWebhookEvent, status unions
+core/orders/                  entities.ts (Order/OrderLine/OrderStatusEvent), rules.ts (order
+                              number generation, buildOrderLinesFromPricedCart, status transitions),
+                              public-view.ts (redacted PublicOrderView for tracking)
+core/email/                   templates.ts — pure render functions, one per EmailTemplate
+core/interfaces/               cart-repository.ts, order-repository.ts, payment-repository.ts,
+                              payment-provider-port.ts, inventory-reservation-repository.ts,
+                              idempotency-repository.ts, email-port.ts, email-outbox-repository.ts
+infrastructure/firebase/        money-mapping.ts, repositories/firestore-{cart,order,order-event,
+                              payment,payment-webhook-event,inventory-reservation,idempotency,
+                              email-outbox}-repository.ts
+infrastructure/payments/tap/    env.ts, tap-payment-provider.ts, fake-tap-provider.ts
+infrastructure/email/           console-email-provider.ts
+services/cart/                  dependencies.ts, cart-session.ts (signed cookie), cart-store.ts,
+                              catalog-snapshot.ts, get-priced-cart.ts, add/update/remove/clear-cart.ts
+services/inventory/             dependencies.ts, reservations.ts — reserve/release/commitOrderReservations
+services/payments/              dependencies.ts, create-payment.ts, handle-tap-webhook.ts,
+                              confirm-cash-payment.ts
+services/checkout/               dependencies.ts, validation.ts, create-order.ts — the one
+                              checkout/order-creation use case
+services/orders/                 dependencies.ts, track-order.ts — public order tracking
+services/email/                  dependencies.ts, send-transactional-email.ts (outbox + best-effort send)
+services/rate-limiting/         default-rate-limiter.ts — shared instance for storefront actions
+config/                          cart.ts, inventory.ts, pickup.ts, rate-limits.ts
+features/cart/                  actions.ts (Server Actions), components/ (AddToCartButton,
+                              CartLineRow, CartSummary)
+features/checkout/               actions.ts, checkout-form.tsx
+features/tracking/               actions.ts, order-lookup-form.tsx (shared by /orders/track and
+                              /checkout/success)
+app/(storefront)/cart/, checkout/, checkout/success/, orders/track/
+app/api/payments/tap/webhook/route.ts
+app/api/admin/orders/[orderId]/confirm-cash-payment/route.ts
+```
+
+No UI or route imports Firebase Admin, Firestore, or the Tap SDK/HTTP API
+directly — `features/*` and `app/*` only ever call `services/*`, which is
+the same boundary `eslint-plugin-boundaries` has enforced since Phase 1.
+`services/checkout/*` composes `services/cart/*`, `services/inventory/*`,
+`services/payments/*`, and `services/email/*` rather than re-implementing
+any of them, so each area's own composition root stays the one place its
+own wiring changes.
+
+### Cart architecture
+
+A `CartLine` stored in Firestore carries only client-controllable fields —
+`{ id, productId, variantId, quantity, addedAt }` — nothing else. Every
+read or mutation rebuilds a `CartLineCatalogSnapshot` (name, SKU, image,
+price, availability, `allowBackorder`, `trackInventory`) from **live**
+catalog/inventory data via `buildCatalogSnapshots`; nothing about price,
+name, or availability is ever trusted from what's stored on the cart
+itself or from anything the browser submits. `core/cart/rules.ts#priceCart`
+is the one function that combines a cart's lines with these snapshots into
+a `PricedCart` — the same function the cart page, the cart drawer summary,
+and checkout's own revalidation step all call, so there is exactly one
+place subtotal/shipping/upsell/grand-total math happens.
+
+Cart validation deliberately uses the **admin** `ProductRepository`/
+`InventoryRepository` (full data, including `allowBackorder` and exact
+stock), not Phase 4's redacted public storefront DTOs — those DTOs
+intentionally hide operational detail for what the browser sees on a
+product page, but cart pricing is a privileged, server-only computation
+that needs the real numbers to build *this shopper's own* cart response.
+
+**Persistence**: the guest cart cookie (`__Host-cart-id`) is `{cartId}.{hmacSignature}`
+(`lib/cart-cookie.ts`), signed — not encrypted — because it carries only an
+unforgeable id, never the cart's actual contents; those live server-side in
+the `carts` Firestore collection, keyed by that id. 30-day expiry
+(`config/cart.ts`). No sensitive data is ever written to `localStorage`. A
+cart id that doesn't resolve to any stored document (new visitor, or an
+expired/never-created cart) returns an in-memory empty `Cart` without a
+Firestore write — a write only happens on an actual mutation (add/update/
+remove/clear), never from a plain read/browse. A future authenticated-
+customer cart-merge (guest cart → account cart on login) is a seam this
+`CartRepository`/cookie design leaves open, not something built now.
+
+### Money and Bahrain shipping rules
+
+`core/money/money.ts`'s `Money` is `{ amount: number, currency: CurrencyCode }`
+where `amount` is always **integer minor units** (fils; `BHD.minorUnitsPerMajor
+= 1000`, `decimalDigits: 3`) — every arithmetic helper (`add`, `subtract`,
+`multiply`, `sum`, comparisons) operates on integers, so there is no
+floating-point currency math anywhere in the codebase. `ACTIVE_CURRENCY` is
+`BHD`; a future multi-currency phase would extend `CurrencyCode` and
+`CurrencyDefinition` rather than redesign `Money` itself. No hardcoded USD
+remains in the checkout flow — the storefront-wide currency formatter is
+Phase 4's own concern and untouched here.
+
+`core/shipping/rules.ts`'s tiers, exactly as specified, with **strict**
+(`>`, never `≥`) boundaries:
+
+| Subtotal | Shipping fee |
+| --- | --- |
+| ≤ BHD 10.000 | BHD 2.000 |
+| > BHD 10.000 and ≤ BHD 30.000 | BHD 1.500 |
+| > BHD 30.000 | Free |
+
+`computeFreeShippingUpsell` is derived from `computeShippingFee` itself
+(not an independent threshold check), so the upsell message and the actual
+fee can never disagree at a boundary. At exactly BHD 30.000, shipping is
+still the reduced BHD 1.500 fee (the rule is strictly "above"), so the
+upsell's `remaining` is one fils, not zero — an intentional, unit-tested
+edge case, not a bug. Boundary tests cover exactly BHD 10.000, just above
+BHD 10.000, exactly BHD 30.000, and above BHD 30.000.
+
+### Checkout flow
+
+`services/checkout/create-order.ts#createOrder` is the one checkout/order-
+creation use case, called from `features/checkout/actions.ts`'s
+`submitCheckoutAction` Server Action (itself rate-limited by IP via
+`services/rate-limiting/default-rate-limiter.ts` before anything else
+runs). In order:
+
+1. Validate customer info (`services/checkout/validation.ts#validateCustomer`
+   — full name, Bahrain mobile via `core/customer/phone.ts`, email) and
+   fulfillment (`validateFulfillment` — delivery address via
+   `core/delivery/rules.ts#isValidDeliveryAddress`, or the fixed pickup
+   location from `config/pickup.ts`; schedule re-checked against
+   `core/scheduling/rules.ts#isScheduleAvailable` using the *server's* own
+   clock, never trusting a client-submitted `available: true`).
+2. Begin the idempotency record (`IdempotencyRepository.begin`, scope
+   `"checkout"`) — see Idempotency below.
+3. Revalidate the cart (`getPricedCart`) against live catalog data; reject
+   an empty cart or one with blocking issues (`hasBlockingIssues`).
+4. Build server-trusted `OrderLine[]` from the priced cart
+   (`buildOrderLinesFromPricedCart`) and create the `Order` with a freshly
+   generated order number, retrying up to 5 times on a number collision
+   (`ConflictError` from `OrderRepository.create`).
+5. Reserve inventory for every line (`services/inventory/reservations.ts#reserveOrderLines`);
+   on failure, the just-created order is marked `cancelled` and the error
+   propagates — a checkout never leaves a "confirmed" order with unreserved
+   stock.
+6. Create the `Payment` (`services/payments/create-payment.ts`) — for
+   `tap`, this opens the real (or fake, in dev/test) hosted-checkout
+   session and returns a redirect URL; for `cash`, it just records a
+   `cash_pending` payment.
+7. Clear the cart, send the order-confirmation email (best-effort, see
+   Email below), and mark the idempotency record `completed`.
+
+Any error after step 2 marks the idempotency record `failed` before
+re-throwing — a client must submit a **new** idempotency key to retry after
+a genuine failure (see Idempotency).
+
+### Order data model
+
+`core/orders/entities.ts#Order` — public `orderNumber` (customer-facing)
+kept separate from the internal Firestore `id` (never shown to a
+customer); `OrderCustomerSnapshot`, `OrderFulfillment`
+(delivery-with-address-and-schedule, or pickup-with-location-and-schedule),
+`OrderLine[]` (server-trusted product/variant/price/name snapshots that
+survive a later catalog change), `subtotal`/`shippingFee`/`discountTotal`
+(always zero — see Known limitations)/`grandTotal`, `currency`,
+`paymentMethod`/`paymentStatus`, `status`, `source: "web"` (reserved for a
+future POS/wholesale value), `idempotencyKey`, and a `version` bumped on
+every update (the same optimistic-concurrency pattern Phase 3's
+`update-product.ts` uses).
+
+`ORDER_STATUSES` models the full future lifecycle (`pending_payment`,
+`confirmed`, `preparing`, `ready`, `out_for_delivery`, `completed`,
+`cancelled`), but Phase 5's own code only ever sets `pending_payment`
+(new `tap` orders), `confirmed` (new `cash` orders, and `tap` orders once
+paid), or `cancelled` — the rest exist so Phase 6's admin order-management
+screen has a stable enum to build against. `isValidOrderStatusTransition`
+only defines the two transitions this phase's own code performs.
+
+**Order numbers** (`core/orders/rules.ts#buildOrderNumber`): `ORD-YYMMDD-XXXXXX`,
+e.g. `ORD-260130-7K3PXQ` — the random suffix (drawn from a 32-character
+alphabet excluding visually-ambiguous characters `0`/`O`/`1`/`I`/`L`) is
+what actually makes each number unique and non-guessable; the date groups
+orders for human scanning without exposing a running sequence/volume
+count. Uniqueness under concurrency is enforced the same way Phase 3
+enforces SKU/slug uniqueness — `FirestoreOrderRepository.create()` claims
+an `"order-number"` unique key via the same `catalogUniqueKeys` mechanism,
+inside the transaction that creates the order document, and throws
+`ConflictError` on collision — `createOrder` catches that and retries with
+a fresh number.
+
+### Payment architecture and Tap configuration
+
+`core/interfaces/payment-provider-port.ts#PaymentProviderPort` is the one
+seam between this app and Tap Payments — `services/payments/*` depends
+only on this interface, never on Tap's SDK/HTTP API directly. Card data
+never passes through or is stored by this application: `createCharge`
+returns a hosted-page `redirectUrl` the browser is sent to, and this app
+only ever sees a charge id and a status back.
+
+`infrastructure/payments/tap/tap-payment-provider.ts` talks to Tap's v2
+Charges API directly over `fetch`. **This was implemented without access
+to a real Tap sandbox account** — the exact field names/status strings
+reflect Tap's publicly documented API, but must be reconfirmed against
+<https://developers.tap.company> before processing a real live payment.
+`infrastructure/payments/tap/fake-tap-provider.ts#FakeTapProvider` is a
+same-port, in-memory drop-in, selected automatically by
+`services/payments/dependencies.ts` whenever `TAP_SECRET_KEY` isn't set
+(always true in this repo's CI/emulator/local-dev runs, since no real Tap
+credentials are committed) — it never fakes business logic, only the
+transport: a test calls `createCharge`/`buildWebhookBody` to simulate
+exactly what a real Tap webhook delivery would say, and that body flows
+through the *exact same* `handle-tap-webhook.ts` code a real webhook would.
+Set `TAP_SECRET_KEY` in `.env.local` (see `.env.example`) to switch to the
+real adapter in a real deployment — no code change required.
+
+**Webhook security** (`app/api/payments/tap/webhook/route.ts`): the raw
+request body is read via `.text()`, never `.json()`, because signature
+verification must run over the exact bytes Tap sent. `verifyWebhookSignature`
+HMAC-SHA256s a fixed, ordered concatenation of charge fields with the
+secret key and compares in constant time (`timingSafeEqual`); a malformed
+or missing signature fails closed (`false`), never throws. Tap doesn't
+send a separate "event id," so `` `${chargeId}:${status}` `` is used as the
+webhook idempotency key — this correctly treats a *redelivery* of the same
+status as a duplicate while still letting a genuine progression (e.g.
+`AUTHORIZED` → `CAPTURED`) through as a new event.
+
+**Payment statuses**: `pending`/`authorized`/`paid`/`failed`/`cancelled`/
+`refunded` (modeled, no refund-execution flow exists — see Known
+limitations) apply to `tap`; `cash_pending`/`cash_confirmed` are cash's own
+two-step lifecycle and never apply to `tap`. `Order.paymentStatus` is one
+field whose meaning depends on `Order.paymentMethod`.
+
+### Stock reservation lifecycle
+
+`InventoryRecord.reserved` (modeled since Phase 3, unwritten until now) is
+the "previously deferred order-reservation workflow" this phase implements.
+One `InventoryReservation` document per `(orderId, productId, variantId)`;
+`FirestoreInventoryReservationRepository.reserve()` both creates that row
+and increments the matching `reserved` counter inside one transaction, so
+the aggregate can never drift from the sum of live reservations.
+`canDecreaseStock` (Phase 3's on-hand-decrease rule, reused verbatim
+against `reserved` instead) enforces "does taking N more units still leave
+availability ≥ 0, unless backorder is allowed" under concurrent checkouts
+— proven under real concurrent load in
+`tests/integration/firestore-inventory-reservation-repository.test.ts`.
+
+A line whose product/variant has `trackInventory: false` is **skipped
+entirely** by `services/inventory/reservations.ts#reserveOrderLines` —
+there is no `onHand` count to reserve against for unlimited stock, the
+same way cart pricing never caps such a line's quantity.
+
+**Expiry**: reservations are reclaimed lazily, not by a background sweep —
+`reserve()`'s own transaction queries for *this same* product/variant's
+own expired-but-still-`"reserved"` rows and releases them first, before
+checking whether new stock is available. `config/inventory.ts#RESERVATION_EXPIRY_MS`
+sets ~30 minutes for `tap` (roughly how long a shopper is realistically
+still completing a payment session) and ~7 days for `cash` (a backstop,
+not the primary release mechanism — see below). A proactive Cloud
+Scheduler sweep would reclaim capacity sooner for an unrelated product
+waiting on it, but isn't required for correctness; noted in Backlog.
+
+**Commit** (reservation → permanent deduction): for a `tap` order, only
+once the webhook reports `paid` (`handle-tap-webhook.ts`); for a `cash`
+order, only once an authorized admin confirms cash receipt
+(`confirm-cash-payment.ts`) — inventory is never permanently deducted
+before that, even though it *is* reserved (so it can't be oversold) the
+moment the order is accepted. `commitOrderReservations`/`releaseOrderReservations`
+are both idempotent (a no-op on an already-committed/released line) and
+operate per-order via `listByOrder`.
+
+### Cash order lifecycle and the admin confirmation action
+
+A `cash` order is created `confirmed` immediately (there's no online
+payment gate to wait on) with `paymentStatus: "cash_pending"`; inventory is
+reserved at that moment so it can't be oversold, but **not** permanently
+deducted. `POST /api/admin/orders/[orderId]/confirm-cash-payment`
+(`requireSession` + `services/payments/confirm-cash-payment.ts`, gated on
+the `payments:manage` permission) is the minimal protected action an
+authorized staff member calls once cash is actually received in hand —
+idempotent (a no-op if already `cash_confirmed`, a `ConflictError` if the
+order isn't in a confirmable state), it commits the reservation, updates
+the `Payment` and `Order`, records a `cash_payment_confirmed` audit entry,
+and sends the payment-confirmation email. A full order-management UI
+(listing, filtering, bulk actions) is Phase 6's concern — this route is
+only the use case a future action button would call.
+
+### Idempotency
+
+`core/interfaces/idempotency-repository.ts#IdempotencyRepository` is one
+general-purpose mechanism, reused everywhere Phase 5 needs one: checkout
+submission (scope `"checkout"`), payment webhook processing (keyed by
+Tap's own `chargeId:status`, via `PaymentWebhookEventRepository` instead —
+a separate, purpose-built idempotency ledger since a webhook event isn't a
+"submission" with a client-generated key), and reservation reserve/release/
+commit (each individually idempotent per order+product+variant, see
+above). `IdempotencyRepository.begin(scope, key)` is the one atomic
+operation: it creates an `in_progress` record if none exists
+(`created: true`, proceed), or returns the existing one unchanged
+(`created: false`) — `completed` returns the prior result, `in_progress`
+means a concurrent duplicate is still running, and `failed` means this
+exact key already failed once and needs a **new** key to retry (by design
+— see Checkout flow). Regression tests cover duplicate checkout submissions
+and repeated webhook deliveries.
+
+### Public order tracking
+
+`services/orders/track-order.ts#trackOrder` requires an order number
+**and** the mobile number or email used at checkout — `NotFoundError` with
+the *exact same generic message* is thrown for a malformed order number, a
+number that doesn't exist, and a number that exists but whose contact
+factor doesn't match, so a caller can never distinguish "wrong
+verification" from "no such order," which is what makes probing/
+enumerating order numbers unproductive.
+`core/orders/public-view.ts#buildPublicOrderView` returns only: order
+number, status, fulfillment method, schedule, a redacted item summary
+(product name + quantity, no per-unit pricing detail beyond the total),
+grand total, and a public-safe payment-status label (`publicPaymentStatusLabel`
+collapses `cash_pending`/`pending` into "Pay on delivery/pickup" /
+"Awaiting payment" rather than exposing the raw enum) — never the internal
+Firestore id, `idempotencyKey`, full customer snapshot, exact delivery
+address, or `version`/audit data. `/orders/track` and `/checkout/success`
+share one `OrderLookupForm` component; the success page pre-fills the order
+number from its query string but still requires the shopper to type their
+own contact info before anything is shown — the query string alone is
+never treated as proof of ownership. `trackOrderAction` is rate-limited by
+IP the same way checkout submission is.
+
+### Email delivery and the retry seam
+
+`services/email/send-transactional-email.ts` is the one path every order/
+payment flow sends through: it **always** records the attempt in the
+durable `emailOutbox` collection first, then makes a best-effort
+`EmailPort.send()` attempt, then marks the outbox entry `sent`/`failed`.
+`EmailPort.send()` itself never throws — a delivery failure is a normal,
+expected outcome, never something that can propagate into failing the
+order/payment it's attached to. `infrastructure/email/console-email-provider.ts#ConsoleEmailProvider`
+is Phase 5's only adapter (logs instead of delivering through a real ESP);
+`core/email/templates.ts` renders all five templates (order confirmation,
+payment confirmation, payment failure, pickup confirmation, delivery
+confirmation) as pure functions. No background worker retries `"failed"`
+outbox entries yet — the durable record it would scan already exists, so
+adding one is additive (see Known limitations). WhatsApp notifications are
+explicitly Backlog, not built.
+
+### Firestore collections and indexes
+
+New collections, all server-only (Admin SDK) — never read/written by any
+client SDK: `carts`, `orders`, `orderEvents` (append-only status-change
+ledger, mirrors `inventoryAdjustments`), `payments`, `paymentEvents`
+(webhook-delivery idempotency ledger), `inventoryReservations`,
+`checkoutIdempotency`, `emailOutbox`. `firestore.indexes.json` adds one
+composite index: `inventoryReservations` on `(productId, variantId,
+status, expiresAt)` for the expired-reservation reclaim query inside
+`reserve()`. No unrelated collections were added.
+
+### Security
+
+- **No client-direct trusted writes**: every cart/checkout/payment
+  mutation goes through `services/*`; `firestore.rules` denies all client
+  read/write on every Phase 5 collection (defense-in-depth — the Admin SDK
+  bypasses rules by design, so the real enforcement is that no client SDK
+  code path exists for any of them). Covered by
+  `tests/integration/firestore-security-rules-phase5.test.ts` for both an
+  unauthenticated and an arbitrary authenticated client.
+- **Never trust the browser** for price, product name, or availability —
+  enforced structurally by `CartLineCatalogSnapshot` always being rebuilt
+  from live data (see Cart architecture) and by `createOrder` revalidating
+  the cart immediately before building order lines.
+- Checkout submission and order tracking are rate-limited by IP
+  (`config/rate-limits.ts`); the Tap webhook is instead gated by signature
+  verification, since it's a server-to-server call with no browser Origin
+  to check.
+- Server Actions (cart/checkout mutations) get Next.js's built-in
+  Origin/Host check on every invocation, the same class of protection
+  `lib/csrf.ts` gives the two pre-auth Route Handlers explicitly (see
+  Phase 2's Security baseline) — no second CSRF scheme was added.
+- `payments:manage` (and `payments:view`/`orders:view`/`orders:manage`)
+  needed no new permission namespaces or actions — Phase 2 already
+  reserved the `payments`/`orders` namespaces and the `manage`/`view`
+  actions across every module; Phase 5 is simply the first phase to
+  actually gate something behind them.
+- Every trusted/system-initiated audit log entry (`cart_checkout_started`,
+  `order_created`, `inventory_reserved`, `inventory_reservation_released`,
+  `payment_started`, `payment_succeeded`, `payment_failed`,
+  `payment_webhook_received`, `order_cancelled`) sets `actorUid: null` —
+  the same convention `services/auth/create-session.ts` already uses for
+  pre-auth/system events — while `cash_payment_confirmed` records the
+  real staff `actorUid`, since that one *is* a human-initiated action.
+
+### Emulator and fake-provider setup
+
+Identical to Phase 2–4's Firebase Emulator Suite setup — `.env.test`
+deliberately leaves `TAP_SECRET_KEY` unset so `FakeTapProvider` is always
+selected in CI/emulator/local-dev runs, and sets a fixed
+`CART_COOKIE_SECRET` (test-only, never a real secret). `pnpm run
+test:integration` and `pnpm run test:e2e:auth` both wrap `firebase
+emulators:exec` and now include Phase 5's Firestore integration tests
+(inventory reservation concurrency, order-number collision, Tap webhook
+reconciliation against real Firestore, Phase 5 security rules) and
+`checkout.spec.ts` (guest cart → checkout → cash order → verified
+tracking; card payment redirect to `FakeTapProvider`'s fake hosted page,
+intercepted via Playwright's own request routing since `fake-tap.test`
+isn't a real domain; order-tracking enumeration-resistance).
+
+### Known limitations
+
+- No refund-execution flow — `refunded` is a modeled `PaymentStatus`
+  value only.
+- No background worker retries a `"failed"` email-outbox entry — the
+  durable record exists, nothing scans it yet.
+- Reservation expiry is reclaimed lazily (on the next `reserve()` for the
+  same product/variant), not by a proactive sweep — an expired reservation
+  for a product nobody else is trying to buy sits released-but-unnoticed
+  until someone does.
+- `discountTotal` is always zero — the field/seam exists, no
+  promotions/coupons engine sits behind it yet.
+- Delivery/pickup slot rules are deliberately simple (fixed time windows,
+  a same-day cutoff hour, no per-slot capacity tracking, no route
+  planning) — `isSlotAtCapacity` is a seam that always returns `false`.
+- A single pickup location, configured via env/code
+  (`config/pickup.ts`), not an admin-editable `pickupLocations` collection.
+- `TapPaymentProvider`'s exact field names/status strings were implemented
+  against Tap's public API docs without a live sandbox account to verify
+  end-to-end — reconfirm before processing a real payment.
+- WhatsApp order/payment notifications are not built (email only).
+
+### Future integration seams
+
+- **Customer accounts**: `CartRepository`/the signed cart cookie already
+  separate "cart identity" from "browser session," so merging a guest
+  cart into an account cart on login is additive, not a redesign.
+  `OrderCustomerSnapshot` is a durable per-order snapshot regardless —
+  linking historical orders to a future `customers` collection would be
+  an additive `customerId` field.
+- **Admin order management** (Phase 6): `ORDER_STATUSES`/`isValidOrderStatusTransition`
+  already model the full lifecycle beyond what checkout itself drives;
+  `orderEvents` is already an append-only status-history ledger ready for
+  a real admin timeline view. `confirm-cash-payment.ts`'s route is the one
+  minimal action Phase 5 needed to validate the cash lifecycle — a real
+  order list/detail/bulk-action UI is Phase 6's own scope.
+- **Refund execution**: `PaymentStatus` already models `refunded`; the
+  actual Tap refund API call and the inventory/accounting implications
+  are unbuilt.
+- **Multi-currency**: `CurrencyCode`/`CurrencyDefinition` are already a
+  seam `Money` is built against; Phase 5 only ever constructs `BHD`.
+- **Proactive reservation-expiry sweep**: a Cloud Scheduler job that
+  reclaims expired reservations for products nobody is actively trying to
+  reserve, instead of only reclaiming lazily on next use.
+- **Email retry worker**: a scheduled job scanning `emailOutbox` for
+  `"failed"` entries and re-attempting delivery with backoff.
+
 ## Backlog (ideas noted, not implemented)
 
 - Firebase App Check / reCAPTCHA in front of Identity Platform, as an
@@ -1614,8 +2076,6 @@ already provide — both noted in Known limitations.
 - Analytics (GA4 / PostHog).
 - Edge middleware for auth session refresh + RBAC route guards (once auth exists).
 - Secret Manager wiring for the first server-side secret an integration needs.
-- Order-reservation workflow (actually incrementing/releasing `reserved`)
-  once an orders module exists — see Phase 3's Future integration seams.
 - Product image download-token rotation/expiry, if these URLs are ever
   exposed anywhere less controlled than the admin UI.
 - A separate `variants` collection, if any product family's variant count
@@ -1629,10 +2089,9 @@ already provide — both noted in Known limitations.
 - Real tax/currency/pricing-rule engine behind `taxClass`/`costPrice`.
 - Wholesale price-list and ERP sync collections referencing `productId`/
   `variantId`.
-- Cart, checkout, orders, and payments — the storefront ends at a
-  disabled "Add to cart" placeholder in Phase 4; see its Future
-  integration seams for how variant resolution already sets this up.
-- Customer accounts, wishlist, and product reviews.
+- Customer accounts, wishlist, and product reviews — Phase 5's guest cart
+  cookie already separates cart identity from browser session, so a
+  future account cart-merge is additive.
 - Coupons/discounts and a real promotions engine.
 - A CMS editor for homepage sections (hero copy, featured picks) — Phase 4
   ships the layout/data-fetching seam, not an admin-editable content
@@ -1648,3 +2107,22 @@ already provide — both noted in Known limitations.
   grows past what a single bounded page can represent.
 - Automated accessibility auditing (axe-core or similar) in CI, beyond
   Phase 4's targeted role/label/alt-text e2e assertions.
+- Full admin order-management UI (listing, filtering, bulk actions,
+  status transitions beyond confirm-cash-payment) — Phase 6.
+- Refund execution against Tap's refund API — `PaymentStatus.refunded` is
+  modeled, nothing calls it yet.
+- WhatsApp order/payment notifications, if an approved provider becomes
+  available (email is Phase 5's only channel).
+- A background worker retrying `"failed"` `emailOutbox` entries with
+  backoff.
+- A proactive Cloud Scheduler sweep reclaiming expired inventory
+  reservations, instead of only reclaiming lazily on the next `reserve()`
+  for the same product/variant.
+- Verify `TapPaymentProvider`'s exact field names/status strings against a
+  real Tap sandbox account before processing a live payment.
+- Multiple admin-configurable pickup locations (`pickupLocations`
+  collection) — Phase 5 ships one fixed location via `config/pickup.ts`.
+- Real multi-currency support — `Money`/`CurrencyCode` already seam for
+  it, only `BHD` is ever constructed today.
+- A real discounts/coupons engine behind `Order.discountTotal`, which is
+  always zero today.

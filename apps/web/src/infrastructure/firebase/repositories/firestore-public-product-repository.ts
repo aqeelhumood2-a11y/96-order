@@ -133,6 +133,23 @@ export class FirestorePublicProductRepository implements PublicProductRepository
     return snap.empty ? null : this.toDetail(snap.docs[0]!);
   }
 
+  /**
+   * Phase 5: cart lines are keyed by product/variant *id* (never a slug —
+   * an id is what a client-controllable cart line actually stores), so
+   * revalidating a cart line's live price/availability needs an id-keyed
+   * lookup. A direct `.doc(id).get()` can't apply `baseQuery()`'s
+   * `.where()` filters, so the same active+visible check happens after
+   * the fetch instead — same enumeration-safe `null` for "doesn't exist"
+   * and "exists but isn't public" as `findBySlug`.
+   */
+  async findById(id: string): Promise<PublicProduct | null> {
+    const doc = await this.db().collection(COLLECTION).doc(id).get();
+    if (!doc.exists) return null;
+    const data = doc.data() as ProductDoc;
+    if (data.status !== "active" || data.visibility !== "visible") return null;
+    return this.toDetail(doc as QueryDocumentSnapshot);
+  }
+
   async listFeatured(limit: number): Promise<PublicProductSummary[]> {
     const snap = await this.baseQuery().where("featured", "==", true).orderBy("createdAt", "desc").limit(limit).get();
     return this.toSummaries(snap.docs);
