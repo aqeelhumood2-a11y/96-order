@@ -25,7 +25,13 @@ export default defineConfig({
   ],
   webServer: {
     command: "pnpm run build && pnpm run start",
-    url: "http://127.0.0.1:3000",
+    // Not "/" — the homepage is a real storefront page that reads
+    // Firestore via the Admin SDK on every request (force-dynamic, no
+    // static fallback), which fails without a real project or emulator
+    // and would never let this readiness check succeed. `/robots.txt`
+    // (app/robots.ts) is static and touches no Firebase API at all, so
+    // it's a safe health-check target for this Firebase-free config.
+    url: "http://127.0.0.1:3000/robots.txt",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

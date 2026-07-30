@@ -136,8 +136,8 @@ Before any of this can talk to a real project, update `.firebaserc`'s
 | `pnpm run typecheck` | Type-checks every workspace package |
 | `pnpm run test` | Runs Vitest unit tests in every workspace package (mocked ports, no emulator) |
 | `pnpm run test:integration` | Firestore/Storage adapter + security-rules tests against the Emulator Suite (`firebase emulators:exec`, now including `storage`) |
-| `pnpm run test:e2e` | Playwright smoke test against a production build (no emulator) |
-| `pnpm run test:e2e:auth` | Playwright auth/RBAC (Phase 2) **and** catalog admin (Phase 3) e2e suites against the Emulator Suite |
+| `pnpm run test:e2e` | Playwright not-found-page smoke test against a production build (no emulator — the only page left that needs no Firebase backend at all) |
+| `pnpm run test:e2e:auth` | Playwright auth/RBAC (Phase 2), catalog admin (Phase 3), **and** public storefront (Phase 4) e2e suites against the Emulator Suite |
 | `pnpm run emulators` | Starts the Firebase Emulator Suite |
 | `pnpm run bootstrap:super-admin` | One-time super-admin bootstrap — see below |
 
@@ -155,6 +155,12 @@ It does not deploy anything — deploy wiring is a later-phase concern.
   all of which are also deny-all — see Phase 2's and Phase 3's data-model
   sections for why. No other collection or storage path is opened up until
   its real access pattern is designed in the phase that introduces it.
+  **Phase 4 changes none of this**: the public storefront reads Firestore
+  exclusively through the server-side Admin SDK (`services/storefront/*`),
+  which bypasses security rules entirely by design (the same way every
+  admin Server Action already does) — there was never a reason to weaken
+  the deny-all client rules just to make the storefront work, and Phase 4
+  didn't.
 - No secrets are committed anywhere in this repo; `.gitignore` covers `.env*`
   and any file matching `*service-account*`/`*serviceAccountKey*`.
 - Images are restricted in `next.config.ts` to this project's own Firebase
@@ -1210,6 +1216,381 @@ See the final verification report for exact current pass counts.
   tenant-readiness posture Phase 2 documented for its own collections, not
   yet implemented, not pretended to be implemented.
 
+## Phase 4 — Public Storefront, Search, and Product Discovery
+
+Adds the customer-facing storefront on top of Phase 3's catalog: a
+homepage, product listing with filters/sort/pagination, product detail
+with variant selection, Firestore-backed search, and SEO metadata/
+structured data — no cart, checkout, orders, payments, shipping, customer
+accounts, wishlist, reviews, coupons, CMS editor, or admin redesign yet.
+Every storefront page is read-only against Phase 3's existing catalog
+data; nothing in this phase writes to Firestore.
+
+### Storefront architecture
+
+Same layering as Phase 1–3, with a `storefront` slice alongside `catalog`
+at each layer:
+
+```
+core/storefront/           dto.ts (public DTOs), rules.ts (visibility/availability/variant
+                            logic), schemas.ts (Zod query validation), structured-data.ts
+                            (pure JSON-LD builders)
+core/catalog/               rules.ts extended (additive) with buildSearchTokens/tokenizeQuery/
+                            matchesAllQueryWords; entities.ts extended with Product.searchTokens
+core/interfaces/            public-product-repository.ts, public-category-repository.ts,
+                            public-brand-repository.ts, public-inventory-availability-port.ts
+infrastructure/firebase/    repositories/firestore-public-{product,category,brand}-repository.ts,
+                            repositories/firestore-public-inventory-availability.ts
+services/storefront/        dependencies.ts (composition root), cache.ts (unstable_cache wrapper +
+                            revalidateStorefrontTag), seo.ts (Metadata builders), get-product.ts,
+                            get-category.ts, get-brand.ts, list-products.ts, list-featured.ts,
+                            list-new-arrivals.ts, list-related-products.ts, search-products.ts
+features/storefront/        shared/ (ProductCard, ProductImage, PriceDisplay, AvailabilityBadge,
+                            Breadcrumbs, StructuredData, HighlightText, empty/skeleton/error states),
+                            home/, listing/, detail/, search/ — presentational components that
+                            receive already-fetched data as props
+app/(storefront)/           layout.tsx (Header/Footer shell) + page.tsx, products/, products/[slug]/,
+                            categories/[slug]/, brands/[slug]/, search/ — thin route composition:
+                            parse/validate searchParams, call services/storefront/*, pass results
+                            to features/storefront/* components
+app/sitemap.ts, app/robots.ts
+```
+
+No UI component imports Firebase directly — the same `eslint-plugin-boundaries`
+rule enforces this unchanged, and the existing `architecture-boundaries.test.ts`
+regression test covers the new directories too. `services/storefront/*`
+never imports `services/catalog/*` or vice versa; the only file Phase 4
+modifies inside Phase 3's own layers is additive (`searchTokens` on
+`Product`, and cache-invalidation calls inside `features/catalog/*/actions.ts`
+— see Cache strategy below), never a redesign of Phase 1–3's architecture.
+
+### Public read model and security boundary
+
+`core/storefront/dto.ts` defines `PublicProduct`, `PublicProductSummary`,
+`PublicCategory`, and `PublicBrand` as **entirely separate types** from the
+admin `Product`/`Category`/`Brand` entities — not a `Pick<>`/`Omit<>` of
+them. That's a deliberate structural choice: adding a new field to the
+admin `Product` entity does nothing to the public DTO until someone
+deliberately adds it there too, so a future admin-only field (internal
+notes, cost price, an audit trail) can never leak to the browser by
+accident.
+
+Every method on every public repository (`FirestorePublicProductRepository`,
+`FirestorePublicCategoryRepository`, `FirestorePublicBrandRepository`) bakes
+its own visibility filter into the Firestore query itself — `status ==
+"active" && visibility == "visible"` for products, `isActive == true` for
+categories/brands — rather than filtering client-side after the fact. This
+applies identically to keyed lookups (`findBySlug`), not just list queries:
+there is no code path on the public port that can return a draft, archived,
+or hidden product under any circumstance. `getProductBySlug`/
+`getCategoryBySlug`/`getBrandBySlug` return `null` identically for "never
+existed," "exists but is a draft," and "exists but hidden" — deliberately
+indistinguishable from the outside, which is what prevents an unpublished
+slug from being enumerated by probing.
+
+Fields deliberately never exposed: `costPrice`, internal notes, the
+inventory adjustment ledger (only the derived `inStock`/`lowStock`
+booleans are ever returned — see Availability below), and `barcode` (never
+populated on `PublicProduct` in Phase 4, since there's no per-product "safe
+to show publicly" flag yet to key that decision on; a future toggle would
+slot in without a DTO shape change).
+
+**Availability** (`PublicAvailability = { inStock, lowStock }`) is computed
+by `FirestorePublicInventoryAvailability`, a read-only adapter over the
+same `inventory` collection Phase 3's admin repository writes, batched via
+`Firestore.getAll()` so a listing page's N products cost one round trip,
+not N. A listing card checks only the *first* variant as a representative
+signal (bounding read cost per card); the product detail page checks every
+variant individually and aggregates ("in stock if any variant is, low
+stock if any in-stock variant is individually low"). This asymmetry is a
+documented tradeoff, not an oversight — see Known limitations.
+
+If a product's primary category or brand is deactivated after the product
+was published, the product doesn't disappear or throw: it falls back to a
+generic `{ name: "Uncategorized", slug: categoryId }` ref. Deactivating a
+category/brand is deliberately non-cascading in Phase 4.
+
+### Filters, pagination, and query validation
+
+`core/storefront/schemas.ts`'s `listProductsQuerySchema` (Zod) validates
+every `/products`, `/categories/[slug]`, and `/brands/[slug]` query
+string before it reaches a repository — the same discipline Phase 2/3
+applied to request bodies, since a query string is untrusted input anyone
+can type or share. A query that fails validation degrades to "no filters"
+rather than 500ing the page (`features/storefront/listing/parse-search-params.ts`).
+
+`PublicProductRepository.list()` pushes down **at most one** equality
+filter to Firestore — category, then brand, then productType, then
+featured, in that priority order — plus a fixed sort. This is the
+deliberate, documented reason Phase 4 needs only 34 total composite
+indexes (25 new) instead of one per every possible filter *combination*:
+every other requested filter dimension (price range, availability, and
+any non-primary filter) is applied by `services/storefront/list-products.ts`
+as an in-memory refinement over the bounded page the primary filter
+already returned. The tradeoff is explicit and shown in the code's own
+comments: a heavily-filtered request can return fewer than `limit` items
+even when more matches exist on the next page. This never means an
+unbounded scan — the Firestore query itself is always capped at `limit`
+(≤ 60), never the whole catalog.
+
+Pagination is cursor-based (`nextCursor`, an opaque Firestore document
+id), not page-numbered — `features/storefront/listing/query-utils.ts`
+maintains a small cursor-history stack encoded in the URL (`cursor` +
+comma-joined `cursors`) so "Previous" can walk backwards without needing
+numbered pages, entirely via plain `<Link>`s (no client JS required for
+pagination itself).
+
+### Search strategy
+
+No paid external search provider exists in Phase 4. Search works by
+denormalizing a `searchTokens: string[]` field onto `Product` (computed in
+`core/catalog/rules.ts`'s `buildSearchTokens()`, called from
+`services/catalog/create-product.ts`/`update-product.ts`): every word
+≥ 2 characters from the name, product type, brand name, category name, and
+tags is expanded into every prefix ≥ 2 characters long (Unicode-aware —
+NFKD-normalized and diacritic-stripped via `\p{M}`), plus the exact
+lowercased SKU/barcode and variant SKUs as whole tokens, capped at 300
+tokens/product.
+
+A search query's **longest word** (the most selective, smallest candidate
+set) becomes the one Firestore-indexed `array-contains` filter
+(`searchTokens array-contains primaryToken`, bounded and cursor-paginated,
+capped at `limit`); every other query word is checked via in-memory
+substring matching (`matchesAllQueryWords`) against that same bounded page
+only — never a second Firestore query, never a full-catalog scan. A
+multi-word query can therefore return fewer results than technically
+match the full catalog; this is the same documented tradeoff as the
+listing filters above, not a bug.
+
+Result highlighting (`features/storefront/shared/highlight-text.tsx`)
+wraps matching words in `<mark>` on a best-effort basis — it re-matches
+the query against the rendered name client-side, independent of (and not
+a substitute for) the actual token-matching logic above.
+
+**Known limitation, stated plainly**: this is prefix/substring matching,
+not relevance ranking, fuzzy matching, or typo tolerance. The seam for a
+real external engine (Algolia, Typesense, Meilisearch) is
+`core/interfaces/public-product-repository.ts`'s `searchByToken()` method
+— swapping the Firestore implementation for an HTTP call to an external
+index requires no change to `services/storefront/search-products.ts`'s
+caller-facing contract.
+
+### Cache and revalidation strategy
+
+`services/storefront/cache.ts` wraps every storefront read with Next's
+`unstable_cache`, tagged with one of three **coarse, entity-kind-level**
+tags (`storefront:products`, `storefront:categories`, `storefront:brands`
+— not per-slug, since `unstable_cache`'s `tags` option is static per
+wrapped function, and per-slug tags would need a freshly-constructed
+wrapped function per slug). `revalidateTag(tag, "max")` invalidates every
+cached read for that entire tag at once — coarser than surgical, a
+deliberate simplification for Phase 4's expected scale. A 300-second
+safety-net `revalidate` window bounds staleness even if an invalidation
+call is ever missed, including for cached availability data (a storefront
+*display* signal only — nothing here reserves or mutates stock, so a few
+minutes of staleness on "in stock" text is an accepted cost the same way
+most storefronts accept it).
+
+`revalidateStorefrontTag()` calls are wired into the existing Phase 3
+admin Server Actions (`features/catalog/{products,categories,brands,inventory}/actions.ts`),
+not into `services/catalog/*` — an admin mutation still lives entirely in
+Phase 3's own layer; Phase 4 only adds one extra call per action so the
+next storefront read for that tag never serves stale data.
+
+Every `services/storefront/*` function accepts an optional `deps`
+parameter defaulting to `defaultStorefrontDeps`; each function checks
+`deps === defaultStorefrontDeps` by reference to decide whether to route
+through the cached wrapper (production, real Firestore) or call the plain
+uncached function directly (unit tests with injected mocks, and
+integration tests that want real Firestore *without* invoking
+`unstable_cache` — see Testing below for why that distinction matters).
+
+**A real gotcha, documented for whoever runs this locally next**: Next's
+Data Cache in a self-hosted `next start` deployment is a *filesystem*
+cache under `.next/cache/`, not purely in-memory — `next build` does not
+clear it. Rebuilding against a *different* Firestore emulator dataset
+(e.g. re-running `test:e2e:auth` locally without clearing `.next`) can
+serve cached reads from a previous, now-gone dataset. `playwright.auth.config.ts`
+guards against exactly this by clearing `.next/cache` and forcing a fresh
+server process before every run; a production deployment doesn't hit this
+because it's built once against its own real data.
+
+### Variant selection
+
+`features/storefront/detail/variant-selector.tsx` and
+`resolve-variant-selection.ts` implement selection entirely as URL state —
+every option renders as a plain `<Link>` (no JavaScript required) to a URL
+that already encodes the resulting selection, which is what makes a
+variant combination shareable/bookmarkable. `core/storefront/rules.ts`'s
+`getAvailableAttributeValues()` computes, for each attribute, exactly
+which values are still reachable given every *other* currently-selected
+attribute; a value that wouldn't form a real variant combination renders
+as inert, struck-through text rather than a clickable link — a shopper can
+never navigate to an invalid combination. Selecting a full valid
+combination updates price, SKU, weight, and availability to that variant's
+own values; an incomplete or invalid combination falls back to the
+product's own base price and a "select options" prompt. **Nothing here
+reserves or mutates inventory** — the "Add to cart" button
+(`purchase-placeholder.tsx`) is permanently disabled and labeled "coming
+in a future update."
+
+### Images
+
+`next.config.ts` conditionally allows two remote patterns, both pinned to
+this project's own Storage bucket path (`/v0/b/<bucket>/o/**`, never a
+wildcard host): the production `https://firebasestorage.googleapis.com`
+host always, and — only when `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true` —
+the Storage emulator's own plain-HTTP host, parsed from
+`FIREBASE_STORAGE_EMULATOR_HOST`. Without this second pattern, `next/image`
+would reject every emulator-served image as an unconfigured remote host,
+breaking local dev and the e2e suite. `features/storefront/shared/product-image.tsx`
+wraps `next/image` with a broken-image/missing-image fallback (a decorative,
+`aria-hidden` icon inside a `role="img"`-labeled container) and requires
+its parent to provide `position: relative` plus a fixed aspect ratio, so a
+missing or slow-loading image never causes layout shift.
+
+### SEO
+
+`services/storefront/seo.ts` builds Next's `Metadata` (title, description,
+canonical URL, Open Graph) for every storefront page from the same public
+DTOs the page itself renders — `seoTitle`/`seoDescription` when an admin
+set them, falling back to the entity's own name/description otherwise.
+`core/storefront/structured-data.ts` builds schema.org JSON-LD (`Product`
+with an `Offer` reflecting the product's own base price/aggregate
+availability — not a client-selected variant, since this is generated
+once per page load — and `BreadcrumbList`), rendered via
+`features/storefront/shared/structured-data.tsx`. `app/robots.ts`
+disallows `/admin` and `/api`, points at `/sitemap.xml`. `app/sitemap.ts`
+includes every active category and brand, plus the 60 most-recently-created
+products (`listProductsQuerySchema`'s own `limit` cap) — **a bounded
+sitemap, not the full catalog**, documented in Known limitations rather
+than silently truncated.
+
+Every storefront page under `app/(storefront)/` is `export const dynamic
+= "force-dynamic"` — none of them can be statically prerendered at build
+time, since they read Firestore via the Admin SDK, which needs Application
+Default Credentials a build step doesn't have (and shouldn't need — catalog
+data changes independently of deploys). The actual read cost is still
+bounded by the cache strategy above, not by static generation.
+
+### Accessibility
+
+Semantic landmarks (`<header role=banner>`, `<main>`, `<footer role=contentinfo>`,
+`<nav aria-label="Primary">`/`"Breadcrumb"`/`"Pagination"`); every dialog
+(mobile nav, mobile filter drawer) is a Radix `Dialog` with correct focus
+trapping/`Escape`-to-close for free; every form control has a real
+`<label>` (explicit `htmlFor` or implicit wrapping); breadcrumbs mark the
+current page with `aria-current="page"`; decorative icons (the broken-image
+fallback, chevrons) are `aria-hidden`; availability/price are
+screen-reader-readable plain text, never color-only. Not done: an
+automated axe-core scan (the e2e suite's accessibility checks are targeted
+role/label/alt-text assertions, not a full automated audit) and explicit
+`prefers-reduced-motion` handling beyond what Radix's own primitives
+already provide — both noted in Known limitations.
+
+### Security summary
+
+- Only `status: "active"` + `visibility: "visible"` products, and
+  `isActive: true` categories/brands, are ever returned by any public
+  repository method, including keyed lookups — enforced at the Firestore
+  query level, not filtered after the fact.
+- `costPrice`, internal notes, and the inventory adjustment ledger are
+  structurally impossible to expose — the public DTOs don't have fields
+  for them.
+- `barcode` is never populated on the public product DTO.
+- Every `/products`, `/categories/[slug]`, `/brands/[slug]`, and `/search`
+  query string is validated with Zod before touching a repository; a
+  malformed query degrades to "no filters" rather than erroring.
+- `getProductBySlug`/`getCategoryBySlug`/`getBrandBySlug` return `null`
+  identically for "never existed" and "exists but unpublished," preventing
+  slug enumeration.
+- No public component or route imports Firebase/Firestore directly; all
+  reads go through `services/storefront/*`, enforced by the same
+  `eslint-plugin-boundaries` rule as every other phase.
+- `firestore.rules`/`storage.rules` are unchanged — still deny-all for
+  every client, since the storefront never reads Firestore from the
+  browser.
+
+### Testing
+
+- **Unit** (87 new tests, `pnpm test`, mocked ports/no emulator):
+  `core/storefront/rules.ts` (visibility, availability, variant-matching,
+  price/availability filters, related-product selection), search-token
+  generation and query tokenization (`core/catalog/rules.ts`), Zod query
+  schemas, `resolve-variant-selection.ts`, the pagination/filter
+  query-string helpers, SEO metadata builders, JSON-LD builders, and
+  `withStorefrontCache`/`revalidateStorefrontTag`'s `next/cache` wiring
+  (mocked, since `unstable_cache` genuinely throws outside a real Next.js
+  request context — confirmed empirically, see Known limitations).
+- **Integration** (25 new tests, `pnpm run test:integration`, Firebase
+  Emulator Suite): every public repository's visibility security (draft/
+  archived/hidden/inactive entities are never returned, by any method,
+  including keyed lookups), availability computation against real
+  inventory records, and an end-to-end services-layer pass (bypassing the
+  cached entry point via a spread-copy of `defaultStorefrontDeps`, since
+  `unstable_cache` can't run outside a real server) proving the same
+  security holds through `listProducts`/`getProductBySlug`/`searchProducts`.
+- **Playwright e2e** (21 new tests, `pnpm run test:e2e:auth`): homepage
+  structure, product listing with category/featured filters and grid/list
+  toggle, search (results, highlighting, min-length prompt, generic empty
+  state), product detail (price/SKU/breadcrumb/disabled purchase
+  placeholder, JSON-LD present), variant selection (price/SKU update,
+  invalid combinations blocked), hidden/draft/inactive-entity denial (each
+  404s the same way as a never-existed slug), mobile hamburger nav and
+  filter drawer, and accessibility smoke checks (accessible image names,
+  breadcrumb `aria-current`). Fixtures are seeded through the real admin
+  repositories directly (not the admin UI) — the admin variant editor's
+  inputs aren't `htmlFor`-associated with their labels (fragile to drive
+  through Playwright, and not what this suite is testing anyway), and
+  driving every fixture through a login would compete with `auth.spec.ts`/
+  `catalog.spec.ts` for the same per-IP login rate limit (a real
+  production safety limit never weakened for tests).
+
+### Known limitations
+
+- Search is prefix/substring matching over denormalized tokens, not
+  relevance-ranked, fuzzy, or typo-tolerant — see Search strategy's
+  external-engine seam.
+- Filters/search beyond the one Firestore-indexed primary filter are
+  applied in-memory over a bounded page, which can return fewer than
+  `limit` results even when more matches exist — a documented, deliberate
+  tradeoff, not a bug.
+- `barcode` is never exposed on the public product DTO in Phase 4 — no
+  per-product "safe to show" flag exists yet to key that decision on.
+- Listing cards check only the first variant for availability (a
+  representative signal); only the product detail page aggregates across
+  every variant.
+- Cache invalidation is coarse (entity-kind-level tags, not per-slug) and
+  bounded by a 300-second safety net even if a tag invalidation is missed.
+- Deactivating a category/brand doesn't cascade to hide its products —
+  they fall back to a generic "Uncategorized" reference instead.
+- The sitemap includes every active category/brand but only the 60
+  most-recently-created products, not the full catalog.
+- Currency is hardcoded to USD (`lib/format.ts`) — no real currency/locale
+  handling exists yet.
+- No automated accessibility audit (axe-core or similar) — only targeted
+  role/label/alt-text assertions in the e2e suite.
+- Next's `unstable_cache` cannot be exercised in a plain Vitest/Node
+  process (confirmed empirically: it throws `Invariant: incrementalCache
+  missing` outside a real Next.js server request) — its tag/revalidate
+  wiring is unit-tested with a mocked `next/cache` instead of a true
+  integration test against the real cache implementation.
+
+### Future integration seams
+
+- **External search**: `PublicProductRepository.searchByToken()` is the
+  one method to replace with an HTTP call to Algolia/Typesense/Meilisearch;
+  `services/storefront/search-products.ts`'s own contract wouldn't change.
+- **Cart/checkout**: `purchase-placeholder.tsx` is the one component to
+  replace; variant resolution (`resolve-variant-selection.ts`) already
+  produces the exact variant id/SKU/price a cart line item would need.
+  Phase 3's `InventoryRepository.adjust()` remains the one transactional
+  stock-mutation seam a checkout flow would call into.
+- **Per-slug cache invalidation**: if Phase 4's coarse, entity-kind-level
+  tags stop being precise enough at scale, `withStorefrontCache` would
+  need per-slug tag construction (a wrapped-function-per-slug, or a
+  different cache primitive) — noted, not built.
+
 ## Backlog (ideas noted, not implemented)
 
 - Firebase App Check / reCAPTCHA in front of Identity Platform, as an
@@ -1245,8 +1626,25 @@ See the final verification report for exact current pass counts.
 - A denormalized `isLowStock` flag on `InventoryRecord` (or a dedicated
   low-stock index), if `listLowStock()`'s bounded in-memory scan stops
   scaling with catalog size.
-- A public storefront, product pages, search/filtering, and the customer-
-  facing side of the catalog generally — Phase 3 is admin-only.
 - Real tax/currency/pricing-rule engine behind `taxClass`/`costPrice`.
 - Wholesale price-list and ERP sync collections referencing `productId`/
   `variantId`.
+- Cart, checkout, orders, and payments — the storefront ends at a
+  disabled "Add to cart" placeholder in Phase 4; see its Future
+  integration seams for how variant resolution already sets this up.
+- Customer accounts, wishlist, and product reviews.
+- Coupons/discounts and a real promotions engine.
+- A CMS editor for homepage sections (hero copy, featured picks) — Phase 4
+  ships the layout/data-fetching seam, not an admin-editable content
+  model.
+- Real relevance-ranked/fuzzy search via an external engine (Algolia,
+  Typesense, Meilisearch) — see Phase 4's Search strategy for the exact
+  seam this would replace.
+- Per-product barcode-exposure control, so `PublicProduct.barcode` could
+  be populated for products explicitly marked safe to show publicly.
+- Per-slug (rather than entity-kind-level) storefront cache invalidation,
+  if Phase 4's coarser tags stop being precise enough at scale.
+- A paginated (not 60-item-bounded) sitemap generator, if the catalog
+  grows past what a single bounded page can represent.
+- Automated accessibility auditing (axe-core or similar) in CI, beyond
+  Phase 4's targeted role/label/alt-text e2e assertions.
