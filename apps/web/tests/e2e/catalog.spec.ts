@@ -32,13 +32,13 @@ test.describe("catalog admin (super admin)", () => {
     await page.goto("/admin/categories");
     await page.getByLabel("Name", { exact: true }).fill(categoryName);
     await page.getByRole("button", { name: "Create category" }).click();
-    await expect(page.getByText(categoryName)).toBeVisible();
+    await expect(page.getByText(categoryName).first()).toBeVisible();
 
     // --- Brand ---
     await page.goto("/admin/brands");
     await page.getByLabel("Name", { exact: true }).fill(brandName);
     await page.getByRole("button", { name: "Create brand" }).click();
-    await expect(page.getByText(brandName)).toBeVisible();
+    await expect(page.getByText(brandName).first()).toBeVisible();
 
     // --- Product ---
     await page.goto("/admin/products/new");

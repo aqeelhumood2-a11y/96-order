@@ -24,6 +24,7 @@ function existingProduct(overrides: Partial<Product> = {}): Product {
     hasVariants: false,
     variants: [],
     images: [],
+    searchTokens: [],
     version: 3,
     createdAt: new Date(),
     updatedAt: new Date(),

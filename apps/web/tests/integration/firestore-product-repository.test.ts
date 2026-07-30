@@ -28,6 +28,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     hasVariants: false,
     variants: [],
     images: [],
+    searchTokens: [],
     version: 1,
     createdAt: now,
     updatedAt: now,

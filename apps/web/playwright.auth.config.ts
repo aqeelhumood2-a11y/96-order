@@ -19,17 +19,18 @@ const definedProcessEnv = Object.fromEntries(
 
 /**
  * For the specs that need a real Firebase Auth + Firestore backend:
- * auth.spec.ts (Phase 2) and catalog.spec.ts (Phase 3 admin catalog
- * flows) — both authenticate through the same emulator-backed login flow
- * and fixture accounts from global-setup.ts, so they share this one
- * config rather than each needing their own. Run via
- * `pnpm run test:e2e:auth` at the repo root, which wraps this in
- * `firebase emulators:exec`. The plain `tests/e2e/homepage.spec.ts` keeps
- * using playwright.config.ts and never needs the emulators.
+ * auth.spec.ts (Phase 2), catalog.spec.ts (Phase 3 admin catalog flows),
+ * and storefront.spec.ts (Phase 4 public storefront — every storefront
+ * page reads from Firestore, so it needs this backend just as much as the
+ * admin specs do). All three share this one config rather than each
+ * needing their own. Run via `pnpm run test:e2e:auth` at the repo root,
+ * which wraps this in `firebase emulators:exec`. The plain
+ * `tests/e2e/not-found.spec.ts` is the only spec that needs no Firebase
+ * backend at all, so it alone keeps using playwright.config.ts.
  */
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: ["auth.spec.ts", "catalog.spec.ts"],
+  testMatch: ["auth.spec.ts", "catalog.spec.ts", "storefront.spec.ts"],
   outputDir: "./test-results-auth",
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,

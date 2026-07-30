@@ -10,6 +10,7 @@ import { deleteProductImage } from "@/services/catalog/delete-product-image";
 import { updateProduct } from "@/services/catalog/update-product";
 import { uploadProductImage } from "@/services/catalog/upload-product-image";
 import { requireSession } from "@/services/auth/session";
+import { revalidateStorefrontTag, STOREFRONT_CACHE_TAGS } from "@/services/storefront/cache";
 
 export async function createProductAction(input: CreateProductInput): Promise<ActionResult<{ id: string }>> {
   const result = await runAction(async () => {
@@ -17,7 +18,10 @@ export async function createProductAction(input: CreateProductInput): Promise<Ac
     const product = await createProduct(actor, input);
     return { id: product.id };
   });
-  if (result.ok) revalidatePath("/admin/products");
+  if (result.ok) {
+    revalidatePath("/admin/products");
+    revalidateStorefrontTag(STOREFRONT_CACHE_TAGS.products);
+  }
   return result;
 }
 
@@ -30,6 +34,7 @@ export async function updateProductAction(productId: string, input: UpdateProduc
   if (result.ok) {
     revalidatePath("/admin/products");
     revalidatePath(`/admin/products/${productId}`);
+    revalidateStorefrontTag(STOREFRONT_CACHE_TAGS.products);
   }
   return result;
 }
@@ -40,7 +45,13 @@ export async function archiveProductAction(productId: string): Promise<ActionRes
     await archiveProduct(actor, productId);
     return null;
   });
-  if (result.ok) revalidatePath("/admin/products");
+  if (result.ok) {
+    revalidatePath("/admin/products");
+    // Archiving is exactly the case where stale publication matters most —
+    // a product must stop being publicly reachable promptly, not just
+    // whenever the 5-minute safety-net revalidation happens to fire.
+    revalidateStorefrontTag(STOREFRONT_CACHE_TAGS.products);
+  }
   return result;
 }
 
@@ -72,7 +83,10 @@ export async function uploadProductImageAction(formData: FormData): Promise<Acti
     return { id: image.id };
   });
 
-  if (result.ok) revalidatePath(`/admin/products/${productId}`);
+  if (result.ok) {
+    revalidatePath(`/admin/products/${productId}`);
+    revalidateStorefrontTag(STOREFRONT_CACHE_TAGS.products);
+  }
   return result;
 }
 
@@ -82,6 +96,9 @@ export async function deleteProductImageAction(productId: string, imageId: strin
     await deleteProductImage(actor, productId, imageId);
     return null;
   });
-  if (result.ok) revalidatePath(`/admin/products/${productId}`);
+  if (result.ok) {
+    revalidatePath(`/admin/products/${productId}`);
+    revalidateStorefrontTag(STOREFRONT_CACHE_TAGS.products);
+  }
   return result;
 }

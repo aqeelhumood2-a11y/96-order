@@ -5,6 +5,17 @@ export const SUPER_ADMIN_EMAIL = "super-admin-e2e@example.com";
 export const SUPER_ADMIN_PASSWORD = "Sup3rAdminE2ePass!";
 export const NO_PERMISSION_STAFF_EMAIL = "no-permission-e2e@example.com";
 export const NO_PERMISSION_STAFF_PASSWORD = "NoPermissionE2ePass!";
+/**
+ * A separate account (not the shared super-admin fixture) for
+ * storefront.spec.ts's catalog seeding — auth.spec.ts and catalog.spec.ts
+ * already log in as the super admin several times each, and the login
+ * rate limiter (`config/auth.ts`'s `sessionCreateByEmail`, 5 per 15
+ * minutes — a real production safety limit, not something to weaken for
+ * tests) is scoped per email. Seeding through its own account keeps the
+ * storefront fixtures from tipping that shared bucket over its limit.
+ */
+export const CATALOG_SEED_EMAIL = "catalog-seed-e2e@example.com";
+export const CATALOG_SEED_PASSWORD = "CatalogSeedE2ePass!";
 
 async function upsertAuthUser(email: string, password: string): Promise<string> {
   const auth = getAdminAuth();
@@ -64,6 +75,21 @@ export default async function globalSetup() {
       status: "active",
       roleIds: [],
       directPermissions: [],
+      createdAt: now,
+      updatedAt: now,
+      createdBy: "e2e-global-setup",
+    },
+    { merge: true },
+  );
+
+  const catalogSeedUid = await upsertAuthUser(CATALOG_SEED_EMAIL, CATALOG_SEED_PASSWORD);
+  await db.collection("users").doc(catalogSeedUid).set(
+    {
+      uid: catalogSeedUid,
+      email: CATALOG_SEED_EMAIL,
+      status: "active",
+      roleIds: [],
+      directPermissions: ["categories:manage", "brands:manage", "products:manage"],
       createdAt: now,
       updatedAt: now,
       createdBy: "e2e-global-setup",

@@ -81,6 +81,8 @@ describe("createProduct", () => {
     expect(deps.products.create).toHaveBeenCalledWith(expect.objectContaining({ sku: "ETH-YIRG-250" }));
     expect(deps.inventory.ensureExists).toHaveBeenCalledWith(product.id, null, undefined, actor.uid);
     expect(deps.auditLogs.record).toHaveBeenCalledWith(expect.objectContaining({ type: "product_created" }));
+    // searchTokens should cover the name (as prefixes), the exact SKU, and the resolved category name.
+    expect(product.searchTokens).toEqual(expect.arrayContaining(["et", "eth", "eth-yirg-250", "coffee", "co"]));
   });
 
   it("derives variant ids and seeds one inventory record per tracked variant, skipping non-tracked ones", async () => {

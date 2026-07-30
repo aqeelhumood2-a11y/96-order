@@ -134,6 +134,14 @@ export interface Product {
   variants: ProductVariant[];
   attributes?: ProductAttributes;
   images: ProductImage[];
+  /**
+   * Denormalized, server-computed search index — see
+   * `core/catalog/rules.ts#buildSearchTokens` and README's Phase 4 Search
+   * strategy section. Never accepted from client input (absent from
+   * `core/catalog/schemas.ts`'s create/update schemas entirely); recomputed
+   * server-side on every create/update.
+   */
+  searchTokens: string[];
   /** Optimistic-concurrency guard — see `services/catalog/update-product.ts`. */
   version: number;
   createdAt: Date;

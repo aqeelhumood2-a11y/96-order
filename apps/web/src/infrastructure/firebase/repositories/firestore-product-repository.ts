@@ -78,6 +78,7 @@ function toDomain(doc: QueryDocumentSnapshot): Product {
         }
       : undefined,
     images: (data.images ?? []).map((image) => ({ ...image, uploadedAt: image.uploadedAt.toDate() })),
+    searchTokens: data.searchTokens ?? [],
     version: data.version,
     createdAt: data.createdAt.toDate(),
     updatedAt: data.updatedAt.toDate(),
@@ -132,6 +133,7 @@ function toDoc(product: Product): ProductDoc {
         }
       : undefined,
     images: product.images.map((image) => ({ ...image, uploadedAt: Timestamp.fromDate(image.uploadedAt) })),
+    searchTokens: product.searchTokens,
     version: product.version,
     createdAt: Timestamp.fromDate(product.createdAt),
     updatedAt: Timestamp.fromDate(product.updatedAt),

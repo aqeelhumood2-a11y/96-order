@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:e2e": "playwright test tests/e2e/homepage.spec.ts",
+    "test:e2e": "playwright test tests/e2e/not-found.spec.ts",
     "test:e2e:auth": "NODE_OPTIONS=--conditions=react-server playwright test --config playwright.auth.config.ts",
     "bootstrap:super-admin": "NODE_OPTIONS=--conditions=react-server tsx scripts/bootstrap-super-admin.ts"
   },

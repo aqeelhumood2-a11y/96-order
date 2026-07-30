@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { slugify } from "@96order/shared";
 import type { Session } from "@/core/auth/entities";
 import type { Product, ProductVariant } from "@/core/catalog/entities";
+import { buildSearchTokens } from "@/core/catalog/rules";
 import { type UpdateProductInput, updateProductSchema } from "@/core/catalog/schemas";
 import { NotFoundError, ValidationError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
@@ -42,6 +43,7 @@ export async function updateProduct(
     }
   }
 
+  const nextBrandId = "brandId" in fields ? fields.brandId : existing.brandId;
   const nextSku = fields.sku ?? existing.sku;
   const nextBarcode = "barcode" in fields ? fields.barcode : existing.barcode;
 
@@ -71,10 +73,31 @@ export async function updateProduct(
 
   const slug = fields.slug ?? (fields.name !== undefined ? slugify(fields.name) : undefined);
 
+  // Recomputed on every update (cheap pure string processing) rather than
+  // only when a search-relevant field changed — simpler and can't drift
+  // out of sync with whichever fields actually changed. One extra doc read
+  // each for the (possibly unchanged) primary category/brand, to get their
+  // current names; acceptable on this admin-only write path.
+  const [effectivePrimaryCategory, effectiveBrand] = await Promise.all([
+    deps.categories.findById(nextPrimaryCategoryId),
+    nextBrandId ? deps.brands.findById(nextBrandId) : Promise.resolve(null),
+  ]);
+  const searchTokens = buildSearchTokens({
+    name: fields.name ?? existing.name,
+    sku: nextSku,
+    barcode: nextBarcode,
+    tags: fields.tags ?? existing.tags,
+    productType: fields.productType ?? existing.productType,
+    brandName: effectiveBrand?.name,
+    categoryName: effectivePrimaryCategory?.name,
+    variantSkus: (nextVariants ?? existing.variants).map((variant) => variant.sku),
+  });
+
   const patch: Partial<Product> = {
     ...fields,
     ...(slug !== undefined ? { slug } : {}),
     ...(nextVariants !== undefined ? { variants: nextVariants } : {}),
+    searchTokens,
     updatedBy: actor.uid,
   };
 

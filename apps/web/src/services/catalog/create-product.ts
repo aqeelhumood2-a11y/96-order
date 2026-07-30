@@ -1,20 +1,27 @@
 import { randomUUID } from "node:crypto";
 import { slugify } from "@96order/shared";
 import type { Session } from "@/core/auth/entities";
-import type { Product, ProductVariant } from "@/core/catalog/entities";
+import type { Category, Product, ProductVariant } from "@/core/catalog/entities";
+import { buildSearchTokens } from "@/core/catalog/rules";
 import { type CreateProductInput, createProductSchema } from "@/core/catalog/schemas";
 import { ValidationError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
 import { defaultCatalogDeps, type CatalogDeps } from "./dependencies";
 import { assertNoDuplicateCategoryAssignment, validateVariantsInput } from "./product-validation";
 
-async function assertCategoriesExist(deps: CatalogDeps, primaryCategoryId: string, additionalCategoryIds: readonly string[]): Promise<void> {
+/** Returns the fetched primary category (needed for `searchTokens`) after confirming every referenced category exists. */
+async function assertCategoriesExist(
+  deps: CatalogDeps,
+  primaryCategoryId: string,
+  additionalCategoryIds: readonly string[],
+): Promise<Category> {
   const ids = [primaryCategoryId, ...additionalCategoryIds];
   const categories = await Promise.all(ids.map((id) => deps.categories.findById(id)));
   const missingIndex = categories.findIndex((category) => category === null);
   if (missingIndex !== -1) {
     throw new ValidationError(`Category not found: "${ids[missingIndex]}".`);
   }
+  return categories[0]!;
 }
 
 export async function createProduct(
@@ -36,12 +43,10 @@ export async function createProduct(
   validateVariantsInput(parsed.sku, parsed.barcode, parsed.variants);
   assertNoDuplicateCategoryAssignment(parsed.primaryCategoryId, parsed.additionalCategoryIds);
 
-  await assertCategoriesExist(deps, parsed.primaryCategoryId, parsed.additionalCategoryIds);
-  if (parsed.brandId) {
-    const brand = await deps.brands.findById(parsed.brandId);
-    if (!brand) {
-      throw new ValidationError("Brand not found.");
-    }
+  const primaryCategory = await assertCategoriesExist(deps, parsed.primaryCategoryId, parsed.additionalCategoryIds);
+  const brand = parsed.brandId ? await deps.brands.findById(parsed.brandId) : null;
+  if (parsed.brandId && !brand) {
+    throw new ValidationError("Brand not found.");
   }
 
   const now = new Date();
@@ -91,6 +96,16 @@ export async function createProduct(
     variants,
     attributes: parsed.attributes,
     images: [],
+    searchTokens: buildSearchTokens({
+      name: parsed.name,
+      sku: parsed.sku,
+      barcode: parsed.barcode,
+      tags: parsed.tags,
+      productType: parsed.productType,
+      brandName: brand?.name,
+      categoryName: primaryCategory.name,
+      variantSkus: variants.map((variant) => variant.sku),
+    }),
     version: 1,
     createdAt: now,
     updatedAt: now,
