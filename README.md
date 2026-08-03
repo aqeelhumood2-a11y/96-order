@@ -2053,6 +2053,401 @@ isn't a real domain; order-tracking enumeration-resistance).
 - **Email retry worker**: a scheduled job scanning `emailOutbox` for
   `"failed"` entries and re-attempting delivery with backoff.
 
+## Phase 6 — Order Management, Customers, Inventory Operations, and Admin Dashboard
+
+Builds the operational back office on top of Phase 5's order/payment/
+reservation foundation: a full admin order-management screen (list,
+detail, status workflow, actions), a derived customer directory rolled up
+from order history, inventory alerts and a proactive (admin-triggered)
+expired-reservation sweep, and an admin dashboard plus a reporting
+foundation (daily/weekly/monthly sales, best sellers, orders by status).
+No new customer-facing surface — every page in this phase lives under
+`/admin`. `ORDER_STATUSES`/`orderEvents`/`confirm-cash-payment.ts` were
+already modeled by Phase 5 specifically for this phase to build against
+(see its README section's Future integration seams) — this phase wires
+them into a real UI rather than redesigning any of it.
+
+### Architecture
+
+Same layering as every prior phase:
+
+```
+core/orders/                  schemas.ts (Zod: list/change-status query & input validation),
+                               rules.ts extended — full status-transition graph,
+                               allowedNextStatuses, buildOrderSearchTokens, order search tokenizer
+core/customer/                entities.ts (Customer), rules.ts (key normalization, totals fold,
+                               search tokens), schemas.ts
+core/reports/                 entities.ts (SalesBucket/BestSellingProductRow/OrdersByStatusRow),
+                               rules.ts (day/week/month bucketing, best-sellers, orders-by-status —
+                               pure functions over already-fetched data), schemas.ts
+core/interfaces/               order-repository.ts extended (list/listByCustomer), customer-repository.ts,
+                               report-repository.ts, inventory-reservation-repository.ts extended
+                              (listExpired), inventory-repository.ts extended (listOutOfStock)
+infrastructure/firebase/       firestore-order-repository.ts extended (list/listByCustomer),
+  repositories/                firestore-customer-repository.ts, firestore-report-repository.ts,
+                              firestore-inventory-repository.ts / firestore-inventory-reservation-
+                              repository.ts extended
+services/orders/               list-orders.ts, get-order.ts, change-order-status.ts (the one
+                              transition engine), order-actions.ts (named wrappers), confirm-order-
+                              payment.ts, release-order-reservation.ts, dependencies.ts extended
+services/customers/            list-customers.ts, get-customer.ts, upsert-customer-from-order.ts,
+                              dependencies.ts
+services/dashboard/            get-dashboard-stats.ts, dependencies.ts
+services/reports/              sales-report.ts, best-selling-products.ts, orders-by-status.ts,
+                              dependencies.ts
+services/inventory/            expire-reservations.ts (the proactive sweep), reservations.ts's
+                              commitOrderReservations fixed (see Inventory lifecycle below)
+features/admin-orders/         actions.ts (Server Actions), parse-search-params.ts, components/
+                              (orders-table, orders-filters, order-status-badge, order-info-panels,
+                              order-status-timeline, order-reservation-status, order-actions-panel)
+features/admin-customers/      parse-search-params.ts, components/ (customers-table, customers-filters)
+features/admin-dashboard/      components/ (stat-tile, inventory-alerts, top-selling-products)
+features/admin-reports/        parse-search-params.ts, components/ (sales-report-table,
+                              best-sellers-table, orders-by-status-table, reports-filters)
+features/admin-shell/          cursor-pagination.tsx (generic admin list pagination)
+lib/                            cursor-pagination.ts (generic cursor/history query-string helpers)
+app/admin/orders/, orders/[orderId]/, customers/, customers/[customerId]/, reports/
+app/admin/page.tsx             rebuilt as the real dashboard (was a placeholder shell)
+```
+
+No UI or route imports Firebase Admin, Firestore, or a repository
+directly — `features/*` and `app/*` only ever call `services/*`, the
+same boundary `eslint-plugin-boundaries`/`tests/unit/architecture-
+boundaries.test.ts` has enforced since Phase 1.
+
+### Order Management architecture
+
+**List** (`/admin/orders`, `services/orders/list-orders.ts`): filters —
+status, payment status, delivery/pickup, date range — plus a search box
+matching order number, customer name, phone, or email, and sort by date,
+grand total, or order number. Search follows the exact two-step strategy
+`services/storefront/search-products.ts` established: the *longest* word
+of a multi-word query is the one Firestore `array-contains` filter
+(`OrderRepository.list`'s `search` field); any remaining words are
+checked in-memory against the bounded page that query already returned —
+never a second Firestore call. `core/orders/rules.ts#buildOrderSearchTokens`
+builds the stored index: word-prefix tokens for customer name (same
+`core/catalog/rules.ts#buildSearchTokens` strategy), and **whole-string**
+prefix tokens (punctuation preserved) for order number/email/mobile, so a
+staff member can progressively type a partial order number, email, or
+phone number and still get a match — unlike SKU search's exact-only
+convention, an order number/email is looked up by partial prefix as often
+as a complete value. A date-range filter forces the underlying query back
+to sort-by-`createdAt`, since Firestore requires the range filter's field
+to be the query's first `orderBy` — documented on `OrderRepository.list`'s
+JSDoc and `FirestoreOrderRepository.list`'s implementation, not something
+the admin UI silently gets wrong.
+
+**Detail** (`/admin/orders/[orderId]`, `services/orders/get-order.ts`):
+one call returns the order, its full `orderEvents` status-change ledger
+(oldest first — doubles as "status timeline" and "audit history"), and
+its `InventoryReservation` rows ("inventory reservation status"). The
+page renders customer information, payment information, delivery *or*
+pickup information (whichever the order used), the line-item table, and
+an actions panel.
+
+**Status workflow** (`core/orders/rules.ts`): the full graph beyond
+Phase 5's own two transitions —
+
+| From | To |
+| --- | --- |
+| `pending_payment` | `confirmed`, `cancelled` |
+| `confirmed` | `preparing`, `cancelled` |
+| `preparing` | `ready`, `cancelled` |
+| `ready` | `out_for_delivery`, `completed`, `cancelled` |
+| `out_for_delivery` | `completed`, `cancelled` |
+
+`completed`/`cancelled` are terminal (`isTerminalOrderStatus`) — neither
+has an outgoing edge. `allowedNextStatuses(from, fulfillmentMethod)`
+additionally filters `out_for_delivery` out for a `pickup` order (there's
+no courier leg to track), so the admin UI never offers a
+fulfillment-method-inappropriate action even though the raw transition
+map allows it from `ready`. `services/orders/change-order-status.ts` is
+the one engine every transition funnels through: `orders:manage`
+permission, optimistic-concurrency `expectedVersion` check (defense in
+depth alongside `OrderRepository.update()`'s own re-check), the
+transition-validity check above, a same-target-status no-op (idempotent
+retry of the same button click, not an error), a payment guard
+(`completed` requires `paymentStatus` to already be `paid`/`cash_confirmed`
+— an order can never be marked complete while still unpaid), and the
+side effects below. **Every transition records an `OrderStatusEvent`**
+(`orderEvents`, append-only, same shape/guarantee as `auditLogs`/
+`inventoryAdjustments`) and an `order_status_changed` audit-log entry with
+the real staff actor — this closes a Phase 5 gap where `create-order.ts`
+and `handle-tap-webhook.ts`'s own status changes only wrote `auditLogs`,
+never `orderEvents`; both now also record the event, so an order's
+status timeline is complete from the very first status it ever had
+(`fromStatus: null`), not just the transitions Phase 6's own actions
+drive.
+
+### Order Actions (`services/orders/order-actions.ts`, `confirm-order-payment.ts`, `release-order-reservation.ts`)
+
+Named, permission-gated, single-purpose wrappers over the engine above —
+what the action buttons actually call:
+
+- **Confirm payment** (`confirm-order-payment.ts`) — the manual admin
+  override for a `tap` order stuck in `pending_payment` whose webhook
+  never arrived; `payments:manage`. Mirrors `handle-tap-webhook.ts`'s own
+  `paid` branch (commit reservations, update `Payment`/`Order`, send the
+  confirmation email) rather than routing through the generic engine,
+  the same way Phase 5's own `confirm-cash-payment.ts` does more than a
+  plain status transition.
+- **Confirm cash payment** — unchanged Phase 5 `confirm-cash-payment.ts`,
+  now reachable from the order-detail action panel instead of only its
+  own route.
+- **Cancel order** — any non-terminal status → `cancelled`; releases
+  still-`reserved` inventory and reverses this order's contribution to
+  its customer's `totalSpent` (see Customer architecture).
+- **Mark preparing / Mark ready** — `confirmed → preparing → ready`.
+  `ready` (pickup order) sends the `pickup_confirmation` email template —
+  modeled by Phase 5, never wired to anything until now.
+- **Mark out for delivery** — `ready → out_for_delivery`, delivery orders
+  only; sends `delivery_confirmation` (same "modeled but unwired" story).
+- **Mark delivered / Complete order** — one function
+  (`order-actions.ts#completeOrder`) covers both: "Mark delivered"
+  (`out_for_delivery → completed`, a courier-confirmed delivery) and
+  "Complete order" (`ready → completed`, a picked-up pickup order) are
+  the same target transition; which start state is valid depends only on
+  fulfillment method, already enforced by the transition graph. The admin
+  UI just labels the button differently based on `order.fulfillment.method`.
+- **Release reservation** (`release-order-reservation.ts`) — a standalone
+  action distinct from cancelling the whole order; idempotent.
+
+### Customer architecture
+
+No customer-accounts phase exists yet (Phase 5's own Known limitations),
+so `core/customer/entities.ts#Customer` is a **derived aggregate**, not a
+first-class write target — keyed by normalized email
+(`customerKeyFromEmail`, the exact same normalization
+`services/checkout/validation.ts#validateCustomer` already applies), not
+a generated id, since checkout always requires and normalizes an email.
+`kind: "guest" | "registered"` and an optional `userId` are modeled now
+and unwritten (`kind` is always `"guest"` today) — linking a `Customer` to
+a future registered account is an additive field, matching exactly what
+Phase 5's README flagged as the seam this phase would need.
+
+**Write path**: `services/customers/upsert-customer-from-order.ts`,
+called once from `services/checkout/create-order.ts` right after
+inventory reservation succeeds (never for an order whose reservation
+failed and got rolled back to `cancelled` — that order never really
+"happened"). `CustomerRepository.upsert(customerId, fold)` is a
+transactional read-modify-write (the repository owns the transaction,
+the caller only supplies a pure fold function —
+`core/customer/rules.ts#nextCustomerOnOrderCreated`) so two concurrent
+first orders from a brand-new customer can never both observe
+`existing: null` and clobber each other. `totalOrders`/`totalSpent`
+increment on every order created; `fullName`/`mobile`/`companyName`
+always reflect the *latest* order's snapshot (the same "latest wins"
+convention `Order.customer` itself uses). **Reversal**: whenever an order
+that already contributed to a customer's totals is cancelled — via the
+admin `cancelOrder` action, or via `handle-tap-webhook.ts`'s own
+failed/cancelled branch — `core/customer/rules.ts#reverseCancelledOrderSpend`
+subtracts that order's `grandTotal` from `totalSpent` (floored at zero;
+`totalOrders` is deliberately left unchanged, since the order still
+genuinely happened).
+
+**List/detail** (`/admin/customers`, `services/customers/list-customers.ts`
+/`get-customer.ts`): same primary-token-plus-in-memory-refinement search
+strategy as orders, over name/phone/email. Detail shows contact info,
+account type (guest today), and full order history
+(`OrderRepository.listByCustomer`, reusing `OrdersTable`).
+
+### Dashboard architecture
+
+`services/dashboard/get-dashboard-stats.ts`, gated on `dashboard:view` —
+its own permission namespace, reserved since Phase 2 and unused until
+now (deliberately separate from `reports:view`: a role can see the
+dashboard's at-a-glance tiles without the deeper report drill-downs, or
+vice versa). One call returns: order counts by status + total revenue
+(`ReportRepository.getDashboardCounts`), low-stock and out-of-stock
+inventory alerts (`InventoryRepository.listLowStock`/`listOutOfStock`),
+the 10 most recent orders, and the top 5 best-selling products over the
+trailing 30 days.
+
+### Reporting architecture
+
+`services/reports/{sales-report,best-selling-products,orders-by-status}.ts`,
+gated on `reports:view`. All three share `core/reports/rules.ts`'s pure
+functions operating on a bounded, already-fetched set of orders — the
+Firestore query itself (`ReportRepository.listOrdersForReport`/
+`listOrderLinesForReport`) is a single date-range-filtered fetch, capped
+at `REPORT_SCAN_LIMIT` (5,000 orders). `bucketOrders` buckets by day, ISO
+week, or month, filling every empty period with a zero-count row (a
+report table never silently skips a quiet day); `computeBestSellingProducts`
+aggregates line-item quantity/revenue keyed by `productId:variantId`;
+`computeOrdersByStatus` always includes all seven statuses, zero-count or
+not. `countsTowardRevenue(status)` — `pending_payment`/`cancelled`
+excluded, everything else counted — is the one predicate every revenue
+figure in the app (dashboard tiles, sales reports, best sellers) shares,
+so "revenue" can never mean something different on two different screens.
+`FirestoreReportRepository.getDashboardCounts` uses Firestore's native
+`count()` aggregation per status (no document fetch at all) but sums
+`totalRevenue` over an in-memory-summed bounded scan rather than a
+`sum()` aggregation query — the same pragmatic "bounded scan, sum in
+memory" tradeoff `listLowStock`/`listOutOfStock` already accept, chosen
+here to avoid depending on `sum()` aggregation-query emulator support
+that wasn't verified. No advanced analytics (cohorts, funnels, forecasting)
+— explicitly out of scope per the spec.
+
+### Inventory lifecycle
+
+Reservation lifecycle (reserve/release/commit) is unchanged Phase 5 —
+this phase adds:
+
+- **Expired reservation handling**: `services/inventory/expire-reservations.ts`,
+  an admin/scheduled-trigger action (`orders:manage`) that calls the new
+  `InventoryReservationRepository.listExpired()` (a direct
+  `status == "reserved" && expiresAt < now` query, `(status, expiresAt)`
+  composite index) and releases every match, recording one
+  `inventory_reservation_expired` audit entry. This is **on top of**,
+  not instead of, Phase 5's existing lazy per-product reclaim inside
+  `reserve()` — that guarantees correctness with zero sweep at all; this
+  only reclaims capacity *sooner* for a product nobody else is currently
+  trying to buy. No Cloud Scheduler trigger wires this up automatically
+  yet (Backlog) — it's callable today from an admin action or a future
+  scheduled HTTPS function with no further change.
+- **Manual inventory correction**: unchanged — Phase 3's
+  `adjustInventory`/`inventory:adjust` already covers this; Phase 6 adds
+  no new correction path, just surfaces reservation state next to it on
+  the order-detail screen.
+- **A real bug fix**: `commitOrderReservations` (Phase 5,
+  `services/inventory/reservations.ts`) used to `throw NotFoundError`
+  whenever an order had zero reservations — which is *always* true for
+  an order made entirely of untracked-inventory lines
+  (`trackInventory: false`, a fully-supported, ordinary catalog
+  configuration). That made `confirmCashPayment`/`confirmOrderPayment`
+  fail for any such order. Found by this phase's own e2e test walking a
+  real cash order through confirmation, and fixed: `commitOrderReservations`
+  is now a no-op (not an error) when there's nothing to commit, matching
+  `releaseOrderReservations`'s own equivalent no-op behavior. Every
+  caller already resolves the `Order` itself (and throws its own
+  `NotFoundError` if it doesn't exist) before ever reaching this
+  function, so nothing relied on the old guard as an order-existence
+  check.
+- **Never double-deduction**: unchanged Phase 5 invariant —
+  `reserve()`/`commit()`/`release()` are each idempotent per
+  order+product+variant, and `commitOrderReservations` only ever acts on
+  rows still in `"reserved"` status, so a repeated confirm action (or a
+  reservation this phase's sweep already released) can never double-commit.
+
+### Permission model
+
+Reuses Phase 2's RBAC exactly as designed — every namespace/action this
+phase gates on (`orders:view`/`manage`, `customers:view`/`manage`,
+`dashboard:view`, `reports:view`, `payments:manage`) was already reserved
+in `core/auth/permissions.ts#PERMISSION_NAMESPACES` since Phase 2, simply
+unused until now. No RBAC code changes. `hasPermission`'s `manage`
+wildcard and `super_admin` bypass apply identically. Server Actions and
+Route Handlers under `/admin/orders`, `/admin/customers`, `/admin/reports`
+all call `requireSession()`/`requirePermission()` themselves — the same
+"the layout's redirect is UX-only, not the enforcement boundary"
+discipline every prior phase established.
+
+### Security
+
+- Every new/extended repository stays server-only (Admin SDK) — no
+  client Firestore SDK path exists for `customers` (new collection) or
+  any of `orders`/`inventory*`'s new query shapes. `firestore.rules` adds
+  an explicit deny block for `customers`, covered by
+  `tests/integration/firestore-security-rules-phase6.test.ts`
+  (unauthenticated **and** an arbitrary authenticated client, same
+  Phase 5 convention).
+- Every admin list/filter query param is Zod-validated
+  (`core/orders/schemas.ts`, `core/customer/schemas.ts`,
+  `core/reports/schemas.ts`) before it ever reaches a repository — a
+  malformed or hand-edited query string degrades to defaults, never a
+  500, the same convention `core/storefront/schemas.ts` established.
+- Optimistic concurrency (`expectedVersion`) on every status-changing
+  action — a stale admin tab can't silently clobber a status change made
+  by someone else in the meantime.
+- Every transition records its real staff actor (`order_status_changed`,
+  `order_payment_confirmed`, `customer_created`/`customer_updated` —
+  reserved for a future direct-edit path, unused today —
+  `inventory_reservation_expired`, `inventory_manual_correction` —
+  reserved, unused) via `actorUid`/`actorEmail`, never `null`, except the
+  sweep's own release calls (`system:reservation_sweep`, following the
+  established system-actor-prefix convention).
+
+### Firestore collections and indexes
+
+One new collection: `customers`, server-only, keyed by normalized email.
+No other new collections — dashboard/reports read from `orders`/
+`inventory` directly. New composite indexes on `orders` (status/payment
+status/fulfillment method/search-tokens/customerId/grandTotal/order
+number, each paired with `createdAt` as the tie-breaker or sole sort),
+`customers` (search-tokens + `lastOrderAt`), and `inventoryReservations`
+(`status`, `expiresAt` — the expired-sweep query). Emulator runs
+auto-create whatever a query needs; a real Firebase project needs
+`firebase deploy --only firestore:indexes` before these queries work in
+production (not run by this phase — see Scope Control).
+
+### Emulator and e2e setup
+
+`tests/e2e/global-setup.ts` seeds a new `ORDERS_MANAGER_EMAIL` fixture
+staff account with a **non-`super_admin`** role
+(`orders:manage`, `customers:manage`, `dashboard:view`, `reports:view`,
+`payments:manage`) — deliberately not reusing `SUPER_ADMIN_EMAIL`, whose
+`sessionCreateByEmail` rate-limit budget (5 per 15 minutes) is already
+fully spent by `auth.spec.ts`/`catalog.spec.ts`'s own logins within one
+`pnpm run test:e2e:auth` run. `tests/e2e/admin-orders.spec.ts` performs
+**exactly one login for its entire run** for the same reason
+(`sessionCreateByIp`'s 10-per-15-minutes budget had only one spare slot
+left) — every assertion (place an order, search/open/act on it through
+the full status workflow to completion, customer roll-up, dashboard,
+reports) runs in that one continuous authenticated session. It seeds its
+own single untracked-inventory product directly (not
+`storefront-fixtures.ts#seedStorefrontFixtures`, whose `withVariants`
+product would otherwise leak extra rows onto `/admin/inventory` and
+break `catalog.spec.ts`'s own "exactly one product" assumption on that
+page — every spec in this run shares one un-reset Firestore emulator).
+`playwright.auth.config.ts` now pins `workers: 1` for the same
+shared-backend reason: different spec files running concurrently could
+otherwise pollute each other's list-page assertions regardless of
+per-file seriality.
+
+### Known limitations
+
+- `getDashboardCounts`'s `totalRevenue` and every report's
+  `listOrdersForReport`/`listOrderLinesForReport` are bounded scans
+  (5,000 orders for reports; a separate 5,000-order revenue scan for the
+  dashboard) — accurate up to that volume, silently incomplete beyond it.
+  Revisit with a `sum()` aggregation query (once verified against a real
+  Firestore project, not just the emulator) or a maintained rolling total
+  if order volume ever approaches this.
+- The expired-reservation sweep (`expire-reservations.ts`) has no
+  automatic trigger — it's an admin-callable action today, not a Cloud
+  Scheduler job.
+- Order search matches order number, customer name, email, and mobile
+  only — no search by delivery address, SKU, or product name within an
+  order.
+- Cancelling an order whose inventory was already **committed** (a fully
+  completed/paid order) does not automatically reverse the `onHand`
+  deduction — that's a real stock discrepancy needing a manual
+  `inventory:adjust` correction, the same edge case Phase 5's own
+  reservation lifecycle never fully closed.
+- No bulk order actions (bulk status change, bulk export) — one order at
+  a time.
+- `Customer.kind` is always `"guest"` — no registered-account linkage
+  exists yet to ever set it to `"registered"`.
+- No CSV/PDF export anywhere in the admin panel (orders, customers, or
+  reports).
+
+### Future integration seams
+
+- **Registered customer accounts**: `Customer.kind`/`userId` are already
+  modeled; linking a future authenticated account to its historical
+  guest `Customer` record (matched by email) is additive.
+- **Automatic reservation-expiry sweep**: `expire-reservations.ts`
+  already does the real work — wiring it to a Cloud Scheduler-triggered
+  HTTPS function is the only remaining piece.
+- **Revenue/report aggregation at scale**: `ReportRepository`'s interface
+  already isolates this concern; swapping the bounded-scan implementation
+  for a maintained rolling-total or a real `sum()` aggregation query
+  doesn't change any caller.
+- **Bulk order actions**: `change-order-status.ts`'s engine already
+  validates one transition at a time in a way a bulk wrapper could loop
+  over directly.
+
 ## Backlog (ideas noted, not implemented)
 
 - Firebase App Check / reCAPTCHA in front of Identity Platform, as an
@@ -2091,7 +2486,8 @@ isn't a real domain; order-tracking enumeration-resistance).
   `variantId`.
 - Customer accounts, wishlist, and product reviews — Phase 5's guest cart
   cookie already separates cart identity from browser session, so a
-  future account cart-merge is additive.
+  future account cart-merge is additive; Phase 6's `Customer.kind`/
+  `userId` fields are the matching seam on the customer-directory side.
 - Coupons/discounts and a real promotions engine.
 - A CMS editor for homepage sections (hero copy, featured picks) — Phase 4
   ships the layout/data-fetching seam, not an admin-editable content
@@ -2107,17 +2503,25 @@ isn't a real domain; order-tracking enumeration-resistance).
   grows past what a single bounded page can represent.
 - Automated accessibility auditing (axe-core or similar) in CI, beyond
   Phase 4's targeted role/label/alt-text e2e assertions.
-- Full admin order-management UI (listing, filtering, bulk actions,
-  status transitions beyond confirm-cash-payment) — Phase 6.
 - Refund execution against Tap's refund API — `PaymentStatus.refunded` is
   modeled, nothing calls it yet.
 - WhatsApp order/payment notifications, if an approved provider becomes
   available (email is Phase 5's only channel).
 - A background worker retrying `"failed"` `emailOutbox` entries with
   backoff.
-- A proactive Cloud Scheduler sweep reclaiming expired inventory
-  reservations, instead of only reclaiming lazily on the next `reserve()`
-  for the same product/variant.
+- A Cloud Scheduler trigger for the already-built expired-reservation
+  sweep (`services/inventory/expire-reservations.ts`, Phase 6) — the
+  sweep itself is a working admin-callable action, just not on an
+  automatic schedule yet.
+- Bulk admin order actions (bulk status change, bulk export) — Phase 6
+  ships one-order-at-a-time actions only.
+- CSV/PDF export for orders, customers, and reports.
+- A maintained rolling revenue total (or a verified `sum()` aggregation
+  query) once order volume approaches the bounded-scan limits
+  `services/reports/*`/`get-dashboard-stats.ts` currently accept — see
+  Phase 6's Known limitations.
+- Order search by delivery address, SKU, or in-order product name — Phase
+  6's order search covers order number/customer name/email/mobile only.
 - Verify `TapPaymentProvider`'s exact field names/status strings against a
   real Tap sandbox account before processing a live payment.
 - Multiple admin-configurable pickup locations (`pickupLocations`

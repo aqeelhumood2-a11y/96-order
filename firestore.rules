@@ -50,6 +50,19 @@ rules_version = '2';
 // append-only the same way `auditLogs`/`inventoryAdjustments` are — their
 // repositories expose no update/delete method for the event itself.
 //
+// Phase 6 (order management, customers, inventory operations, admin
+// dashboard) adds one new collection, `customers` — the same pattern as
+// every collection above: read and written exclusively by server-side
+// code through the Admin SDK (`infrastructure/firebase/repositories/
+// firestore-customer-repository.ts`), gated by `customers:view`/
+// `customers:manage` permission checks in `services/customers/*` before
+// any repository call. It holds the same class of private customer data
+// `orders`/`payments` already do (name, mobile, email), so it stays fully
+// denied for the same reason those do — see the Phase 5 paragraph above.
+// Every other Phase 6 read (order lists/detail, dashboard, reports) is
+// server-computed from `orders`/`inventory*` collections already denied
+// above; no new collection was needed for those.
+//
 // Every other collection — anything belonging to a future module — stays
 // on the Phase 1 default-deny baseline until that module designs its own
 // real access pattern.
@@ -128,6 +141,10 @@ service cloud.firestore {
     }
 
     match /emailOutbox/{entryId} {
+      allow read, write: if false;
+    }
+
+    match /customers/{customerId} {
       allow read, write: if false;
     }
 

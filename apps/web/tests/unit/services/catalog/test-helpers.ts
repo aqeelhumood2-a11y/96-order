@@ -34,6 +34,7 @@ export function createMockCatalogDeps(overrides: Partial<CatalogDeps> = {}): Cat
       findByProductAndVariant: vi.fn().mockResolvedValue(null),
       listByProduct: vi.fn().mockResolvedValue([]),
       listLowStock: vi.fn().mockResolvedValue([]),
+      listOutOfStock: vi.fn().mockResolvedValue([]),
       ensureExists: vi.fn().mockImplementation(async (productId: string, variantId: string | null) => ({
         id: `${productId}:${variantId ?? "-"}`,
         productId,

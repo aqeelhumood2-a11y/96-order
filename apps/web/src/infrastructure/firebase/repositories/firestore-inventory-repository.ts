@@ -64,6 +64,16 @@ export class FirestoreInventoryRepository implements InventoryRepository {
       .slice(0, limit);
   }
 
+  async listOutOfStock(limit: number): Promise<InventoryRecord[]> {
+    // Same in-memory-filter-after-bounded-scan approach as `listLowStock`
+    // above, and for the same reason: "onHand - reserved <= 0" is a
+    // comparison between two stored fields, which Firestore can't express
+    // as a query filter.
+    const snap = await this.db().collection(COLLECTION).limit(2000).get();
+    const records = snap.docs.map(toDomain);
+    return records.filter((record) => record.onHand - record.reserved <= 0).slice(0, limit);
+  }
+
   async ensureExists(
     productId: string,
     variantId: string | null,

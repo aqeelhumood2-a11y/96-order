@@ -22,6 +22,7 @@ export function createMockCartDeps(): CartDeps {
       findByProductAndVariant: vi.fn().mockResolvedValue(null),
       listByProduct: vi.fn(),
       listLowStock: vi.fn(),
+      listOutOfStock: vi.fn(),
       ensureExists: vi.fn(),
       adjust: vi.fn(),
     },

@@ -91,6 +91,21 @@ export interface Order {
   source: "web";
   /** The checkout submission's idempotency key — see `services/checkout/*` and README's Idempotency section. */
   idempotencyKey: string;
+  /**
+   * Phase 6: the id of this order's `Customer` aggregate (see
+   * `core/customer/entities.ts`), always set — every order has a customer
+   * record, guest or not (see `Customer.kind`). Optional only so a
+   * `FirestoreOrderRepository` document written before this field existed
+   * still deserializes; never absent on an order created by Phase 6 code.
+   */
+  customerId?: string;
+  /**
+   * Phase 6: denormalized admin search index — see
+   * `core/orders/rules.ts#buildOrderSearchTokens` and README's Order search
+   * strategy section. Never accepted from client input; recomputed
+   * server-side whenever an order is created.
+   */
+  searchTokens?: string[];
   /** Bumped on every status transition — an optimistic-concurrency guard, and the seam a future full status-history view reads alongside `orderEvents`. */
   version: number;
   createdAt: Date;

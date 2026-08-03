@@ -56,6 +56,14 @@ export function createMockPaymentOrchestrationDeps(): PaymentOrchestrationDeps {
       findByIdempotencyKey: vi.fn(),
       create: vi.fn().mockResolvedValue(undefined),
       update: vi.fn().mockResolvedValue(undefined),
+      list: vi.fn(),
+      listByCustomer: vi.fn(),
+    },
+    orderEvents: { record: vi.fn().mockResolvedValue(undefined), listByOrder: vi.fn().mockResolvedValue([]) },
+    customers: {
+      findById: vi.fn().mockResolvedValue(null),
+      list: vi.fn(),
+      upsert: vi.fn(async (id, fold) => fold(null)),
     },
     inventory: {
       reservations: {
@@ -63,6 +71,7 @@ export function createMockPaymentOrchestrationDeps(): PaymentOrchestrationDeps {
         release: vi.fn().mockResolvedValue(undefined),
         commit: vi.fn().mockResolvedValue(undefined),
         listByOrder: vi.fn().mockResolvedValue([{ id: "r1", orderId: "order-1", productId: "product-1", variantId: null, quantity: 1, status: "reserved", expiresAt: new Date(), createdAt: new Date(), updatedAt: new Date() }]),
+        listExpired: vi.fn().mockResolvedValue([]),
       },
       auditLogs: { record: vi.fn().mockResolvedValue(undefined), list: vi.fn() },
     },

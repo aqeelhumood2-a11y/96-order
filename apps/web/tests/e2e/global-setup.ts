@@ -6,6 +6,25 @@ export const SUPER_ADMIN_PASSWORD = "Sup3rAdminE2ePass!";
 export const NO_PERMISSION_STAFF_EMAIL = "no-permission-e2e@example.com";
 export const NO_PERMISSION_STAFF_PASSWORD = "NoPermissionE2ePass!";
 
+/**
+ * Phase 6's own fixture account, deliberately separate from
+ * `SUPER_ADMIN_EMAIL` — `config/auth.ts#RATE_LIMITS.sessionCreateByEmail`
+ * (5 per 15 minutes) is already fully spent by `auth.spec.ts`/
+ * `catalog.spec.ts`'s own logins against that email within one
+ * `pnpm run test:e2e:auth` run, and the shared `sessionCreateByIp` budget
+ * (10 per 15 minutes, spent across every spec in the run) has only one
+ * spare slot left — see `admin-orders.spec.ts`'s doc comment for why it
+ * performs exactly one login total. A non-`super_admin` role (rather than
+ * reusing the super-admin bypass) also means this account's coverage
+ * genuinely exercises namespace-scoped RBAC (`orders:manage`,
+ * `customers:manage`, `dashboard:view`, `reports:view`, `payments:manage`
+ * — the last one needed for the "Confirm cash payment" action), not just
+ * "is a super admin."
+ */
+export const ORDERS_MANAGER_EMAIL = "orders-manager-e2e@example.com";
+export const ORDERS_MANAGER_PASSWORD = "0rdersManagerE2ePass!";
+const ORDERS_MANAGER_ROLE_ID = "e2e_orders_manager";
+
 async function upsertAuthUser(email: string, password: string): Promise<string> {
   const auth = getAdminAuth();
   try {
@@ -63,6 +82,34 @@ export default async function globalSetup() {
       email: NO_PERMISSION_STAFF_EMAIL,
       status: "active",
       roleIds: [],
+      directPermissions: [],
+      createdAt: now,
+      updatedAt: now,
+      createdBy: "e2e-global-setup",
+    },
+    { merge: true },
+  );
+
+  const ordersManagerUid = await upsertAuthUser(ORDERS_MANAGER_EMAIL, ORDERS_MANAGER_PASSWORD);
+  await db.collection("roles").doc(ORDERS_MANAGER_ROLE_ID).set(
+    {
+      name: "E2E Orders Manager",
+      description: "Phase 6 e2e fixture — order/customer management, dashboard, and reports only.",
+      permissions: ["orders:manage", "customers:manage", "dashboard:view", "reports:view", "payments:manage"],
+      isSystemRole: false,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: "e2e-global-setup",
+      updatedBy: "e2e-global-setup",
+    },
+    { merge: true },
+  );
+  await db.collection("users").doc(ordersManagerUid).set(
+    {
+      uid: ordersManagerUid,
+      email: ORDERS_MANAGER_EMAIL,
+      status: "active",
+      roleIds: [ORDERS_MANAGER_ROLE_ID],
       directPermissions: [],
       createdAt: now,
       updatedAt: now,

@@ -1,8 +1,11 @@
 import type { AuditLogRepository } from "@/core/interfaces/audit-log-repository";
-import type { OrderRepository } from "@/core/interfaces/order-repository";
+import type { CustomerRepository } from "@/core/interfaces/customer-repository";
+import type { OrderEventRepository, OrderRepository } from "@/core/interfaces/order-repository";
 import type { PaymentProviderPort } from "@/core/interfaces/payment-provider-port";
 import type { PaymentRepository, PaymentWebhookEventRepository } from "@/core/interfaces/payment-repository";
 import { FirestoreAuditLogRepository } from "@/infrastructure/firebase/repositories/firestore-audit-log-repository";
+import { FirestoreCustomerRepository } from "@/infrastructure/firebase/repositories/firestore-customer-repository";
+import { FirestoreOrderEventRepository } from "@/infrastructure/firebase/repositories/firestore-order-event-repository";
 import { FirestoreOrderRepository } from "@/infrastructure/firebase/repositories/firestore-order-repository";
 import { FirestorePaymentRepository } from "@/infrastructure/firebase/repositories/firestore-payment-repository";
 import { FirestorePaymentWebhookEventRepository } from "@/infrastructure/firebase/repositories/firestore-payment-webhook-event-repository";
@@ -45,13 +48,19 @@ export const defaultPaymentDeps: PaymentDeps = {
 export interface PaymentOrchestrationDeps {
   payments: PaymentDeps;
   orders: OrderRepository;
+  /** Phase 6: the status-history ledger a webhook/admin-confirmation-driven transition also records to — see `core/orders/entities.ts#OrderStatusEvent`. */
+  orderEvents: OrderEventRepository;
   inventory: InventoryReservationDeps;
   email: EmailDeps;
+  /** Phase 6: reverses a cancelled order's contribution to its customer's `totalSpent` — see `core/customer/rules.ts#reverseCancelledOrderSpend`. */
+  customers: CustomerRepository;
 }
 
 export const defaultPaymentOrchestrationDeps: PaymentOrchestrationDeps = {
   payments: defaultPaymentDeps,
   orders: new FirestoreOrderRepository(),
+  orderEvents: new FirestoreOrderEventRepository(),
   inventory: defaultInventoryReservationDeps,
   email: defaultEmailDeps,
+  customers: new FirestoreCustomerRepository(),
 };

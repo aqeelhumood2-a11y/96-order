@@ -25,8 +25,11 @@ const definedProcessEnv = Object.fromEntries(
  * admin specs do), and checkout.spec.ts (Phase 5 — cart/checkout/order
  * tracking, all backed by Firestore; card payment uses `FakeTapProvider`
  * automatically, since `TAP_SECRET_KEY` is deliberately absent from
- * `.env.test`, so no real Tap sandbox account is needed here either). All
- * four share this one config rather than each needing their own. Run via
+ * `.env.test`, so no real Tap sandbox account is needed here either), and
+ * admin-orders.spec.ts (Phase 6 — order management, customers, dashboard,
+ * reports; see its own doc comment for why it performs exactly one login
+ * for its entire run). All five share this one config rather than each
+ * needing their own. Run via
  * `pnpm run test:e2e:auth` at the repo root, which wraps this in
  * `firebase emulators:exec`. The plain `tests/e2e/not-found.spec.ts` is
  * the only spec that needs no Firebase backend at all, so it alone keeps
@@ -34,10 +37,23 @@ const definedProcessEnv = Object.fromEntries(
  */
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: ["auth.spec.ts", "catalog.spec.ts", "storefront.spec.ts", "checkout.spec.ts"],
+  testMatch: ["auth.spec.ts", "catalog.spec.ts", "storefront.spec.ts", "checkout.spec.ts", "admin-orders.spec.ts"],
   outputDir: "./test-results-auth",
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,
+  // Every spec here shares one live, un-reset Firestore/Auth emulator
+  // instance for the whole run (see catalog.spec.ts's own doc comment on
+  // why it keeps its state-mutating steps sequential within itself) —
+  // several list pages this suite asserts against (e.g. `/admin/inventory`,
+  // `/admin/products`) are unscoped queries over the *entire* collection,
+  // not filtered to one spec's own fixtures. `fullyParallel: false` alone
+  // only serializes tests *within* one file; Playwright's default worker
+  // count still runs *different* spec files concurrently against that same
+  // shared backend, which is exactly the collision hazard (one file's
+  // fixture product briefly appearing on another file's "exactly one row"
+  // assertion) `workers: 1` closes off entirely, at the cost of this suite
+  // running spec files one at a time instead of two.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI

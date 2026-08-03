@@ -15,6 +15,14 @@ export function createMockCheckoutDeps(): CheckoutDeps {
       findByIdempotencyKey: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue(undefined),
       update: vi.fn().mockResolvedValue(undefined),
+      list: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+      listByCustomer: vi.fn().mockResolvedValue([]),
+    },
+    orderEvents: { record: vi.fn().mockResolvedValue(undefined), listByOrder: vi.fn().mockResolvedValue([]) },
+    customers: {
+      findById: vi.fn().mockResolvedValue(null),
+      list: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+      upsert: vi.fn(async (id, fold) => fold(null)),
     },
     idempotency: {
       begin: vi.fn().mockResolvedValue({
@@ -40,6 +48,7 @@ export function createMockCheckoutDeps(): CheckoutDeps {
         release: vi.fn().mockResolvedValue(undefined),
         commit: vi.fn().mockResolvedValue(undefined),
         listByOrder: vi.fn().mockResolvedValue([]),
+        listExpired: vi.fn().mockResolvedValue([]),
       },
       auditLogs: { record: vi.fn().mockResolvedValue(undefined), list: vi.fn() },
     },

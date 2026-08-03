@@ -1,15 +1,22 @@
 import "server-only";
-import type { Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
+import type { Firestore, Query, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { Timestamp } from "firebase-admin/firestore";
 import { ConflictError, NotFoundError } from "@/core/errors";
+import type { ListOrdersRequest, OrderRepository } from "@/core/interfaces/order-repository";
+import type { Page } from "@/core/interfaces/repository";
 import type { Order, OrderLine } from "@/core/orders/entities";
-import type { OrderRepository } from "@/core/interfaces/order-repository";
 import { moneyFromDoc, moneyToDoc, type MoneyDoc } from "../money-mapping";
 import { reconcileUniqueKeys } from "./catalog-unique-keys";
 import { getAdminFirestore } from "../admin";
 
 const COLLECTION = "orders";
 const OWNER_KIND = "order";
+
+const SORT_FIELD_PATHS: Record<ListOrdersRequest["sort"], string> = {
+  createdAt: "createdAt",
+  grandTotal: "grandTotal.amount",
+  orderNumber: "orderNumber",
+};
 
 interface OrderLineDoc extends Omit<OrderLine, "unitPrice" | "lineTotal"> {
   unitPrice: MoneyDoc;
@@ -61,6 +68,8 @@ function toDoc(order: Order): OrderDoc {
     status: order.status,
     source: order.source,
     idempotencyKey: order.idempotencyKey,
+    customerId: order.customerId,
+    searchTokens: order.searchTokens,
     version: order.version,
     createdAt: Timestamp.fromDate(order.createdAt),
     updatedAt: Timestamp.fromDate(order.updatedAt),
@@ -112,5 +121,54 @@ export class FirestoreOrderRepository implements OrderRepository {
       const next: Order = { ...current, ...patch, version: current.version + 1, updatedAt: new Date() };
       transaction.set(ref, toDoc(next));
     });
+  }
+
+  /**
+   * The admin order-management list. `request.search` is expected to
+   * already be a single Firestore-ready token (the caller,
+   * `services/orders/list-orders.ts`, does the primary-word selection and
+   * in-memory multi-word refinement — this method only ever issues one
+   * bounded query). `dateFrom`/`dateTo` add a range filter on `createdAt`,
+   * which forces `orderBy("createdAt", ...)` regardless of `request.sort`
+   * — Firestore requires the first `orderBy` to match a query's one
+   * inequality field; `services/orders/list-orders.ts` documents this
+   * constraint to callers.
+   */
+  async list(request: ListOrdersRequest): Promise<Page<Order>> {
+    let query: Query = this.db().collection(COLLECTION);
+
+    if (request.status) query = query.where("status", "==", request.status);
+    if (request.paymentStatus) query = query.where("paymentStatus", "==", request.paymentStatus);
+    if (request.fulfillmentMethod) query = query.where("fulfillment.method", "==", request.fulfillmentMethod);
+    if (request.search) query = query.where("searchTokens", "array-contains", request.search);
+
+    const hasDateRange = request.dateFrom !== undefined || request.dateTo !== undefined;
+    if (request.dateFrom) query = query.where("createdAt", ">=", Timestamp.fromDate(request.dateFrom));
+    if (request.dateTo) query = query.where("createdAt", "<=", Timestamp.fromDate(request.dateTo));
+
+    const sortField = hasDateRange ? SORT_FIELD_PATHS.createdAt : SORT_FIELD_PATHS[request.sort];
+    query = query.orderBy(sortField, request.direction);
+    if (sortField !== SORT_FIELD_PATHS.createdAt) {
+      // Tie-breaker for deterministic pagination when sorting by a
+      // non-unique field (grandTotal/orderNumber ties are otherwise
+      // possible, unlike createdAt which is effectively unique).
+      query = query.orderBy(SORT_FIELD_PATHS.createdAt, "desc");
+    }
+    query = query.limit(request.limit);
+
+    if (request.cursor) {
+      const cursorDoc = await this.db().collection(COLLECTION).doc(request.cursor).get();
+      if (cursorDoc.exists) query = query.startAfter(cursorDoc);
+    }
+
+    const snap = await query.get();
+    const items = snap.docs.map((doc) => toDomain(doc as QueryDocumentSnapshot));
+    const nextCursor = items.length === request.limit ? snap.docs[snap.docs.length - 1]!.id : null;
+    return { items, nextCursor };
+  }
+
+  async listByCustomer(customerId: string, limit: number): Promise<Order[]> {
+    const snap = await this.db().collection(COLLECTION).where("customerId", "==", customerId).orderBy("createdAt", "desc").limit(limit).get();
+    return snap.docs.map((doc) => toDomain(doc as QueryDocumentSnapshot));
   }
 }

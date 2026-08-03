@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { InventoryReservation } from "@/core/catalog/entities";
-import { ConflictError, NotFoundError } from "@/core/errors";
+import { ConflictError } from "@/core/errors";
 import type { InventoryReservationDeps } from "@/services/inventory/dependencies";
 import { commitOrderReservations, releaseOrderReservations, reserveOrderLines, type ReservationLineInput } from "@/services/inventory/reservations";
 
@@ -27,6 +27,7 @@ function createMockDeps(): InventoryReservationDeps {
       release: vi.fn().mockResolvedValue(undefined),
       commit: vi.fn().mockResolvedValue(undefined),
       listByOrder: vi.fn().mockResolvedValue([]),
+      listExpired: vi.fn().mockResolvedValue([]),
     },
     auditLogs: {
       record: vi.fn().mockResolvedValue(undefined),
@@ -99,10 +100,10 @@ describe("releaseOrderReservations", () => {
         makeReservation({ productId: "product-2", status: "committed" }),
       ]);
 
-    await releaseOrderReservations("order-1", "system", deps);
+    await releaseOrderReservations("order-1", "system:test", deps);
 
     expect(deps.reservations.release).toHaveBeenCalledTimes(1);
-    expect(deps.reservations.release).toHaveBeenCalledWith("order-1", "product-1", null, "system");
+    expect(deps.reservations.release).toHaveBeenCalledWith("order-1", "product-1", null, "system:test");
     expect(deps.auditLogs.record).toHaveBeenCalledWith(
       expect.objectContaining({ type: "inventory_reservation_released", actorUid: null, metadata: { orderId: "order-1" } }),
     );
@@ -134,11 +135,12 @@ describe("commitOrderReservations", () => {
     expect(deps.reservations.commit).toHaveBeenCalledWith("order-1", "product-1", null, "system");
   });
 
-  it("throws when the order has no reservations at all", async () => {
+  it("is a no-op (not an error) when the order has zero reservations — e.g. every line is untracked inventory", async () => {
     const deps = createMockDeps();
     deps.reservations.listByOrder = vi.fn().mockResolvedValue([]);
 
-    await expect(commitOrderReservations("order-1", "system", deps)).rejects.toThrow(NotFoundError);
+    await expect(commitOrderReservations("order-1", "system", deps)).resolves.toBeUndefined();
+    expect(deps.reservations.commit).not.toHaveBeenCalled();
   });
 
   it("is idempotent — committing an already-committed order is a no-op", async () => {

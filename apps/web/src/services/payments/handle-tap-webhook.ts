@@ -1,3 +1,4 @@
+import { reverseCancelledOrderSpend } from "@/core/customer/rules";
 import { UnauthorizedError } from "@/core/errors";
 import { commitOrderReservations, releaseOrderReservations } from "@/services/inventory/reservations";
 import { sendTransactionalEmail } from "@/services/email/send-transactional-email";
@@ -64,6 +65,7 @@ export async function handleTapWebhook(
     if (event.status === "paid") {
       await commitOrderReservations(order.id, WEBHOOK_ACTOR, deps.inventory);
       await deps.orders.update(order.id, { status: "confirmed", paymentStatus: "paid" }, order.version);
+      await deps.orderEvents.record({ orderId: order.id, fromStatus: order.status, toStatus: "confirmed", actorId: WEBHOOK_ACTOR });
       await deps.payments.auditLogs.record({
         type: "payment_succeeded",
         actorUid: null,
@@ -76,6 +78,14 @@ export async function handleTapWebhook(
     } else if (event.status === "failed" || event.status === "cancelled") {
       await releaseOrderReservations(order.id, WEBHOOK_ACTOR, deps.inventory);
       await deps.orders.update(order.id, { status: "cancelled", paymentStatus: event.status, cancelledAt: new Date() }, order.version);
+      await deps.orderEvents.record({ orderId: order.id, fromStatus: order.status, toStatus: "cancelled", actorId: WEBHOOK_ACTOR });
+      if (order.customerId) {
+        const cancelledAt = new Date();
+        await deps.customers.upsert(order.customerId, (existing) => {
+          if (!existing) throw new Error(`Customer record ${order.customerId} not found while reversing a cancelled order's spend.`);
+          return reverseCancelledOrderSpend(existing, order.grandTotal, cancelledAt);
+        });
+      }
       await deps.payments.auditLogs.record({
         type: "payment_failed",
         actorUid: null,

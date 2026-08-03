@@ -32,4 +32,14 @@ export interface InventoryReservationRepository {
   /** Idempotent no-op if already `committed`. Converts the reservation into a permanent `onHand` deduction (an `InventoryAdjustment` with reason `"order_fulfilled"`). Throws `ConflictError` if the reservation was already `released`. */
   commit(orderId: string, productId: string, variantId: string | null, actorId: string): Promise<void>;
   listByOrder(orderId: string): Promise<InventoryReservation[]>;
+  /**
+   * Phase 6: every still-`reserved` row whose `expiresAt` has already
+   * passed, across every order/product — the read side of the proactive
+   * expired-reservation sweep (`services/inventory/expire-reservations.ts`).
+   * Reservation expiry is otherwise only reclaimed lazily (see `reserve()`'s
+   * doc comment); this lets an admin/scheduled action reclaim capacity for
+   * a product nobody is actively trying to buy, without waiting for the
+   * next `reserve()` call against that same product/variant.
+   */
+  listExpired(limit: number): Promise<InventoryReservation[]>;
 }

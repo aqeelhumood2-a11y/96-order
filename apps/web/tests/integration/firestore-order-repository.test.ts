@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ConflictError, NotFoundError } from "@/core/errors";
 import { money } from "@/core/money/money";
 import type { Order } from "@/core/orders/entities";
+import { buildOrderSearchTokens } from "@/core/orders/rules";
 import { FirestoreOrderRepository } from "@/infrastructure/firebase/repositories/firestore-order-repository";
 
 const repo = new FirestoreOrderRepository();
@@ -81,5 +82,63 @@ describe("FirestoreOrderRepository (emulator)", () => {
 
   it("update() throws NotFoundError for a nonexistent order", async () => {
     await expect(repo.update(randomUUID(), { status: "cancelled" }, 1)).rejects.toThrow(NotFoundError);
+  });
+
+  describe("list()", () => {
+    it("filters by status", async () => {
+      const marker = randomUUID().slice(0, 8);
+      const pending = makeOrder({ status: "pending_payment", orderNumber: `ORD-260130-${marker}A` });
+      const confirmed = makeOrder({ status: "confirmed", orderNumber: `ORD-260130-${marker}B` });
+      await repo.create(pending);
+      await repo.create(confirmed);
+
+      const page = await repo.list({ limit: 50, sort: "createdAt", direction: "desc", status: "confirmed" });
+      const ids = page.items.map((order) => order.id);
+      expect(ids).toContain(confirmed.id);
+      expect(ids).not.toContain(pending.id);
+    });
+
+    it("filters by a search token built from the order number", async () => {
+      const orderNumber = `ORD-260130-${randomUUID().slice(0, 6).toUpperCase()}`;
+      const customer = { fullName: "Zara Searchable", mobile: "+97336009999", email: `zara-${randomUUID().slice(0, 6)}@example.com` };
+      const order = makeOrder({ orderNumber, customer, searchTokens: buildOrderSearchTokens(orderNumber, customer) });
+      await repo.create(order);
+
+      const [primaryToken] = orderNumber.toLowerCase().split("-");
+      const page = await repo.list({ limit: 50, sort: "createdAt", direction: "desc", search: `${primaryToken}-260130` });
+      expect(page.items.map((item) => item.id)).toContain(order.id);
+    });
+
+    it("paginates with a cursor, newest first", async () => {
+      const marker = randomUUID().slice(0, 8);
+      const first = makeOrder({ orderNumber: `ORD-260130-${marker}1`, status: "preparing" });
+      await repo.create(first);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      const second = makeOrder({ orderNumber: `ORD-260130-${marker}2`, status: "preparing" });
+      await repo.create(second);
+
+      const page1 = await repo.list({ limit: 1, sort: "createdAt", direction: "desc", status: "preparing" });
+      expect(page1.items).toHaveLength(1);
+      expect(page1.items[0]!.id).toBe(second.id);
+      expect(page1.nextCursor).toBe(second.id);
+
+      const page2 = await repo.list({ limit: 1, sort: "createdAt", direction: "desc", status: "preparing", cursor: page1.nextCursor! });
+      expect(page2.items[0]!.id).toBe(first.id);
+    });
+  });
+
+  describe("listByCustomer()", () => {
+    it("returns every order for a customer, newest first", async () => {
+      const customerId = `customer-${randomUUID()}`;
+      const first = makeOrder({ customerId });
+      await repo.create(first);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      const second = makeOrder({ customerId });
+      await repo.create(second);
+      await repo.create(makeOrder({ customerId: `other-${randomUUID()}` }));
+
+      const orders = await repo.listByCustomer(customerId, 50);
+      expect(orders.map((order) => order.id)).toEqual([second.id, first.id]);
+    });
   });
 });

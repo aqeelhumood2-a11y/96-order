@@ -4,11 +4,13 @@ import type { PricedCartLine } from "@/core/cart/rules";
 import type { DeliveryAddress, FulfillmentMethod, FulfillmentSchedule } from "@/core/delivery/entities";
 import { ConflictError, ValidationError } from "@/core/errors";
 import { ACTIVE_CURRENCY } from "@/core/money/money";
+import { customerKeyFromEmail } from "@/core/customer/rules";
 import type { Order } from "@/core/orders/entities";
-import { buildOrderLinesFromPricedCart, buildOrderNumber, ORDER_NUMBER_RANDOM_LENGTH } from "@/core/orders/rules";
+import { buildOrderLinesFromPricedCart, buildOrderNumber, buildOrderSearchTokens, ORDER_NUMBER_RANDOM_LENGTH } from "@/core/orders/rules";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/core/payments/entities";
 import { clearCart } from "@/services/cart/clear-cart";
 import { getPricedCart } from "@/services/cart/get-priced-cart";
+import { upsertCustomerFromOrder } from "@/services/customers/upsert-customer-from-order";
 import { sendTransactionalEmail } from "@/services/email/send-transactional-email";
 import { reserveOrderLines, type ReservationLineInput } from "@/services/inventory/reservations";
 import { createPayment } from "@/services/payments/create-payment";
@@ -133,6 +135,8 @@ export async function createOrder(input: CheckoutInput, deps: CheckoutDeps = def
         status: input.paymentMethod === "tap" ? "pending_payment" : "confirmed",
         source: "web",
         idempotencyKey: input.idempotencyKey,
+        customerId: customerKeyFromEmail(customer.email),
+        searchTokens: buildOrderSearchTokens(orderNumber, customer),
         version: 1,
         createdAt: now,
         updatedAt: now,
@@ -160,6 +164,15 @@ export async function createOrder(input: CheckoutInput, deps: CheckoutDeps = def
       await deps.orders.update(order.id, { status: "cancelled", cancelledAt: new Date() }, order.version);
       throw error;
     }
+
+    // Phase 6: the order's status-history ledger starts here (`fromStatus:
+    // null`) — see `core/orders/entities.ts#OrderStatusEvent`'s doc
+    // comment. The customer aggregate is only folded in once reservation
+    // has actually succeeded (never for the reservation-failure/cancelled
+    // path just above), so a cancelled-before-it-really-happened order
+    // never needs its spend reversed later.
+    await deps.orderEvents.record({ orderId: order.id, fromStatus: null, toStatus: order.status, actorId: "system:checkout" });
+    await upsertCustomerFromOrder(order.customer, order.grandTotal, order.createdAt, deps.customers);
 
     await deps.auditLogs.record({
       type: "cart_checkout_started",

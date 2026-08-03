@@ -30,7 +30,17 @@ function makeOrder(overrides: Partial<Order> = {}): Order {
 }
 
 function createMockDeps(order: Order | null = makeOrder()): OrderTrackingDeps {
-  return { orders: { findById: vi.fn(), findByOrderNumber: vi.fn().mockResolvedValue(order), findByIdempotencyKey: vi.fn(), create: vi.fn(), update: vi.fn() } };
+  return {
+    orders: {
+      findById: vi.fn(),
+      findByOrderNumber: vi.fn().mockResolvedValue(order),
+      findByIdempotencyKey: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      list: vi.fn(),
+      listByCustomer: vi.fn(),
+    },
+  };
 }
 
 describe("trackOrder", () => {

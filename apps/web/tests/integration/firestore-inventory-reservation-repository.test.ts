@@ -184,4 +184,29 @@ describe("FirestoreInventoryReservationRepository (emulator)", () => {
     const list = await reservations.listByOrder(orderId);
     expect(list).toHaveLength(2);
   });
+
+  describe("listExpired()", () => {
+    it("returns only still-reserved rows whose expiresAt has already passed", async () => {
+      // Two *different* products — `reserve()`'s own lazy reclaim only
+      // scans expired rows for the same product/variant it's reserving
+      // against (see `InventoryReservationRepository.reserve`'s doc
+      // comment), so using one product per reservation here means neither
+      // creation call can accidentally reclaim the other's row before this
+      // test gets to call `listExpired()` itself.
+      const expiredProductId = randomUUID();
+      const activeProductId = randomUUID();
+      await inventory.adjust({ productId: expiredProductId, variantId: null, reason: "initial_stock", quantityDelta: 10, allowBackorder: false, actorId: "actor-1" });
+      await inventory.adjust({ productId: activeProductId, variantId: null, reason: "initial_stock", quantityDelta: 10, allowBackorder: false, actorId: "actor-1" });
+
+      const expiredOrderId = randomUUID();
+      const activeOrderId = randomUUID();
+      await reservations.reserve({ orderId: expiredOrderId, productId: expiredProductId, variantId: null, quantity: 1, allowBackorder: false, actorId: "actor-1", expiresAt: PAST });
+      await reservations.reserve({ orderId: activeOrderId, productId: activeProductId, variantId: null, quantity: 1, allowBackorder: false, actorId: "actor-1", expiresAt: FUTURE });
+
+      const expired = await reservations.listExpired(100);
+      const expiredOrderIds = expired.map((reservation) => reservation.orderId);
+      expect(expiredOrderIds).toContain(expiredOrderId);
+      expect(expiredOrderIds).not.toContain(activeOrderId);
+    });
+  });
 });

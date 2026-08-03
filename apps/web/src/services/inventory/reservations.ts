@@ -1,4 +1,3 @@
-import { NotFoundError } from "@/core/errors";
 import { defaultInventoryReservationDeps, type InventoryReservationDeps } from "./dependencies";
 
 /**
@@ -85,8 +84,16 @@ export async function releaseOrderReservations(
   }
 
   await deps.auditLogs.record({
+    // Phase 6 added a real admin-triggered caller of this function
+    // (`services/orders/release-order-reservation.ts`) alongside its
+    // existing system callers (checkout rollback, webhook failure,
+    // `change-order-status.ts` cancellation) — `actorId` is only ever a
+    // real staff uid when it doesn't start with the `"system:"` prefix
+    // convention `services/auth/create-session.ts` established, so this
+    // stays `null` for every pre-existing system caller and only
+    // attributes to a real uid for the new admin-initiated one.
+    actorUid: actorId.startsWith("system:") ? null : actorId,
     type: "inventory_reservation_released",
-    actorUid: null,
     metadata: { orderId },
   });
 }
@@ -97,6 +104,15 @@ export async function releaseOrderReservations(
  * cash-order admin-confirmation path both call this once the respective
  * business event (verified payment / confirmed cash receipt) has actually
  * occurred. Idempotent: lines already `committed` are left untouched.
+ *
+ * A no-op (not an error) when the order has zero reservations — an order
+ * made up entirely of untracked-inventory lines (`trackInventory: false`,
+ * see `reserveOrderLines`'s doc comment) never had anything reserved in
+ * the first place, and that's a perfectly ordinary order composition, not
+ * a sign anything went wrong. Every caller of this function already
+ * resolves the `Order` itself (and throws its own `NotFoundError` if it
+ * doesn't exist) before ever reaching here, so this is never the only
+ * check standing between a bad `orderId` and silent success.
  */
 export async function commitOrderReservations(
   orderId: string,
@@ -104,9 +120,6 @@ export async function commitOrderReservations(
   deps: InventoryReservationDeps = defaultInventoryReservationDeps,
 ): Promise<void> {
   const reservations = await deps.reservations.listByOrder(orderId);
-  if (reservations.length === 0) {
-    throw new NotFoundError(`No reservations found for order ${orderId}.`);
-  }
 
   for (const reservation of reservations) {
     if (reservation.status !== "reserved") continue;

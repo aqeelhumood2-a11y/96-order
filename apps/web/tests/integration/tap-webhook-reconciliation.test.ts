@@ -5,9 +5,11 @@ import type { Order } from "@/core/orders/entities";
 import type { Payment } from "@/core/payments/entities";
 import { ConsoleEmailProvider } from "@/infrastructure/email/console-email-provider";
 import { FirestoreAuditLogRepository } from "@/infrastructure/firebase/repositories/firestore-audit-log-repository";
+import { FirestoreCustomerRepository } from "@/infrastructure/firebase/repositories/firestore-customer-repository";
 import { FirestoreEmailOutboxRepository } from "@/infrastructure/firebase/repositories/firestore-email-outbox-repository";
 import { FirestoreInventoryRepository } from "@/infrastructure/firebase/repositories/firestore-inventory-repository";
 import { FirestoreInventoryReservationRepository } from "@/infrastructure/firebase/repositories/firestore-inventory-reservation-repository";
+import { FirestoreOrderEventRepository } from "@/infrastructure/firebase/repositories/firestore-order-event-repository";
 import { FirestoreOrderRepository } from "@/infrastructure/firebase/repositories/firestore-order-repository";
 import { FirestorePaymentRepository } from "@/infrastructure/firebase/repositories/firestore-payment-repository";
 import { FirestorePaymentWebhookEventRepository } from "@/infrastructure/firebase/repositories/firestore-payment-webhook-event-repository";
@@ -16,19 +18,23 @@ import type { PaymentOrchestrationDeps } from "@/services/payments/dependencies"
 import { handleTapWebhook } from "@/services/payments/handle-tap-webhook";
 
 const orders = new FirestoreOrderRepository();
+const orderEvents = new FirestoreOrderEventRepository();
 const inventory = new FirestoreInventoryRepository();
 const inventoryReservations = new FirestoreInventoryReservationRepository();
 const paymentsRepo = new FirestorePaymentRepository();
 const webhookEvents = new FirestorePaymentWebhookEventRepository();
 const auditLogs = new FirestoreAuditLogRepository();
 const provider = new FakeTapProvider();
+const customers = new FirestoreCustomerRepository();
 
 /** Real Firestore adapters throughout (proving the actual reconciliation logic against a real database), only the transport is faked — see `FakeTapProvider`'s own doc comment. */
 const deps: PaymentOrchestrationDeps = {
   payments: { payments: paymentsRepo, webhookEvents, provider, auditLogs },
   orders,
+  orderEvents,
   inventory: { reservations: inventoryReservations, auditLogs },
   email: { email: new ConsoleEmailProvider(), outbox: new FirestoreEmailOutboxRepository() },
+  customers,
 };
 
 function makeOrder(overrides: Partial<Order> = {}): Order {

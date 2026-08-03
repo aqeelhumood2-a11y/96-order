@@ -28,6 +28,8 @@ export interface InventoryRepository {
   findByProductAndVariant(productId: string, variantId: string | null): Promise<InventoryRecord | null>;
   listByProduct(productId: string): Promise<InventoryRecord[]>;
   listLowStock(limit: number): Promise<InventoryRecord[]>;
+  /** Phase 6: every tracked record whose available quantity (`onHand - reserved`, `core/catalog/rules.ts#computeAvailableQuantity`) is zero or negative — the dashboard/inventory-alerts "out of stock" list. */
+  listOutOfStock(limit: number): Promise<InventoryRecord[]>;
   /** Idempotent: creates a zeroed record if one doesn't exist yet, otherwise returns the existing one unchanged. */
   ensureExists(productId: string, variantId: string | null, lowStockThreshold: number | undefined, actorId: string): Promise<InventoryRecord>;
   /** Throws `ConflictError` (not `ValidationError`) when the decrease would take available stock negative and backorder isn't allowed — this is a state conflict, not a malformed request. */

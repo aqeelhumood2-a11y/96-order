@@ -213,4 +213,15 @@ export class FirestoreInventoryReservationRepository implements InventoryReserva
     const snap = await this.db().collection(RESERVATIONS_COLLECTION).where("orderId", "==", orderId).get();
     return snap.docs.map((doc) => toDomain(doc.id, doc.data() as ReservationDoc));
   }
+
+  async listExpired(limit: number): Promise<InventoryReservation[]> {
+    const snap = await this.db()
+      .collection(RESERVATIONS_COLLECTION)
+      .where("status", "==", "reserved")
+      .where("expiresAt", "<", Timestamp.now())
+      .orderBy("expiresAt", "asc")
+      .limit(limit)
+      .get();
+    return snap.docs.map((doc) => toDomain(doc.id, doc.data() as ReservationDoc));
+  }
 }

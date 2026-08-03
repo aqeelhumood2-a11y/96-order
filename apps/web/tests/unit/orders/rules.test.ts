@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { money } from "@/core/money/money";
 import type { PricedCartLine } from "@/core/cart/rules";
+import type { OrderCustomerSnapshot } from "@/core/orders/entities";
 import {
+  allowedNextStatuses,
   buildOrderLinesFromPricedCart,
   buildOrderNumber,
+  buildOrderSearchTokens,
+  isTerminalOrderStatus,
   isValidOrderNumberFormat,
   isValidOrderStatusTransition,
+  orderMatchesAllQueryWords,
   ORDER_NUMBER_RANDOM_LENGTH,
+  tokenizeOrderSearchQuery,
 } from "@/core/orders/rules";
 
 describe("buildOrderNumber", () => {
@@ -117,13 +123,98 @@ describe("isValidOrderStatusTransition", () => {
     expect(isValidOrderStatusTransition("pending_payment", "cancelled")).toBe(true);
   });
 
-  it("allows confirmed -> cancelled", () => {
-    expect(isValidOrderStatusTransition("confirmed", "cancelled")).toBe(true);
+  it("allows the full Phase 6 admin workflow forward chain", () => {
+    expect(isValidOrderStatusTransition("confirmed", "preparing")).toBe(true);
+    expect(isValidOrderStatusTransition("preparing", "ready")).toBe(true);
+    expect(isValidOrderStatusTransition("ready", "out_for_delivery")).toBe(true);
+    expect(isValidOrderStatusTransition("ready", "completed")).toBe(true);
+    expect(isValidOrderStatusTransition("out_for_delivery", "completed")).toBe(true);
   });
 
-  it("rejects a transition not in the Phase 5 allow-list", () => {
-    expect(isValidOrderStatusTransition("confirmed", "preparing")).toBe(false);
+  it("allows cancellation from every non-terminal status", () => {
+    expect(isValidOrderStatusTransition("confirmed", "cancelled")).toBe(true);
+    expect(isValidOrderStatusTransition("preparing", "cancelled")).toBe(true);
+    expect(isValidOrderStatusTransition("ready", "cancelled")).toBe(true);
+    expect(isValidOrderStatusTransition("out_for_delivery", "cancelled")).toBe(true);
+  });
+
+  it("rejects a transition not on the allow-list", () => {
     expect(isValidOrderStatusTransition("cancelled", "confirmed")).toBe(false);
     expect(isValidOrderStatusTransition("completed", "pending_payment")).toBe(false);
+    expect(isValidOrderStatusTransition("confirmed", "ready")).toBe(false);
+    expect(isValidOrderStatusTransition("preparing", "out_for_delivery")).toBe(false);
+  });
+
+  it("rejects every transition out of a terminal status", () => {
+    for (const to of ["pending_payment", "confirmed", "preparing", "ready", "out_for_delivery", "completed"] as const) {
+      expect(isValidOrderStatusTransition("completed", to)).toBe(false);
+      expect(isValidOrderStatusTransition("cancelled", to)).toBe(false);
+    }
+  });
+});
+
+describe("isTerminalOrderStatus", () => {
+  it("treats completed and cancelled as terminal", () => {
+    expect(isTerminalOrderStatus("completed")).toBe(true);
+    expect(isTerminalOrderStatus("cancelled")).toBe(true);
+  });
+
+  it("treats every other status as non-terminal", () => {
+    for (const status of ["pending_payment", "confirmed", "preparing", "ready", "out_for_delivery"] as const) {
+      expect(isTerminalOrderStatus(status)).toBe(false);
+    }
+  });
+});
+
+describe("allowedNextStatuses", () => {
+  it("excludes out_for_delivery for a pickup order even though the raw transition map allows it", () => {
+    expect(allowedNextStatuses("ready", "pickup")).toEqual(["completed", "cancelled"]);
+  });
+
+  it("keeps out_for_delivery for a delivery order", () => {
+    expect(allowedNextStatuses("ready", "delivery")).toEqual(["out_for_delivery", "completed", "cancelled"]);
+  });
+
+  it("returns an empty array for a terminal status", () => {
+    expect(allowedNextStatuses("completed", "delivery")).toEqual([]);
+    expect(allowedNextStatuses("cancelled", "pickup")).toEqual([]);
+  });
+});
+
+function makeCustomer(overrides: Partial<OrderCustomerSnapshot> = {}): OrderCustomerSnapshot {
+  return { fullName: "Ahmed Ali", mobile: "+97336001234", email: "ahmed@example.com", ...overrides };
+}
+
+describe("buildOrderSearchTokens", () => {
+  it("indexes the order number as whole-string prefixes", () => {
+    const tokens = buildOrderSearchTokens("ORD-260803-7K3PXQ", makeCustomer());
+    expect(tokens).toContain("ord-260803-7k3pxq");
+    expect(tokens).toContain("ord-2608");
+  });
+
+  it("indexes name as word prefixes", () => {
+    const tokens = buildOrderSearchTokens("ORD-260803-7K3PXQ", makeCustomer({ fullName: "Ahmed Ali" }));
+    expect(tokens).toContain("ahm");
+    expect(tokens).toContain("ali");
+  });
+
+  it("indexes email and mobile as whole-string prefixes, mobile both with and without the +973 prefix", () => {
+    const tokens = buildOrderSearchTokens("ORD-260803-7K3PXQ", makeCustomer({ email: "ahmed@example.com", mobile: "+97336001234" }));
+    expect(tokens).toContain("ahmed@example.com");
+    expect(tokens).toContain("+973360");
+    expect(tokens).toContain("360012");
+  });
+});
+
+describe("tokenizeOrderSearchQuery / orderMatchesAllQueryWords", () => {
+  it("splits on whitespace without stripping punctuation", () => {
+    expect(tokenizeOrderSearchQuery("ORD-260803-7K3PXQ")).toEqual(["ord-260803-7k3pxq"]);
+    expect(tokenizeOrderSearchQuery("ahmed ali")).toEqual(["ahmed", "ali"]);
+  });
+
+  it("matches only when every query word is found somewhere in the order", () => {
+    const order = { orderNumber: "ORD-260803-7K3PXQ", customer: makeCustomer({ fullName: "Ahmed Ali" }) };
+    expect(orderMatchesAllQueryWords(order, ["ahmed", "ali"])).toBe(true);
+    expect(orderMatchesAllQueryWords(order, ["ahmed", "hassan"])).toBe(false);
   });
 });

@@ -67,6 +67,13 @@ export const AUDIT_LOG_EVENT_TYPES = [
   "payment_failed",
   "payment_webhook_received",
   "cash_payment_confirmed",
+  // Phase 6 (order management, customers, inventory operations, admin dashboard)
+  "order_status_changed",
+  "order_payment_confirmed",
+  "inventory_reservation_expired",
+  "inventory_manual_correction",
+  "customer_created",
+  "customer_updated",
 ] as const;
 
 export type AuditLogEventType = (typeof AUDIT_LOG_EVENT_TYPES)[number];
