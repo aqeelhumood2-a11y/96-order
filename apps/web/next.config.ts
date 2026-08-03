@@ -36,11 +36,33 @@ if (usingEmulators && storageEmulatorHost && storageBucket) {
   });
 }
 
+/**
+ * Baseline security headers applied to every response. Deliberately not a
+ * `Content-Security-Policy` — this app's page mix (Firebase Storage
+ * images, Google Identity Toolkit calls from the client SDK, Next's own
+ * hydration script injection) needs a carefully tuned, per-directive CSP
+ * that's easy to get subtly wrong (and hard to verify without a real
+ * staging rollout); shipping an under-tested CSP risks silently breaking
+ * pages rather than hardening them. See README's Security hardening
+ * section — a scoped CSP is tracked there as a backlog item, not skipped
+ * silently.
+ */
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+];
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns,
   },
   reactStrictMode: true,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
 };
 
 export default nextConfig;

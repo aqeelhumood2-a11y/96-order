@@ -1,4 +1,4 @@
-# 96 Order — Premium Coffee & Equipment E-commerce Platform
+# Ninety Six Degrees Cafe — Premium Coffee & Equipment E-commerce Platform
 
 A production-grade, enterprise e-commerce platform for coffee beans, coffee
 products, brewing equipment, machines, grinders, filters, accessories, and
@@ -9,16 +9,19 @@ multi-tenant, ...) plugs in without restructuring what already exists.
 **Stack:** Next.js (App Router) · React · TypeScript · Firebase (Firestore,
 Auth, Storage, Cloud Functions) · Tailwind CSS · GitHub · Vercel.
 
-**Status:** Phase 1 (Foundation) through Phase 7 (Customer Accounts, CMS,
-Wishlist, Reviews, Promotions, and Full Site Management) are complete.
-Guest and registered-customer checkout, Bahrain delivery/pickup
-scheduling, cash and Tap-card payments, public order tracking, customer
-accounts with saved addresses/wishlist/back-in-stock alerts, product
-reviews and Q&A, coupons and automatic promotions, an admin-editable CMS
-and site settings/homepage/navigation, and the full admin back office
-(order management, customers, inventory operations, dashboard, reporting)
-now exist end-to-end. No refund execution, ERP sync, POS, wholesale, or
-multi-tenant modules exist yet.
+**Status:** Phase 1 (Foundation) through Phase 8 (Official Brand Identity
+and Production Readiness) are complete. Guest and registered-customer
+checkout, Bahrain delivery/pickup scheduling, cash and Tap-card payments
+(each independently enable/disable-able from Site Settings), public order
+tracking, customer accounts with saved addresses/wishlist/back-in-stock
+alerts, product reviews and Q&A, coupons and automatic promotions, an
+admin-editable CMS and site settings/homepage/navigation, the full admin
+back office (order management, customers, inventory operations, dashboard,
+reporting, cash/online payment reports, an AI Admin Assistant, an
+integrations manager), and the official Ninety Six Degrees Cafe brand
+identity now exist end-to-end. No refund execution, POS, wholesale, or
+multi-tenant modules exist yet; a real external ERP is not integrated
+(only the read-only sync feed it would poll — see Phase 8 below).
 
 ## Repository layout
 
@@ -2878,6 +2881,358 @@ doesn't have room for.
 - **Real image uploads for reviews/CMS**: `Review.imageUrls`/`CmsPage`
   already have the field shape; only the Storage upload path is missing.
 
+## Phase 8 — Official Brand Identity, AI Admin Assistant, and Production Readiness
+
+Two parts. First, a design-system-only swap: every temporary Phase
+1 placeholder color/radius/shadow token is replaced with the official
+Ninety Six Degrees Cafe brand (the logo's purple, the tropical-leaf
+artwork's supporting palette), with zero changes to architecture,
+routes, Firestore models, services, or business logic. Second, the
+production-readiness features the brief asked for: an AI Admin
+Assistant, admin-controllable payment providers, cash/online payment
+reporting, a queue/retry worker for transactional email, a read-only
+external-system integration feed, health checks, baseline security
+headers, and centralized error logging.
+
+### Brand identity
+
+```
+apps/web/public/brand/            logo-{wordmark,mark}-{purple,white,charcoal}.png, og-default.png
+apps/web/src/app/{icon,apple-icon}.png, favicon.ico   Next.js auto-served icon convention
+apps/web/src/app/globals.css      the entire design-token system (rewritten)
+apps/web/src/ui/layout/logo.tsx           <Logo variant="wordmark"|"mark" color="purple"|"white"|"charcoal" />
+apps/web/src/ui/layout/leaf-accent.tsx    <LeafAccent corner="..." /> — the one decorative motif, hero/empty-state only
+```
+
+- **Palette provenance**: primary purple sampled directly from the official
+  logo PDF (`#52346a`, exact pixel value, used unmodified as the 600 step
+  of an 11-step ramp); secondary teal and the success/warning/danger hues
+  extracted from the official tropical-leaf artwork via hue-bucketed
+  pixel-frequency analysis (not eyeballed); a purple-tinted (not plain
+  gray) neutral ramp for background/surface/border/text — deliberately
+  not the traditional brown coffee-shop palette the brief explicitly ruled
+  out. Every semantic color passes WCAG AA contrast (≥4.5:1) against white.
+- **Zero-touch token compatibility**: `--color-brand-*`/`--color-accent-*`
+  (the ~150-file-referenced Phase 1 names) are kept as exact CSS-variable
+  aliases of the new `--color-primary-*`/`--color-secondary-*` values — no
+  component's `bg-brand-900`/`text-accent-600` class needed to change.
+  `--color-success-*`/`--color-warning-*`/`--color-danger-*` are new;
+  every raw Tailwind color utility that predated them (`text-red-600`,
+  `bg-amber-100`, `bg-emerald-100`, etc. — 43 files, ~70 occurrences) was
+  swept to the matching semantic token.
+- **Logo usage**: `<Logo>` renders the official wordmark or standalone leaf
+  mark, in the colorway that fits its background, in the header, footer,
+  admin nav, and the root `global-error.tsx` boundary.
+- **The tropical-leaf motif is used exactly twice, by design** (the brief
+  says "do NOT overuse them"): the homepage hero's two `<LeafAccent>`
+  corner-bleed accents (`features/storefront/home/hero.tsx`) and the
+  shared `EmptyState` component's small centered mark (used wherever a
+  storefront list/section has nothing to show).
+- **Dark mode**: intentionally not themed (see `globals.css`'s doc
+  comment) — no `dark:` Tailwind variant existed anywhere in the codebase
+  before this phase, and a half-themed dark background with light-styled
+  cards would look broken, not premium. Tracked as a Known limitation
+  below, not silently dropped.
+- Default site branding text (`SITE_NAME`, `defaultSiteSettings().storeName`,
+  the pickup-location default, every email template's sign-off) now reads
+  "Ninety Six Degrees Cafe" instead of the Phase 1 placeholder "96 Order".
+
+### AI Admin Assistant
+
+```
+core/interfaces/ai-assistant-port.ts       AIAssistantPort, AdminAssistantContext (aggregate-only, no PII)
+core/ai-assistant/format-context.ts        shared plain-text rendering both providers use
+infrastructure/ai/anthropic-env.ts         hasAnthropicCredentials()/getAnthropicEnv() — same shape as Tap's env.ts
+infrastructure/ai/anthropic-assistant-provider.ts   real provider, fetch to api.anthropic.com, no SDK dependency
+infrastructure/ai/rule-based-assistant-provider.ts  always-available deterministic fallback
+services/ai-assistant/ask-assistant.ts     permission + rate limit + context assembly + graceful fallback
+app/admin/(protected)/ai-assistant/page.tsx, features/admin-ai-assistant/*
+```
+
+- Gated by `reports:view` (it's a natural-language view over the same
+  aggregate data `/admin/reports` already shows, not a new capability) and
+  rate-limited per admin (`AI_ASSISTANT_RATE_LIMIT`, 20 questions/15 min) —
+  a real LLM call costs real money per request, unlike everything else
+  this app rate-limits.
+- **Strictly read-only, context-bounded, no tool access.** The model is
+  only ever given `AdminAssistantContext` — dashboard counts, a 30-day
+  sales bucket, orders-by-status, cash/online payment summaries, and up to
+  25 pending-cash-collection rows — never raw customer records, and has no
+  function-calling/tool access to change anything. The system prompt
+  states this explicitly and instructs the model to say so rather than
+  guess when a question falls outside the snapshot.
+- **Provider selection mirrors `defaultPaymentDeps`'s Tap/Fake pattern**:
+  `AnthropicAssistantProvider` (real, calls Claude) is used automatically
+  when `ANTHROPIC_API_KEY` is set; otherwise `RuleBasedAssistantProvider`
+  (a deterministic data-snapshot digest, always correct, never fabricated)
+  runs instead — and if the live API call itself throws (timeout, bad
+  response, rate limit on Anthropic's side), `askAdminAssistant` catches
+  it and falls back to the same rules-based digest rather than failing the
+  request. `generatedByAI: false` on the response tells the UI (and the
+  admin) which one actually answered.
+- No conversation memory/session state — every question is answered from
+  a freshly assembled context, independently.
+
+### Payment provider management
+
+```
+core/site-settings/entities.ts     PaymentProviderSettings, isPaymentMethodEnabled()
+services/checkout/create-order.ts  server-side gate: rejects a disabled method/fulfillment combo
+features/checkout/checkout-form.tsx   hides/reflows disabled options client-side, in real time
+```
+
+- Site Settings gains three independent switches: Tap (card), cash on
+  delivery, cash on pickup — cash-on-delivery and cash-on-pickup are the
+  same `PaymentMethod: "cash"` (see Phase 5) but different
+  `OrderFulfillment.method`, so they're toggled separately.
+- **Enforced server-side, not just hidden in the UI**: `createOrder` reads
+  `SiteSettings.paymentProviders` and throws `ValidationError` before
+  touching the idempotency ledger if the submitted method/fulfillment
+  combination is off — a disabled provider can never be reached by a
+  replayed or hand-crafted request, only by what the admin actually
+  allows.
+- Any `siteSettings` document saved before this field existed is missing
+  it; every read path (`getPublicSiteSettings`, `getSiteSettingsForAdmin`,
+  `createOrder`) treats a missing value as "every provider on" — the
+  actual behavior before this field existed — rather than failing.
+
+### Cash/online payment reports and the pending-cash worklist
+
+```
+core/reports/entities.ts    CashPaymentsSummary, OnlinePaymentsSummary, PendingCashCollectionRow
+core/reports/rules.ts       computeCashPaymentsSummary(), computeOnlinePaymentsSummary()
+services/reports/payments-report.ts
+app/admin/(protected)/reports/page.tsx   three new sections alongside Sales/Best sellers/Orders by status
+```
+
+- **Cash payments**: pending-vs-confirmed counts and totals, split by
+  delivery vs pickup, over the same date range as the rest of `/admin/reports`.
+- **Online (Tap) payments**: paid/refunded totals plus pending/authorized/
+  failed/cancelled counts.
+- **Pending cash collection**: not a date-bucketed report like the two
+  above — a live, oldest-first worklist of every still-`cash_pending`
+  order (reusing the existing `paymentStatus + createdAt` Firestore
+  index from Phase 6's order list filters), each row linking straight to
+  `/admin/orders/[orderId]` to confirm cash, cancel, or release the
+  reservation.
+- **The order confirm/cancel/release-reservation admin actions and their
+  audit logging already existed from Phase 5/6** — Phase 8 only adds the
+  reports and provider toggles on top of already-working mechanics; see
+  `services/payments/confirm-cash-payment.ts`,
+  `services/orders/release-order-reservation.ts`, and
+  `OrderActionsPanel`'s "Confirm cash payment"/"Release reservation"/
+  "Cancel order" buttons.
+
+### Integrations, queue, and retry
+
+```
+lib/verify-job-secret.ts                      shared-secret auth for machine-to-machine routes (JOB_SECRET)
+services/email/retry-failed-emails.ts         drains EmailOutboxRepository.listRetryable()
+services/integrations/daily-order-sync.ts     read-only order feed for an external ERP
+app/api/jobs/retry-failed-emails/route.ts     POST, JOB_SECRET-protected
+app/api/integrations/orders/sync/route.ts     GET ?from=&to=, JOB_SECRET-protected
+app/admin/(protected)/integrations/page.tsx   config status + manual "retry now" trigger
+```
+
+- **Email retry worker**: `EmailOutboxRepository` gains
+  `listRetryable(maxAttempts, limit)` (least-retried-first, backed by a
+  new `status + attempts + updatedAt` Firestore composite index) —
+  `retryFailedEmails()` drains up to `EMAIL_RETRY_BATCH_LIMIT` (50)
+  still-failing entries per call and re-attempts delivery, same
+  sent/failed bookkeeping the original send uses. This is the retry
+  worker `core/interfaces/email-outbox-repository.ts` was designed for
+  since Phase 5 but never had.
+- **Daily order sync API**: `GET /api/integrations/orders/sync` returns
+  every order created in `[from, to]` (default: the last 24 hours) in a
+  stable `OrderSyncRow` shape (deliberately not `Order` itself, so an
+  internal schema change can never silently break an external
+  integration) — meant to be polled once a day by an external ERP/
+  inventory system. Bounded by `ORDER_SYNC_MAX_RESULTS` (1000); a busier
+  store should narrow `from`/`to` rather than expect a cursor this
+  endpoint doesn't provide.
+- **No real external ERP is integrated** — this is the read-only feed
+  such a system would poll, not a live integration with one. "Optional
+  external ERP/System integration" from the brief is satisfied as an
+  available seam, not a fabricated connection to a system that doesn't
+  exist in this environment.
+- Both job routes authenticate via `Authorization: Bearer <JOB_SECRET>`
+  (`lib/verify-job-secret.ts`, constant-time comparison), never an admin
+  session — they're meant to be called by a scheduler or an external
+  system, not a browser. **Disabled by default**: every job route denies
+  every request when `JOB_SECRET` isn't set, the same
+  "credential-absence-means-off" precedent `hasTapCredentials()`
+  established in Phase 5.
+- `/admin/integrations` (gated by the `integrations:view`/`integrations:manage`
+  permission namespace, reserved since Phase 2) shows which optional
+  credentials are configured — presence only, never values — and lets an
+  admin manually trigger the email retry worker without waiting for the
+  next scheduled run.
+- Neither job route is on an automatic schedule yet — see Backlog.
+
+### Health checks and error monitoring
+
+- `GET /api/health` — unauthenticated (this is what a load balancer/
+  uptime monitor hits), checks Firestore reachability with a 5s-bounded
+  read, returns `{ status: "ok"|"degraded", checks: { firestore } }` and
+  HTTP 200/503. Deliberately returns only pass/fail booleans, never error
+  text, so it can't be used to fingerprint internals.
+- `src/instrumentation.ts` registers Next.js's `onRequestError` hook —
+  every uncaught Server Component/Route Handler/Server Action error now
+  also logs through the existing structured `logger.error` JSON output
+  (already Cloud-Logging-compatible on a real deployment), independent of
+  whatever that code path already does with the error. This is the one
+  centralized point a real third-party sink (Sentry, Cloud Error
+  Reporting) would plug into — see Backlog.
+
+### Security hardening
+
+- `next.config.ts` now sends baseline security headers on every response:
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy` (camera/microphone/geolocation all denied), and
+  `Strict-Transport-Security` (2-year max-age, includeSubDomains, preload).
+- **Deliberately no `Content-Security-Policy`** — this app's real resource
+  mix (Firebase Storage images, the Google Identity Toolkit client SDK,
+  Next's own hydration script injection) needs a carefully tuned,
+  per-directive CSP that's easy to get subtly wrong without a staging
+  rollout to verify against; shipping an under-tested CSP risks silently
+  breaking pages rather than hardening them. Tracked in Backlog as a
+  scoped follow-up, not skipped silently.
+- Rate limiting reviewed: every existing limiter (`sessionCreateByIp/Email`,
+  `forgotPasswordByIp/Email`, back-in-stock subscribe) is unchanged and
+  still in force; the new AI Assistant adds its own per-admin limiter
+  (`AI_ASSISTANT_RATE_LIMIT`) since it's the first endpoint whose cost is
+  per-call money, not just abuse risk.
+- **App Check and Secret Manager are ops/GCP-console configuration, not
+  application code** — this repository has no GCP project to configure
+  App Check attestation or Secret Manager bindings against, so neither is
+  wired here; see the Production checklist below for what enabling them
+  in a real deployment involves, and Backlog for the App Check tracking
+  item carried over from Phase 2.
+
+### Production checklist
+
+Concrete, in order, for taking this repository to a live deployment:
+
+1. **Firebase project**: create/select a production Firebase project;
+   enable Firestore (production mode), Authentication (Email/Password),
+   and Storage. Deploy `firestore.rules`/`firestore.indexes.json`
+   (`firebase deploy --only firestore`) and `storage.rules`.
+2. **Secrets**: set `TAP_SECRET_KEY` (live Tap key, once verified against
+   a real Tap sandbox — see Backlog), `ANTHROPIC_API_KEY` (optional — the
+   AI Assistant degrades gracefully without it), and `JOB_SECRET` (a
+   long random value) in your hosting platform's environment/Secret
+   Manager, never committed. Rotate `JOB_SECRET` by updating it in both
+   the platform and whatever scheduler calls the job routes.
+3. **App Check**: enable Firebase App Check (reCAPTCHA Enterprise or
+   similar) on the Firebase project and enforce it for Firestore/Auth —
+   an additional bot/device-attestation layer on top of, not instead of,
+   this app's own rate limiting.
+4. **Bootstrap the first super admin**: `pnpm run bootstrap:super-admin`
+   against the production project (see Getting started above).
+5. **Deploy the web app** (Vercel or any Next.js-capable host) with
+   `NEXT_PUBLIC_FIREBASE_*` pointed at the production project and
+   `NEXT_PUBLIC_SITE_URL` set to the real domain (used by `sitemap.xml`,
+   `robots.txt`, and every canonical/OG URL).
+6. **Health check wiring**: point your host's/load balancer's health
+   check at `GET /api/health`; alert on repeated 503s.
+7. **Schedule the two job routes** (`POST /api/jobs/retry-failed-emails`,
+   and the existing `services/inventory/expire-reservations.ts` sweep —
+   wire it to a route the same way if one doesn't exist yet) via Cloud
+   Scheduler or equivalent, both authenticated with `JOB_SECRET`.
+8. **CSP**: before enabling a strict `Content-Security-Policy`, audit every
+   real external resource this deployment actually loads (Firebase
+   Storage bucket, any CDN) and test in staging — see Security hardening
+   above for why this wasn't shipped pre-tuned.
+9. **Verify Tap** against a real sandbox/live account (field names/status
+   strings — see Backlog) before taking real payments.
+10. Point an uptime monitor and a real error-monitoring sink (see
+    "Health checks and error monitoring" above) at the deployment.
+
+### Backup strategy
+
+- **Firestore**: enable [scheduled backups](https://firebase.google.com/docs/firestore/backups)
+  (`gcloud firestore backups schedules create`) at a daily cadence with a
+  retention window matching your compliance/ops needs (e.g. 30 days) —
+  this is a GCP-console/CLI configuration against the production project,
+  not something this repository can pre-configure without one. Test a
+  restore into a scratch project at least once before relying on it.
+- **Storage**: Firebase Storage buckets can enable
+  [Object Versioning](https://cloud.google.com/storage/docs/object-versioning)
+  for the product-image bucket, giving point-in-time recovery of
+  accidentally-overwritten/deleted images independent of the Firestore
+  backup above.
+- **Audit trail as a secondary source of truth**: every mutating action
+  in this app already writes an append-only `auditLogs`/`orderEvents`
+  entry (Phase 2 onward) — while not a substitute for real backups, it
+  means a corrupted document's history of changes is independently
+  reconstructable.
+- No automated backup-verification job exists in this repository (it
+  would need to run against real GCP infrastructure this environment
+  doesn't have) — tracked as an ops runbook item, not application code.
+
+### Load testing
+
+- No load test suite is included in this repository — realistic load
+  testing needs a real deployed environment (a local Firestore emulator's
+  performance characteristics don't represent production Firestore) and
+  is an ops exercise, not something to fabricate against a sandbox.
+- **Recommended approach once deployed to staging**: [k6](https://k6.io/)
+  or [Artillery](https://www.artillery.io/) against the read-heavy
+  storefront paths first (`/`, `/products`, `/products/[slug]`, `/search`
+  — all backed by `unstable_cache`, see `services/storefront/cache.ts`),
+  then the checkout write path (`createOrder`) at a realistic order rate,
+  watching Firestore's per-second write budget and the
+  `REPORT_SCAN_LIMIT`/`ORDER_SYNC_MAX_RESULTS` bounded-scan limits called
+  out throughout this README as the points most likely to need
+  revisiting at higher volume.
+- The application-level rate limiters (`config/auth.ts#RATE_LIMITS`,
+  `AI_ASSISTANT_RATE_LIMIT`, back-in-stock subscribe) will themselves
+  throttle a naive load test that doesn't vary IP/email/actor — a real
+  load test needs to account for this rather than read it as a
+  performance ceiling.
+
+### Known limitations
+
+- Dark mode is not themed (see Brand identity above) — a deliberate
+  scope decision, not an oversight.
+- No `Content-Security-Policy` header (see Security hardening above).
+- Neither job route (`retry-failed-emails`, the Phase 6 reservation
+  sweep) is on an automatic schedule — both are working, callable
+  endpoints/actions, wiring Cloud Scheduler to call them is an ops step
+  (see Production checklist).
+- The AI Admin Assistant has no conversation memory and cannot take any
+  action — it answers from a fresh, read-only data snapshot every time.
+- The daily order sync API is a read-only feed, not a real ERP
+  integration — no external ERP exists to integrate with in this
+  environment.
+- App Check, Secret Manager, and a real load test all require a live GCP
+  project this environment doesn't have — see the Production checklist
+  for exactly what enabling each involves.
+- `TapPaymentProvider`'s field names/status strings are still unverified
+  against a real Tap sandbox account (carried over from Phase 5).
+
+### Future integration seams
+
+- **A third-party error-monitoring sink**: `src/instrumentation.ts`'s
+  `onRequestError` is the one place a Sentry/Cloud-Error-Reporting SDK
+  call would be added.
+- **A real Content-Security-Policy**: `next.config.ts`'s `headers()` is
+  where the `Content-Security-Policy` entry would join the existing
+  security headers, once tuned against this deployment's actual resource
+  list.
+- **Cloud Scheduler-driven job routes**: both `/api/jobs/*` routes already
+  do the work; only the recurring trigger is missing.
+- **A real ERP consuming `/api/integrations/orders/sync`**: the response
+  shape (`OrderSyncRow`) is intentionally decoupled from `Order` so the
+  integration contract can stay stable independent of internal schema
+  changes.
+- **Tool-calling for the AI Assistant**: `AIAssistantPort`/`AdminAssistantContext`
+  are read-only by design today; if a future phase wants the assistant to
+  take actions, that would be a deliberate, separately-reviewed expansion
+  of scope — not something to add casually to a context object that
+  currently guarantees "never acts."
+
 ## Backlog (ideas noted, not implemented)
 
 - Firebase App Check / reCAPTCHA in front of Identity Platform, as an
@@ -2897,10 +3252,21 @@ doesn't have room for.
   tenant-aware feature is designed.
 - i18n / multi-language support.
 - Storybook catalog for `ui/primitives`.
-- Error monitoring (Sentry or similar).
-- Analytics (GA4 / PostHog).
+- A real third-party error-monitoring sink (Sentry, Cloud Error Reporting)
+  wired into `src/instrumentation.ts`'s `onRequestError` hook — Phase 8
+  centralizes every server error through structured `logger.error` JSON
+  (already picked up by Cloud Logging on a real deployment), but no
+  external dashboard/alerting integration exists yet.
+- Analytics (GA4 / PostHog) — Phase 8's admin-facing reports (sales, best
+  sellers, cash/online payments) are store-operations analytics, not
+  storefront visitor/behavior analytics.
 - Edge middleware for auth session refresh + RBAC route guards (once auth exists).
-- Secret Manager wiring for the first server-side secret an integration needs.
+- Secret Manager wiring for `TAP_SECRET_KEY`/`ANTHROPIC_API_KEY`/`JOB_SECRET`
+  — Phase 8 reads these from `process.env` the same way `.env.example`
+  documents every other secret; moving them into GCP Secret Manager with
+  the Firebase Admin SDK's Secret Manager integration at deploy time is
+  ops configuration, not an application code change (see Phase 8's
+  Production checklist).
 - Product image download-token rotation/expiry, if these URLs are ever
   exposed anywhere less controlled than the admin UI.
 - A separate `variants` collection, if any product family's variant count
@@ -2929,12 +3295,18 @@ doesn't have room for.
   modeled, nothing calls it yet.
 - WhatsApp order/payment notifications, if an approved provider becomes
   available (email is Phase 5's only channel).
-- A background worker retrying `"failed"` `emailOutbox` entries with
-  backoff.
+- ~~A background worker retrying `"failed"` `emailOutbox` entries with
+  backoff.~~ Built in Phase 8 — `services/email/retry-failed-emails.ts`,
+  exposed at `POST /api/jobs/retry-failed-emails`. Still backlog: wiring
+  an actual Cloud Scheduler (or similar) trigger to call it automatically
+  — see the next item, which now applies to both workers.
 - A Cloud Scheduler trigger for the already-built expired-reservation
-  sweep (`services/inventory/expire-reservations.ts`, Phase 6) — the
-  sweep itself is a working admin-callable action, just not on an
-  automatic schedule yet.
+  sweep (`services/inventory/expire-reservations.ts`, Phase 6) and for the
+  email retry worker (`POST /api/jobs/retry-failed-emails`, Phase 8) — both
+  are working, callable jobs (the reservation sweep as an admin action, the
+  email worker as a `JOB_SECRET`-protected route), just not on an automatic
+  schedule yet; wiring Cloud Scheduler (or GitHub Actions cron) to call
+  them periodically is ops configuration, not an application change.
 - Bulk admin order actions (bulk status change, bulk export) — Phase 6
   ships one-order-at-a-time actions only.
 - CSV/PDF export for orders, customers, and reports.
