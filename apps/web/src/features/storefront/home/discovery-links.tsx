@@ -13,7 +13,7 @@ export function DiscoveryLinks() {
   return (
     <section className="border-t border-brand-100 py-12">
       <Container>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/50">Browse</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/65">Browse</h2>
         <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
           {LINKS.map((link) => (
             <li key={link.href}>

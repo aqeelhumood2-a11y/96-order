@@ -30,7 +30,7 @@ export function AdminReviewsTable({ reviews }: { reviews: Review[] }) {
   }
 
   if (reviews.length === 0) {
-    return <p className="text-sm text-foreground/60">No reviews yet.</p>;
+    return <p className="text-sm text-foreground/69">No reviews yet.</p>;
   }
 
   return (
@@ -44,9 +44,9 @@ export function AdminReviewsTable({ reviews }: { reviews: Review[] }) {
               <Badge variant={STATUS_VARIANT[review.status]}>{review.status}</Badge>
               {review.verifiedPurchase && <Badge variant="success">Verified purchase</Badge>}
             </div>
-            <span className="text-xs text-foreground/50">{review.createdAt.toLocaleDateString()}</span>
+            <span className="text-xs text-foreground/65">{review.createdAt.toLocaleDateString()}</span>
           </div>
-          <p className="text-xs text-foreground/50">
+          <p className="text-xs text-foreground/65">
             {review.customerName} · product {review.productId}
           </p>
           <p className="whitespace-pre-line text-sm text-foreground/80">{review.body}</p>

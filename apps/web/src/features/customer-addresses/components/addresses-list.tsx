@@ -35,7 +35,7 @@ export function AddressesList({ addresses }: { addresses: CustomerAddress[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {addresses.length === 0 && <p className="text-sm text-foreground/60">You haven&apos;t saved any addresses yet.</p>}
+      {addresses.length === 0 && <p className="text-sm text-foreground/69">You haven&apos;t saved any addresses yet.</p>}
 
       {addresses.map((address) =>
         editingId === address.id ? (

@@ -38,7 +38,7 @@ export function SearchPage({ query, products, nextCursor, cursor, cursorsParam }
 
         {trimmed.length >= MIN_SEARCH_QUERY_LENGTH && (
           <>
-            <p className="text-sm text-foreground/60" role="status">
+            <p className="text-sm text-foreground/69" role="status">
               {products.length > 0 ? `Results for "${trimmed}"` : `No products matched "${trimmed}"`}
             </p>
             {products.length > 0 && (

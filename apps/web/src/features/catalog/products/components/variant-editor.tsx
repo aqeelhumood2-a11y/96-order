@@ -165,7 +165,7 @@ export function VariantEditor({ variants, onChange, disabled }: VariantEditorPro
           </div>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="text-xs font-medium text-foreground/60">Attribute selections (e.g. Bag size = 500g)</legend>
+            <legend className="text-xs font-medium text-foreground/69">Attribute selections (e.g. Bag size = 500g)</legend>
             {variant.attributeSelections.map((attr, attrIndex) => (
               <div key={attrIndex} className="flex items-center gap-2">
                 <Input placeholder="Attribute" value={attr.key} onChange={(event) => updateAttribute(index, attrIndex, { key: event.target.value })} disabled={disabled} />

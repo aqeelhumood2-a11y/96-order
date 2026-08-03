@@ -6,7 +6,7 @@ function AlertList({ title, records, emptyMessage }: { title: string; records: I
     <div className="flex flex-col gap-2 rounded-md border border-brand-100 p-4">
       <h2 className="text-sm font-semibold text-brand-950">{title}</h2>
       {records.length === 0 ? (
-        <p className="text-sm text-foreground/60">{emptyMessage}</p>
+        <p className="text-sm text-foreground/69">{emptyMessage}</p>
       ) : (
         <ul className="flex flex-col gap-1.5 text-sm">
           {records.map((record) => (
@@ -15,7 +15,7 @@ function AlertList({ title, records, emptyMessage }: { title: string; records: I
                 {record.productId}
                 {record.variantId ? `:${record.variantId}` : ""}
               </span>
-              <span className="text-foreground/60">
+              <span className="text-foreground/69">
                 {record.onHand - record.reserved} available ({record.reserved} reserved)
               </span>
             </li>

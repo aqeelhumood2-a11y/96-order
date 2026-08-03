@@ -29,7 +29,7 @@ export function CmsPagesTable({ pages }: { pages: CmsPage[] }) {
   }
 
   if (pages.length === 0) {
-    return <p className="text-sm text-foreground/60">No pages yet.</p>;
+    return <p className="text-sm text-foreground/69">No pages yet.</p>;
   }
 
   return (
@@ -41,7 +41,7 @@ export function CmsPagesTable({ pages }: { pages: CmsPage[] }) {
       )}
       <div className="overflow-x-auto rounded-md border border-brand-100">
         <table className="w-full text-left text-sm">
-          <thead className="bg-brand-50 text-xs uppercase tracking-wide text-foreground/60">
+          <thead className="bg-brand-50 text-xs uppercase tracking-wide text-foreground/69">
             <tr>
               <th className="px-4 py-2">Title</th>
               <th className="px-4 py-2">Slug</th>

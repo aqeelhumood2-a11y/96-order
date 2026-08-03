@@ -54,7 +54,7 @@ export function AdminQuestionsTable({ questions }: { questions: ProductQuestion[
   const router = useRouter();
 
   if (questions.length === 0) {
-    return <p className="text-sm text-foreground/60">No questions yet.</p>;
+    return <p className="text-sm text-foreground/69">No questions yet.</p>;
   }
 
   return (
@@ -65,7 +65,7 @@ export function AdminQuestionsTable({ questions }: { questions: ProductQuestion[
             <p className="font-medium text-brand-950">{question.question}</p>
             <Badge variant={question.status === "approved" ? "success" : question.status === "rejected" ? "danger" : "warning"}>{question.status}</Badge>
           </div>
-          <p className="text-xs text-foreground/50">
+          <p className="text-xs text-foreground/65">
             {question.customerName} · product {question.productId} · {question.createdAt.toLocaleDateString()}
           </p>
           {question.status === "approved" ? (

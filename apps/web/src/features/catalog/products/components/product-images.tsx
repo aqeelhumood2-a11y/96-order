@@ -77,7 +77,7 @@ export function ProductImages({
       <h2 className="text-lg font-semibold text-brand-950">Images</h2>
 
       {images.length === 0 ? (
-        <p className="text-sm text-foreground/60">No images uploaded yet.</p>
+        <p className="text-sm text-foreground/69">No images uploaded yet.</p>
       ) : (
         <div className="flex flex-wrap gap-4">
           {[...images]
@@ -90,7 +90,7 @@ export function ProductImages({
                 ) : (
                   <div className="h-32 w-full rounded bg-brand-50" />
                 )}
-                <p className="truncate text-xs text-foreground/60">{image.altText || "(no alt text)"}</p>
+                <p className="truncate text-xs text-foreground/69">{image.altText || "(no alt text)"}</p>
                 {image.isPrimary && <span className="text-xs font-medium text-brand-700">Primary</span>}
                 <Button type="button" variant="outline" size="sm" onClick={() => handleDelete(image.id)} disabled={deletingId === image.id}>
                   {deletingId === image.id ? "Deleting…" : "Delete"}

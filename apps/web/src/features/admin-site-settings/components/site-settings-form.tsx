@@ -226,7 +226,7 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
 
       <fieldset className="flex flex-col gap-3">
         <legend className="text-lg font-semibold text-brand-950">Payment providers</legend>
-        <p className="text-xs text-foreground/50">Turn a provider off to hide it at checkout immediately — existing orders are unaffected.</p>
+        <p className="text-xs text-foreground/65">Turn a provider off to hide it at checkout immediately — existing orders are unaffected.</p>
         <div className="flex flex-wrap gap-4">
           <label className="flex items-center gap-2 text-sm text-foreground/80">
             <input

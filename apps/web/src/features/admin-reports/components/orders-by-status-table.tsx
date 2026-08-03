@@ -4,7 +4,7 @@ export function OrdersByStatusTable({ rows }: { rows: OrdersByStatusRow[] }) {
   return (
     <div className="overflow-x-auto rounded-md border border-brand-100">
       <table className="w-full min-w-[320px] text-left text-sm">
-        <thead className="border-b border-brand-100 bg-brand-50/50 text-xs uppercase tracking-wide text-foreground/60">
+        <thead className="border-b border-brand-100 bg-brand-50/50 text-xs uppercase tracking-wide text-foreground/69">
           <tr>
             <th className="px-4 py-3 font-medium">Status</th>
             <th className="px-4 py-3 text-right font-medium">Orders</th>

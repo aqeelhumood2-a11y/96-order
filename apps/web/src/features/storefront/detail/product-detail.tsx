@@ -73,7 +73,7 @@ export function ProductDetail({
 
         <div className="flex flex-col gap-6">
           <div>
-            {product.brand && <p className="text-sm font-medium uppercase tracking-wide text-foreground/50">{product.brand.name}</p>}
+            {product.brand && <p className="text-sm font-medium uppercase tracking-wide text-foreground/65">{product.brand.name}</p>}
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-950">{product.name}</h1>
             {product.shortDescription && <p className="mt-2 text-base text-foreground/70">{product.shortDescription}</p>}
           </div>
@@ -83,7 +83,7 @@ export function ProductDetail({
             <AvailabilityBadge availability={availability} />
           </div>
 
-          <p className="text-sm text-foreground/50">
+          <p className="text-sm text-foreground/65">
             SKU: <span className="font-medium text-foreground/70">{sku}</span>
           </p>
 

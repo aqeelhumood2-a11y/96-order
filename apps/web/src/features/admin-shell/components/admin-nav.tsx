@@ -48,7 +48,7 @@ export function AdminNav({ session }: { session: Session }) {
           ))}
       </div>
       <div className="flex items-center gap-4">
-        <span className="text-sm text-foreground/60">{session.email}</span>
+        <span className="text-sm text-foreground/69">{session.email}</span>
         <LogoutButton />
       </div>
     </nav>

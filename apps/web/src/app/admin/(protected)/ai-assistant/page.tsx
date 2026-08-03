@@ -16,7 +16,7 @@ export default async function AiAssistantPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-brand-950">AI Admin Assistant</h1>
-        <p className="mt-1 text-sm text-foreground/60">
+        <p className="mt-1 text-sm text-foreground/69">
           Ask questions about orders, payments, and cash collection. Answers are read-only and based only on your store&apos;s own report data.
         </p>
       </div>

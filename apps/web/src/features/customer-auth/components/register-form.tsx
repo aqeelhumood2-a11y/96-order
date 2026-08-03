@@ -87,7 +87,7 @@ export function CustomerRegisterForm() {
           aria-invalid={Boolean(fieldErrors.password)}
           aria-describedby="register-password-hint"
         />
-        <p id="register-password-hint" className="text-xs text-foreground/60">At least 8 characters.</p>
+        <p id="register-password-hint" className="text-xs text-foreground/69">At least 8 characters.</p>
         {fieldErrors.password && <p role="alert" className="text-sm text-danger-600">{fieldErrors.password}</p>}
       </div>
 

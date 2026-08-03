@@ -36,9 +36,9 @@ function CategoryRow({
       <li className="flex items-center justify-between gap-4 border-b border-brand-100 py-2" style={{ paddingLeft: depth * 20 }}>
         <div className="flex flex-col">
           <span className="text-sm font-medium text-foreground">
-            {node.name} {!node.isActive && <span className="text-xs text-foreground/50">(inactive)</span>}
+            {node.name} {!node.isActive && <span className="text-xs text-foreground/65">(inactive)</span>}
           </span>
-          <span className="text-xs text-foreground/50">/{node.slug}</span>
+          <span className="text-xs text-foreground/65">/{node.slug}</span>
         </div>
         {canManage && (
           <div className="flex items-center gap-2">
@@ -68,7 +68,7 @@ export function CategoriesTree({
   const tree = buildTree(categories);
 
   if (categories.length === 0) {
-    return <p className="text-sm text-foreground/60">No categories yet.</p>;
+    return <p className="text-sm text-foreground/69">No categories yet.</p>;
   }
 
   return (

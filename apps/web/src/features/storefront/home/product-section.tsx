@@ -20,7 +20,7 @@ export function ProductSection({ title, description, viewAllHref, products }: Pr
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-brand-950">{title}</h2>
-            {description && <p className="mt-1 text-sm text-foreground/60">{description}</p>}
+            {description && <p className="mt-1 text-sm text-foreground/69">{description}</p>}
           </div>
           <Link href={viewAllHref} className="whitespace-nowrap text-sm font-medium text-brand-700 hover:text-brand-900 hover:underline">
             View all

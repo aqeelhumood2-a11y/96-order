@@ -10,7 +10,7 @@ export function CashPaymentsSummaryCard({ summary }: { summary: CashPaymentsSumm
   return (
     <div className="overflow-x-auto rounded-md border border-surface-border">
       <table className="w-full min-w-[400px] text-left text-sm">
-        <thead className="border-b border-surface-border bg-surface-sunken text-xs uppercase tracking-wide text-foreground/60">
+        <thead className="border-b border-surface-border bg-surface-sunken text-xs uppercase tracking-wide text-foreground/69">
           <tr>
             <th className="px-4 py-3 font-medium">Cash status</th>
             <th className="px-4 py-3 text-right font-medium">Orders</th>
@@ -27,7 +27,7 @@ export function CashPaymentsSummaryCard({ summary }: { summary: CashPaymentsSumm
           ))}
         </tbody>
       </table>
-      <p className="border-t border-surface-border px-4 py-3 text-xs text-foreground/50">
+      <p className="border-t border-surface-border px-4 py-3 text-xs text-foreground/65">
         {summary.deliveryCount} on delivery, {summary.pickupCount} on pickup.
       </p>
     </div>

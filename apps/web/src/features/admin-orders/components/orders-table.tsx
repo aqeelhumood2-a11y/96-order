@@ -9,13 +9,13 @@ function formatDate(date: Date): string {
 
 export function OrdersTable({ orders }: { orders: Order[] }) {
   if (orders.length === 0) {
-    return <p className="text-sm text-foreground/60">No orders match these filters.</p>;
+    return <p className="text-sm text-foreground/69">No orders match these filters.</p>;
   }
 
   return (
     <div className="overflow-x-auto rounded-md border border-brand-100">
       <table className="w-full min-w-[840px] text-left text-sm">
-        <thead className="border-b border-brand-100 bg-brand-50/50 text-xs uppercase tracking-wide text-foreground/60">
+        <thead className="border-b border-brand-100 bg-brand-50/50 text-xs uppercase tracking-wide text-foreground/69">
           <tr>
             <th className="px-4 py-3 font-medium">Order</th>
             <th className="px-4 py-3 font-medium">Customer</th>
@@ -37,7 +37,7 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
               <td className="px-4 py-3">
                 <div className="flex flex-col">
                   <span className="text-foreground">{order.customer.fullName}</span>
-                  <span className="text-xs text-foreground/50">{order.customer.mobile}</span>
+                  <span className="text-xs text-foreground/65">{order.customer.mobile}</span>
                 </div>
               </td>
               <td className="px-4 py-3 capitalize text-foreground/80">{order.fulfillment.method}</td>

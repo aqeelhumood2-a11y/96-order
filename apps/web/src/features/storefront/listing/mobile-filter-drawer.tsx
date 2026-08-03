@@ -20,7 +20,7 @@ export function MobileFilterDrawer({ children }: { children: ReactNode }) {
             <button
               type="button"
               aria-label="Close filters"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground/69 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />

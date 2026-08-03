@@ -5,14 +5,14 @@ export function StaffTable({ staff, roles, canEdit }: { staff: StaffUser[]; role
   const roleNameById = new Map(roles.map((role) => [role.id, role.name]));
 
   if (staff.length === 0) {
-    return <p className="text-sm text-foreground/60">No staff accounts yet.</p>;
+    return <p className="text-sm text-foreground/69">No staff accounts yet.</p>;
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead>
-          <tr className="border-b border-brand-100 text-foreground/60">
+          <tr className="border-b border-brand-100 text-foreground/69">
             <th className="py-2 pr-4 font-medium">Email</th>
             <th className="py-2 pr-4 font-medium">Roles</th>
             <th className="py-2 pr-4 font-medium">Status</th>

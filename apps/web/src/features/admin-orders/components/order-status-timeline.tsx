@@ -7,7 +7,7 @@ function formatDateTime(date: Date): string {
 /** The "status timeline"/"order history" panel — every `OrderStatusEvent` for this order, oldest first (see `services/orders/get-order.ts`). Also doubles as this order's own slice of "audit history" (README's Admin Order Management requirements) since every transition is recorded here with its actor. */
 export function OrderStatusTimeline({ events }: { events: OrderStatusEvent[] }) {
   if (events.length === 0) {
-    return <p className="text-sm text-foreground/60">No status history yet.</p>;
+    return <p className="text-sm text-foreground/69">No status history yet.</p>;
   }
 
   return (
@@ -18,7 +18,7 @@ export function OrderStatusTimeline({ events }: { events: OrderStatusEvent[] }) 
             {event.fromStatus ? `${event.fromStatus.replace(/_/g, " ")} → ` : "Created as "}
             {event.toStatus.replace(/_/g, " ")}
           </span>
-          <span className="text-xs text-foreground/50">
+          <span className="text-xs text-foreground/65">
             {formatDateTime(event.createdAt)} · {event.actorId}
           </span>
           {event.note && <span className="text-xs text-foreground/70">{event.note}</span>}

@@ -14,7 +14,7 @@ export function BackInStockSubscriptionsList({ subscriptions }: { subscriptions:
   const pending = subscriptions.filter((subscription) => subscription.status === "pending");
 
   if (pending.length === 0) {
-    return <p className="text-sm text-foreground/60">You&apos;re not waiting on any back-in-stock alerts.</p>;
+    return <p className="text-sm text-foreground/69">You&apos;re not waiting on any back-in-stock alerts.</p>;
   }
 
   async function handleUnsubscribe(id: string) {
@@ -36,7 +36,7 @@ export function BackInStockSubscriptionsList({ subscriptions }: { subscriptions:
               {subscription.productName}
             </Link>
           ) : (
-            <span className="text-foreground/50">Product no longer available</span>
+            <span className="text-foreground/65">Product no longer available</span>
           )}
           <Button size="sm" variant="outline" disabled={busyId === subscription.id} onClick={() => handleUnsubscribe(subscription.id)}>
             Unsubscribe

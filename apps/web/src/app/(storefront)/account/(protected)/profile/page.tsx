@@ -9,7 +9,7 @@ export default async function AccountProfilePage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Profile</h1>
-      <p className="text-sm text-foreground/60">{account.email}</p>
+      <p className="text-sm text-foreground/69">{account.email}</p>
       <ProfileForm fullName={account.displayName} mobile={account.mobile} />
     </div>
   );

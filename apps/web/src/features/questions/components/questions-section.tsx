@@ -64,11 +64,11 @@ export function QuestionsSection({ productId, productSlug, questions, signedIn }
           </Button>
         )
       ) : (
-        <p className="text-sm text-foreground/60">Sign in to ask a question.</p>
+        <p className="text-sm text-foreground/69">Sign in to ask a question.</p>
       )}
 
       {questions.length === 0 ? (
-        <p className="text-sm text-foreground/60">No questions yet.</p>
+        <p className="text-sm text-foreground/69">No questions yet.</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {questions.map((item) => (

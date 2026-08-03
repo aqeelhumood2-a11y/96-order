@@ -14,9 +14,9 @@ export function ProductListRow({ product }: { product: PublicProductSummary }) {
         <ProductImage src={product.primaryImage?.url} alt={product.primaryImage?.altText ?? product.name} sizes="128px" />
       </div>
       <div className="flex flex-1 flex-col justify-center gap-1">
-        {product.brand && <span className="text-xs font-medium uppercase tracking-wide text-foreground/50">{product.brand.name}</span>}
+        {product.brand && <span className="text-xs font-medium uppercase tracking-wide text-foreground/65">{product.brand.name}</span>}
         <span className="font-medium text-brand-950 group-hover:underline">{product.name}</span>
-        {product.shortDescription && <p className="line-clamp-2 text-sm text-foreground/60">{product.shortDescription}</p>}
+        {product.shortDescription && <p className="line-clamp-2 text-sm text-foreground/69">{product.shortDescription}</p>}
         <div className="mt-1 flex items-center gap-3">
           <PriceDisplay price={product.displayPrice} compareAtPrice={product.compareAtPrice} />
           <AvailabilityBadge availability={product.availability} />

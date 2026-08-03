@@ -9,7 +9,7 @@ export function ListingError({ onRetry }: ListingErrorProps) {
   return (
     <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-danger-200 px-6 py-16 text-center">
       <p className="text-base font-medium text-brand-950">Something went wrong loading products</p>
-      <p className="max-w-sm text-sm text-foreground/60">Please try again in a moment.</p>
+      <p className="max-w-sm text-sm text-foreground/69">Please try again in a moment.</p>
       {onRetry && (
         <Button type="button" variant="outline" onClick={onRetry}>
           Try again

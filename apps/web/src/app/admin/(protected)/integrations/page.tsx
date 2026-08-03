@@ -21,7 +21,7 @@ export default async function IntegrationsPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Integrations</h1>
-        <p className="mt-1 text-sm text-foreground/60">Payment providers, AI assistant, and external system access.</p>
+        <p className="mt-1 text-sm text-foreground/69">Payment providers, AI assistant, and external system access.</p>
       </div>
       <IntegrationsPanel status={status} />
     </div>

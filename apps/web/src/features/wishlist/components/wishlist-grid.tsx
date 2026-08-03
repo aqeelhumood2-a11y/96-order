@@ -41,7 +41,7 @@ export function WishlistGrid({ items }: { items: WishlistItemView[] }) {
   }
 
   if (items.length === 0) {
-    return <p className="text-sm text-foreground/60">Your wishlist is empty. Browse products and tap the heart to save them here.</p>;
+    return <p className="text-sm text-foreground/69">Your wishlist is empty. Browse products and tap the heart to save them here.</p>;
   }
 
   return (

@@ -3,14 +3,14 @@ import { DeleteRoleButton } from "./delete-role-button";
 
 export function RolesTable({ roles, canManage }: { roles: Role[]; canManage: boolean }) {
   if (roles.length === 0) {
-    return <p className="text-sm text-foreground/60">No roles yet.</p>;
+    return <p className="text-sm text-foreground/69">No roles yet.</p>;
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[560px] text-left text-sm">
         <thead>
-          <tr className="border-b border-brand-100 text-foreground/60">
+          <tr className="border-b border-brand-100 text-foreground/69">
             <th className="py-2 pr-4 font-medium">Name</th>
             <th className="py-2 pr-4 font-medium">Description</th>
             <th className="py-2 pr-4 font-medium">Permissions</th>

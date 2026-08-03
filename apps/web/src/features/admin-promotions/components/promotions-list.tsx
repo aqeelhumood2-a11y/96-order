@@ -35,7 +35,7 @@ export function PromotionsList({ promotions }: { promotions: Promotion[] }) {
               <span className="font-medium text-brand-950">{promotion.name}</span>
               <Badge variant={promotion.active ? "success" : "neutral"}>{promotion.active ? "active" : "inactive"}</Badge>
             </div>
-            <p className="text-xs text-foreground/50">
+            <p className="text-xs text-foreground/65">
               {promotion.type === "percentage" ? `${promotion.value}% off` : promotion.type === "fixed" ? `${promotion.value} fils off` : "Free shipping"} · priority {promotion.priority} ·{" "}
               {promotion.stackable ? "stackable" : "exclusive"}
             </p>

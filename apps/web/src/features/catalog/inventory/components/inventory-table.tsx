@@ -4,7 +4,7 @@ import { AdjustInventoryForm } from "./adjust-inventory-form";
 
 export function InventoryTable({ rows, canAdjust }: { rows: InventoryOverviewRow[]; canAdjust: boolean }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-foreground/60">No tracked inventory yet.</p>;
+    return <p className="text-sm text-foreground/69">No tracked inventory yet.</p>;
   }
 
   return (
@@ -22,9 +22,9 @@ export function InventoryTable({ rows, canAdjust }: { rows: InventoryOverviewRow
               <div>
                 <p className="text-sm font-medium text-foreground">
                   {product.name}
-                  {variant && <span className="text-foreground/60"> — {Object.values(variant.attributeSelections).join(" / ")}</span>}
+                  {variant && <span className="text-foreground/69"> — {Object.values(variant.attributeSelections).join(" / ")}</span>}
                 </p>
-                <p className="text-xs text-foreground/50">SKU {variant?.sku ?? product.sku}</p>
+                <p className="text-xs text-foreground/65">SKU {variant?.sku ?? product.sku}</p>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <span>On hand: {onHand}</span>

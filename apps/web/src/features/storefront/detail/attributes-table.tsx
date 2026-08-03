@@ -46,7 +46,7 @@ export function AttributesTable({ coffee, equipment, weightGrams, dimensions }: 
     <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
       {rows.map(([label, value]) => (
         <div key={label} className="flex justify-between gap-4 border-b border-brand-100 pb-2 text-sm sm:justify-start">
-          <dt className="text-foreground/60">{label}</dt>
+          <dt className="text-foreground/69">{label}</dt>
           <dd className="font-medium text-brand-950 sm:ml-auto">{value}</dd>
         </div>
       ))}

@@ -45,7 +45,7 @@ export function ProductListing({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{heading}</h1>
-            {description && <p className="mt-1 text-sm text-foreground/60">{description}</p>}
+            {description && <p className="mt-1 text-sm text-foreground/69">{description}</p>}
           </div>
           <div className="flex items-center gap-3">
             <MobileFilterDrawer>

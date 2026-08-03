@@ -10,13 +10,13 @@ const STATUS_VARIANT = {
 /** README's "Inventory reservation status" requirement — every reservation row this order created, whatever its current state. */
 export function OrderReservationStatus({ reservations }: { reservations: InventoryReservation[] }) {
   if (reservations.length === 0) {
-    return <p className="text-sm text-foreground/60">No inventory was reserved for this order (untracked items only).</p>;
+    return <p className="text-sm text-foreground/69">No inventory was reserved for this order (untracked items only).</p>;
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[420px] text-left text-sm">
-        <thead className="text-xs uppercase tracking-wide text-foreground/50">
+        <thead className="text-xs uppercase tracking-wide text-foreground/65">
           <tr>
             <th className="py-1.5 font-medium">Product</th>
             <th className="py-1.5 text-right font-medium">Qty</th>
@@ -35,7 +35,7 @@ export function OrderReservationStatus({ reservations }: { reservations: Invento
               <td className="py-2">
                 <Badge variant={STATUS_VARIANT[reservation.status]}>{reservation.status}</Badge>
               </td>
-              <td className="py-2 text-foreground/60">
+              <td className="py-2 text-foreground/69">
                 {reservation.status === "reserved" ? new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(reservation.expiresAt) : "—"}
               </td>
             </tr>

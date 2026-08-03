@@ -88,7 +88,7 @@ export function Footer({ footerPages, footerColumns, contactEmail, contactPhone,
               <ul className="mt-3 flex flex-col gap-2 text-sm text-brand-800">
                 {contactEmail && <li>{contactEmail}</li>}
                 {contactPhone && <li>{contactPhone}</li>}
-                {hoursText && <li className="text-foreground/60">{hoursText}</li>}
+                {hoursText && <li className="text-foreground/69">{hoursText}</li>}
               </ul>
             </div>
           )}
@@ -105,7 +105,7 @@ export function Footer({ footerPages, footerColumns, contactEmail, contactPhone,
         )}
 
         {paymentLogos.length > 0 && (
-          <div className="flex flex-wrap gap-3 text-xs text-foreground/50">
+          <div className="flex flex-wrap gap-3 text-xs text-foreground/65">
             {paymentLogos.map((logo) => (
               <span key={logo} className="rounded border border-surface-border px-2 py-1">
                 {logo}
@@ -114,9 +114,9 @@ export function Footer({ footerPages, footerColumns, contactEmail, contactPhone,
           </div>
         )}
 
-        {freeShippingThresholdText && <p className="text-xs text-foreground/60">{freeShippingThresholdText}</p>}
+        {freeShippingThresholdText && <p className="text-xs text-foreground/69">{freeShippingThresholdText}</p>}
 
-        <p className="text-sm text-foreground/60">
+        <p className="text-sm text-foreground/69">
           © {new Date().getFullYear()} {copyrightText}
         </p>
       </Container>

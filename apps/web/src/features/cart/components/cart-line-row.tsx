@@ -42,7 +42,7 @@ export function CartLineRow({ line }: { line: PricedCartLine }) {
       <div className="min-w-40 flex-1">
         <p className="font-medium text-brand-950">{snapshot?.name ?? "Item no longer available"}</p>
         {snapshot?.variantAttributes && (
-          <p className="text-xs text-foreground/50">
+          <p className="text-xs text-foreground/65">
             {Object.entries(snapshot.variantAttributes)
               .map(([key, value]) => `${key}: ${value}`)
               .join(", ")}

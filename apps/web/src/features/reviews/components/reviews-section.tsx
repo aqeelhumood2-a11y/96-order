@@ -54,14 +54,14 @@ export function ReviewsSection({ productId, productSlug, reviews, averageRating,
         </Button>
       )}
 
-      {!signedIn && <p className="text-sm text-foreground/60">Sign in to write a review.</p>}
+      {!signedIn && <p className="text-sm text-foreground/69">Sign in to write a review.</p>}
 
       {showForm && (
         <ReviewForm productId={productId} productSlug={productSlug} existing={myReview ?? undefined} onDone={() => setShowForm(false)} />
       )}
 
       {reviews.length === 0 ? (
-        <p className="text-sm text-foreground/60">No reviews yet.</p>
+        <p className="text-sm text-foreground/69">No reviews yet.</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {reviews.map((review) => (
@@ -71,7 +71,7 @@ export function ReviewsSection({ productId, productSlug, reviews, averageRating,
                 <span className="font-medium text-brand-950">{review.title}</span>
                 {review.verifiedPurchase && <Badge variant="success">Verified purchase</Badge>}
               </div>
-              <p className="mt-1 text-sm text-foreground/50">{review.customerName}</p>
+              <p className="mt-1 text-sm text-foreground/65">{review.customerName}</p>
               <p className="mt-2 whitespace-pre-line text-sm text-foreground/80">{review.body}</p>
             </li>
           ))}

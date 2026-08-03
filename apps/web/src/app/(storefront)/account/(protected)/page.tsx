@@ -21,7 +21,7 @@ export default async function AccountOverviewPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-md border border-brand-100 p-4">
-          <p className="text-xs uppercase tracking-wide text-foreground/50">Total orders</p>
+          <p className="text-xs uppercase tracking-wide text-foreground/65">Total orders</p>
           <p className="text-xl font-semibold text-brand-950">{orders.length}</p>
         </div>
         <Link href="/account/addresses" className="rounded-md border border-brand-100 p-4 hover:bg-brand-50/40">
@@ -40,7 +40,7 @@ export default async function AccountOverviewPage() {
           </Link>
         </div>
         {orders.length === 0 ? (
-          <p className="text-sm text-foreground/60">No orders yet.</p>
+          <p className="text-sm text-foreground/69">No orders yet.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {orders.slice(0, 5).map((order) => (

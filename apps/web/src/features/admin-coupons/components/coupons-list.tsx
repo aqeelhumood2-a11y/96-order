@@ -37,7 +37,7 @@ export function CouponsList({ coupons }: { coupons: Coupon[] }) {
               <Badge variant={coupon.active ? "success" : "neutral"}>{coupon.active ? "active" : "inactive"}</Badge>
             </div>
             <p className="text-sm text-foreground/70">{coupon.description || "—"}</p>
-            <p className="text-xs text-foreground/50">
+            <p className="text-xs text-foreground/65">
               {coupon.type === "percentage" ? `${coupon.value}% off` : coupon.type === "fixed" ? `${formatMoney({ amount: coupon.value, currency: "BHD" })} off` : "Free shipping"} ·
               used {coupon.usageCount}
               {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ""}

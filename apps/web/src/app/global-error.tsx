@@ -20,7 +20,7 @@ export default function GlobalError({
       <body className="flex min-h-full flex-col items-center justify-center gap-4 p-8 text-center font-sans">
         <Logo variant="mark" color="purple" height={40} className="mb-2" />
         <h1 className="text-3xl font-semibold tracking-tight text-brand-950">Something went wrong</h1>
-        <p className="max-w-sm text-foreground/60">
+        <p className="max-w-sm text-foreground/69">
           The application hit an unexpected error. Please try again.
         </p>
         <button

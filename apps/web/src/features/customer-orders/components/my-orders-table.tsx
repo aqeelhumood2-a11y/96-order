@@ -8,7 +8,7 @@ function formatDate(date: Date): string {
 
 export function MyOrdersTable({ orders }: { orders: Order[] }) {
   if (orders.length === 0) {
-    return <p className="text-sm text-foreground/60">You haven&apos;t placed any orders yet.</p>;
+    return <p className="text-sm text-foreground/69">You haven&apos;t placed any orders yet.</p>;
   }
 
   return (
@@ -21,7 +21,7 @@ export function MyOrdersTable({ orders }: { orders: Order[] }) {
         >
           <div>
             <p className="text-sm font-medium text-brand-900">{order.orderNumber}</p>
-            <p className="text-xs text-foreground/50">{formatDate(order.createdAt)}</p>
+            <p className="text-xs text-foreground/65">{formatDate(order.createdAt)}</p>
           </div>
           <div className="flex items-center gap-3 text-sm">
             <span className="capitalize text-foreground/70">{order.status.replace(/_/g, " ")}</span>

@@ -49,19 +49,19 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-md border border-brand-100 p-4">
-          <p className="text-xs uppercase tracking-wide text-foreground/50">Total orders</p>
+          <p className="text-xs uppercase tracking-wide text-foreground/65">Total orders</p>
           <p className="text-xl font-semibold text-brand-950">{customer.totalOrders}</p>
         </div>
         <div className="rounded-md border border-brand-100 p-4">
-          <p className="text-xs uppercase tracking-wide text-foreground/50">Total spent</p>
+          <p className="text-xs uppercase tracking-wide text-foreground/65">Total spent</p>
           <p className="text-xl font-semibold text-brand-950">{formatMoney(customer.totalSpent)}</p>
         </div>
         <div className="rounded-md border border-brand-100 p-4">
-          <p className="text-xs uppercase tracking-wide text-foreground/50">First order</p>
+          <p className="text-xs uppercase tracking-wide text-foreground/65">First order</p>
           <p className="text-xl font-semibold text-brand-950">{formatDate(customer.firstOrderAt)}</p>
         </div>
         <div className="rounded-md border border-brand-100 p-4">
-          <p className="text-xs uppercase tracking-wide text-foreground/50">Last order</p>
+          <p className="text-xs uppercase tracking-wide text-foreground/65">Last order</p>
           <p className="text-xl font-semibold text-brand-950">{formatDate(customer.lastOrderAt)}</p>
         </div>
       </div>
@@ -70,21 +70,21 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
         <h2 className="text-sm font-semibold text-brand-950">Contact information</h2>
         <dl className="flex flex-col gap-1.5 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-foreground/60">Email</dt>
+            <dt className="text-foreground/69">Email</dt>
             <dd className="text-foreground">{customer.email}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-foreground/60">Mobile</dt>
+            <dt className="text-foreground/69">Mobile</dt>
             <dd className="text-foreground">{customer.mobile}</dd>
           </div>
           {customer.companyName && (
             <div className="flex justify-between gap-4">
-              <dt className="text-foreground/60">Company</dt>
+              <dt className="text-foreground/69">Company</dt>
               <dd className="text-foreground">{customer.companyName}</dd>
             </div>
           )}
           <div className="flex justify-between gap-4">
-            <dt className="text-foreground/60">Account type</dt>
+            <dt className="text-foreground/69">Account type</dt>
             <dd className="text-foreground">{customer.kind === "guest" ? "Guest checkout" : "Registered account"}</dd>
           </div>
         </dl>

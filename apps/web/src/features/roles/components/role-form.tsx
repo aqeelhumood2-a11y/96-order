@@ -96,9 +96,9 @@ export function RoleForm() {
           <table className="text-sm">
             <thead>
               <tr>
-                <th className="pr-4 text-left font-medium text-foreground/60">Namespace</th>
+                <th className="pr-4 text-left font-medium text-foreground/69">Namespace</th>
                 {PERMISSION_ACTIONS.map((action) => (
-                  <th key={action} className="px-2 text-left font-medium text-foreground/60">
+                  <th key={action} className="px-2 text-left font-medium text-foreground/69">
                     {action}
                   </th>
                 ))}

@@ -11,7 +11,7 @@ function StatusRow({ label, configured, envVar }: { label: string; configured: b
     <div className="flex items-center justify-between border-b border-surface-border py-3 last:border-0">
       <div>
         <p className="text-sm font-medium text-brand-950">{label}</p>
-        <p className="text-xs text-foreground/50">{envVar}</p>
+        <p className="text-xs text-foreground/65">{envVar}</p>
       </div>
       <Badge variant={configured ? "success" : "neutral"}>{configured ? "Configured" : "Not configured"}</Badge>
     </div>
@@ -50,7 +50,7 @@ function RetryQueueCard({
   return (
     <div className="rounded-md border border-surface-border p-4">
       <h2 className="mb-2 text-sm font-semibold text-brand-950">{title}</h2>
-      <p className="mb-3 text-xs text-foreground/60">{description}</p>
+      <p className="mb-3 text-xs text-foreground/69">{description}</p>
       <Button size="sm" onClick={handleRetry} disabled={pending}>
         {pending ? "Retrying…" : buttonLabel}
       </Button>
@@ -77,7 +77,7 @@ export function IntegrationsPanel({ status }: { status: IntegrationStatus }) {
       <div className="rounded-md border border-surface-border p-4">
         <h2 className="mb-2 text-sm font-semibold text-brand-950">System &amp; ERP integration</h2>
         <StatusRow label="Job/integration API access" configured={status.jobSecretConfigured} envVar="JOB_SECRET" />
-        <p className="mt-3 text-xs text-foreground/60">
+        <p className="mt-3 text-xs text-foreground/69">
           When configured, an external scheduler can call{" "}
           <code className="rounded bg-surface-sunken px-1">POST /api/jobs/retry-failed-emails</code>,{" "}
           <code className="rounded bg-surface-sunken px-1">POST /api/jobs/retry-failed-notifications</code>, and{" "}

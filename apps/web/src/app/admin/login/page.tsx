@@ -11,7 +11,7 @@ export default async function AdminLoginPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
       <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Admin sign in</h1>
       <Suspense>
         <LoginForm />
@@ -19,6 +19,6 @@ export default async function AdminLoginPage() {
       <Link href="/admin/forgot-password" className="text-sm text-brand-700 hover:underline">
         Forgot your password?
       </Link>
-    </div>
+    </main>
   );
 }

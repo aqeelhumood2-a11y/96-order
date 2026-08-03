@@ -97,7 +97,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
 
       <fieldset className="flex flex-col gap-1.5">
         <legend className="text-sm font-medium text-foreground">Roles</legend>
-        {roles.length === 0 && <p className="text-sm text-foreground/60">No roles exist yet.</p>}
+        {roles.length === 0 && <p className="text-sm text-foreground/69">No roles exist yet.</p>}
         {roles.map((role) => (
           <label key={role.id} className="flex items-center gap-2 text-sm">
             <input

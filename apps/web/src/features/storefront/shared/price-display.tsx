@@ -15,7 +15,7 @@ export function PriceDisplay({ price, compareAtPrice, className }: PriceDisplayP
       <span className="font-semibold text-brand-950">{formatPrice(price)}</span>
       {isOnSale && (
         <span
-          className="text-sm text-foreground/50 line-through"
+          className="text-sm text-foreground/65 line-through"
           aria-label={`Compare at price ${formatPrice(compareAtPrice)}`}
         >
           {formatPrice(compareAtPrice)}

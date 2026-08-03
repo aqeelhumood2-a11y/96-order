@@ -12,7 +12,7 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
     <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-surface-border px-6 py-16 text-center">
       <Logo variant="mark" color="purple" height={32} className="opacity-30" />
       <p className="text-base font-medium text-brand-950">{title}</p>
-      {description && <p className="max-w-sm text-sm text-foreground/60">{description}</p>}
+      {description && <p className="max-w-sm text-sm text-foreground/69">{description}</p>}
       {action}
     </div>
   );

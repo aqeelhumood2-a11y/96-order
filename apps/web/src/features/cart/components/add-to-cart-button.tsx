@@ -52,7 +52,7 @@ export function AddToCartButton({ productId, variantId, disabled, disabledReason
           {status === "loading" ? "Adding…" : "Add to cart"}
         </Button>
       </div>
-      {disabled && disabledReason && <p className="text-xs text-foreground/50">{disabledReason}</p>}
+      {disabled && disabledReason && <p className="text-xs text-foreground/65">{disabledReason}</p>}
       {status === "success" && (
         <p role="status" className="text-xs text-brand-700">
           Added to cart.

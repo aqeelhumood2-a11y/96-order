@@ -116,7 +116,7 @@ export function OrderActionsPanel({ order, canManageOrders, canManagePayments }:
         )}
       </div>
 
-      {!canManageOrders && !canManagePayments && <p className="text-xs text-foreground/50">You don&apos;t have permission to act on this order.</p>}
+      {!canManageOrders && !canManagePayments && <p className="text-xs text-foreground/65">You don&apos;t have permission to act on this order.</p>}
       {error && (
         <p role="alert" className="text-sm text-danger-600">
           {error}

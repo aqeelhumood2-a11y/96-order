@@ -24,6 +24,11 @@ export function buildProductMetadata(product: PublicProduct): Metadata {
       siteName: SITE_NAME,
       images: image ? [{ url: image.url, alt: image.altText }] : undefined,
     },
+    // Twitter/X doesn't fall back to `openGraph.images` — without this,
+    // sharing a product link there would show the generic site-wide
+    // `og-default.png` (inherited from the root layout's `twitter` block)
+    // instead of the actual product photo Open Graph consumers already get.
+    twitter: image ? { card: "summary_large_image", title, description, images: [image.url] } : undefined,
   };
 }
 

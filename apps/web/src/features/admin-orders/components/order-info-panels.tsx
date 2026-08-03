@@ -14,7 +14,7 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex justify-between gap-4 text-sm">
-      <dt className="text-foreground/60">{label}</dt>
+      <dt className="text-foreground/69">{label}</dt>
       <dd className="text-right text-foreground">{value}</dd>
     </div>
   );
@@ -83,7 +83,7 @@ export function LineItemsPanel({ order }: { order: Order }) {
     <Panel title="Items">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[480px] text-left text-sm">
-          <thead className="text-xs uppercase tracking-wide text-foreground/50">
+          <thead className="text-xs uppercase tracking-wide text-foreground/65">
             <tr>
               <th className="py-1.5 font-medium">Item</th>
               <th className="py-1.5 font-medium">SKU</th>
@@ -98,10 +98,10 @@ export function LineItemsPanel({ order }: { order: Order }) {
                 <td className="py-2">
                   {line.productName}
                   {line.variantAttributes && (
-                    <span className="text-foreground/50"> — {Object.values(line.variantAttributes).join(" / ")}</span>
+                    <span className="text-foreground/65"> — {Object.values(line.variantAttributes).join(" / ")}</span>
                   )}
                 </td>
-                <td className="py-2 text-foreground/60">{line.sku}</td>
+                <td className="py-2 text-foreground/69">{line.sku}</td>
                 <td className="py-2 text-right">{line.quantity}</td>
                 <td className="py-2 text-right">{formatMoney(line.unitPrice)}</td>
                 <td className="py-2 text-right font-medium">{formatMoney(line.lineTotal)}</td>

@@ -54,6 +54,16 @@ describe("buildProductMetadata", () => {
     const metadata = buildProductMetadata(product);
     expect(metadata.openGraph?.images).toEqual([{ url: "https://example.com/a.jpg", alt: "Bag of coffee" }]);
   });
+
+  it("sets a matching Twitter summary_large_image card, since Twitter doesn't fall back to Open Graph images", () => {
+    const metadata = buildProductMetadata(product);
+    expect(metadata.twitter).toMatchObject({ card: "summary_large_image", images: ["https://example.com/a.jpg"] });
+  });
+
+  it("omits the Twitter card entirely when the product has no image, inheriting the site-wide default", () => {
+    const metadata = buildProductMetadata({ ...product, images: [] });
+    expect(metadata.twitter).toBeUndefined();
+  });
 });
 
 describe("buildCategoryMetadata", () => {

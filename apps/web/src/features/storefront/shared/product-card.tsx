@@ -28,7 +28,7 @@ export function ProductCard({ product, highlightQuery }: ProductCardProps) {
         <WishlistButton productId={product.id} variantId={null} className="absolute right-2 top-2 z-20" />
       </div>
       <div className="flex flex-1 flex-col gap-1 p-4">
-        {product.brand && <span className="text-xs font-medium uppercase tracking-wide text-foreground/50">{product.brand.name}</span>}
+        {product.brand && <span className="text-xs font-medium uppercase tracking-wide text-foreground/65">{product.brand.name}</span>}
         <span className="line-clamp-2 font-medium text-brand-950 group-hover:underline">
           <HighlightText text={product.name} query={highlightQuery} />
         </span>
