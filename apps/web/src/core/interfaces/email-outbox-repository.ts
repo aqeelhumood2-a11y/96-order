@@ -20,13 +20,13 @@ export type NewEmailOutboxEntry = Pick<EmailOutboxEntry, "to" | "template" | "da
 /**
  * A durable record of every transactional email the app has ever tried to
  * send, independent of whether the immediate best-effort `EmailPort.send`
- * attempt succeeded — this *is* Phase 5's retry seam: no background
- * worker retries `"failed"` entries yet (see README's Known limitations),
- * but the durable record they'd need to scan already exists, so adding
- * one later is additive.
+ * attempt succeeded — this is Phase 5's retry seam, drained by Phase 8's
+ * `services/email/retry-failed-emails.ts` via `listRetryable`.
  */
 export interface EmailOutboxRepository {
   enqueue(entry: NewEmailOutboxEntry): Promise<EmailOutboxEntry>;
   markSent(id: string): Promise<void>;
   markFailed(id: string, error: string): Promise<void>;
+  /** Every `"failed"` entry with fewer than `maxAttempts` attempts so far, least-retried first — see `services/email/retry-failed-emails.ts`. */
+  listRetryable(maxAttempts: number, limit: number): Promise<EmailOutboxEntry[]>;
 }

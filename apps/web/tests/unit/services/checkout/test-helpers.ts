@@ -84,6 +84,7 @@ export function createMockCheckoutDeps(): CheckoutDeps {
         }),
         markSent: vi.fn().mockResolvedValue(undefined),
         markFailed: vi.fn().mockResolvedValue(undefined),
+        listRetryable: vi.fn().mockResolvedValue([]),
       },
     },
     auditLogs: { record: vi.fn().mockResolvedValue(undefined), list: vi.fn() },

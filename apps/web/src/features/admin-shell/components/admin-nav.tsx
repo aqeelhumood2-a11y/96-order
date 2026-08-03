@@ -22,6 +22,8 @@ export function AdminNav({ session }: { session: Session }) {
     { href: "/admin/brands", label: "Brands", visible: hasPermission(session, "brands:view") },
     { href: "/admin/inventory", label: "Inventory", visible: hasPermission(session, "inventory:view") },
     { href: "/admin/reports", label: "Reports", visible: hasPermission(session, "reports:view") },
+    { href: "/admin/ai-assistant", label: "AI Assistant", visible: hasPermission(session, "reports:view") },
+    { href: "/admin/integrations", label: "Integrations", visible: hasPermission(session, "integrations:view") },
     { href: "/admin/cms/pages", label: "CMS", visible: hasPermission(session, "cms:view") },
     { href: "/admin/site-settings", label: "Site Settings", visible: hasPermission(session, "settings:view") },
     { href: "/admin/coupons", label: "Coupons", visible: hasPermission(session, "promotions:view") },

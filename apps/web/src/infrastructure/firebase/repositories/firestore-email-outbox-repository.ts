@@ -42,4 +42,20 @@ export class FirestoreEmailOutboxRepository implements EmailOutboxRepository {
     const snap = await this.db().collection(COLLECTION).doc(id).get();
     return snap.exists ? ((snap.data() as EmailOutboxDoc).attempts ?? 0) : 0;
   }
+
+  async listRetryable(maxAttempts: number, limit: number): Promise<EmailOutboxEntry[]> {
+    const snap = await this.db()
+      .collection(COLLECTION)
+      .where("status", "==", "failed")
+      .where("attempts", "<", maxAttempts)
+      .orderBy("attempts", "asc")
+      .orderBy("updatedAt", "asc")
+      .limit(limit)
+      .get();
+
+    return snap.docs.map((doc) => {
+      const data = doc.data() as EmailOutboxDoc;
+      return { ...data, id: doc.id, createdAt: data.createdAt.toDate(), updatedAt: data.updatedAt.toDate() };
+    });
+  }
 }

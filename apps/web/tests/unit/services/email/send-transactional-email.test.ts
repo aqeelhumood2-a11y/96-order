@@ -18,6 +18,7 @@ function createMockDeps(): EmailDeps {
       }),
       markSent: vi.fn().mockResolvedValue(undefined),
       markFailed: vi.fn().mockResolvedValue(undefined),
+      listRetryable: vi.fn().mockResolvedValue([]),
     },
   };
 }

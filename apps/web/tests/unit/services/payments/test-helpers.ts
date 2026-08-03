@@ -81,6 +81,7 @@ export function createMockPaymentOrchestrationDeps(): PaymentOrchestrationDeps {
         enqueue: vi.fn().mockResolvedValue({ id: "outbox-1", to: "x", template: "payment_confirmation", data: {}, status: "pending", attempts: 0, createdAt: new Date(), updatedAt: new Date() }),
         markSent: vi.fn().mockResolvedValue(undefined),
         markFailed: vi.fn().mockResolvedValue(undefined),
+        listRetryable: vi.fn().mockResolvedValue([]),
       },
     },
   };

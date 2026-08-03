@@ -76,6 +76,7 @@ export function createMockOrderManagementDeps(): OrderManagementDeps {
         enqueue: vi.fn().mockResolvedValue({ id: "outbox-1", to: "x", template: "order_confirmation", data: {}, status: "pending", attempts: 0, createdAt: new Date(), updatedAt: new Date() }),
         markSent: vi.fn().mockResolvedValue(undefined),
         markFailed: vi.fn().mockResolvedValue(undefined),
+        listRetryable: vi.fn().mockResolvedValue([]),
       },
     },
     auditLogs: { record: vi.fn().mockResolvedValue(undefined), list: vi.fn() },
