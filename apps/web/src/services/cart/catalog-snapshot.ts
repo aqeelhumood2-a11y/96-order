@@ -50,6 +50,8 @@ export async function buildCatalogSnapshots(lines: readonly CartLine[], deps: Ca
         allowBackorder,
         trackInventory,
         maxQuantity,
+        categoryIds: [product.primaryCategoryId, ...product.additionalCategoryIds],
+        brandId: product.brandId,
       });
     }),
   );

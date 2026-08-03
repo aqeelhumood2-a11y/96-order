@@ -5,7 +5,8 @@ import { listAvailableSlots } from "@/core/scheduling/rules";
 import { CartSummary } from "@/features/cart/components/cart-summary";
 import { CheckoutForm } from "@/features/checkout/checkout-form";
 import { peekCartId } from "@/services/cart/cart-session";
-import { getPricedCart } from "@/services/cart/get-priced-cart";
+import { getCustomerSession } from "@/services/customer-auth/session";
+import { getDiscountedPricedCart } from "@/services/pricing/get-discounted-cart";
 import { buildStaticPageMetadata } from "@/services/storefront/seo";
 import { Container } from "@/ui/layout/container";
 import { Button } from "@/ui/primitives/button";
@@ -17,7 +18,8 @@ export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage() {
   const cartId = await peekCartId();
-  const priced = cartId ? (await getPricedCart(cartId)).priced : null;
+  const session = await getCustomerSession();
+  const priced = cartId ? (await getDiscountedPricedCart(cartId, session?.email ?? null)).priced : null;
 
   if (!priced || priced.lines.length === 0 || priced.hasBlockingIssues) {
     return (

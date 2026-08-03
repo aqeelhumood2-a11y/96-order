@@ -87,6 +87,18 @@ export class FirebaseAuthSession implements AuthSessionPort {
     }
   }
 
+  async createUserWithPassword(email: string, password: string): Promise<AuthUserRecord> {
+    try {
+      const user = await getAdminAuth().createUser({ email, password, emailVerified: false, disabled: false });
+      return { uid: user.uid, email, disabled: false };
+    } catch (error) {
+      if (isFirebaseAuthError(error, "auth/email-already-exists")) {
+        throw new ConflictError("An account with this email already exists.", { cause: error });
+      }
+      throw new InternalError("Could not create the account.", { cause: error });
+    }
+  }
+
   async setSuperAdminClaim(uid: string): Promise<void> {
     await getAdminAuth().setCustomUserClaims(uid, { sa: true });
   }

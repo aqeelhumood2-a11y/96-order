@@ -108,6 +108,15 @@ export function max(a: Money, b: Money): Money {
   return isGreaterThanOrEqual(a, b) ? a : b;
 }
 
+export function min(a: Money, b: Money): Money {
+  return isLessThanOrEqual(a, b) ? a : b;
+}
+
+/** `percent` is a whole-number percentage (e.g. `15` for 15%), rounded to the nearest minor unit — used by percentage-off coupons/promotions (`core/pricing/discount-engine.ts`), never a general-purpose float multiplier. */
+export function percentageOf(a: Money, percent: number): Money {
+  return money(Math.round((a.amount * percent) / 100), a.currency);
+}
+
 /** Never returns a negative amount — used for "how much more until free shipping" style differences. */
 export function positiveDifference(a: Money, b: Money): Money {
   const diff = subtract(a, b);

@@ -17,6 +17,7 @@ interface CartDoc {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   expiresAt: Timestamp;
+  couponCode: string | null;
 }
 
 function toDomain(doc: QueryDocumentSnapshot): Cart {
@@ -28,6 +29,7 @@ function toDomain(doc: QueryDocumentSnapshot): Cart {
     createdAt: data.createdAt.toDate(),
     updatedAt: data.updatedAt.toDate(),
     expiresAt: data.expiresAt.toDate(),
+    couponCode: data.couponCode ?? null,
   };
 }
 
@@ -38,6 +40,7 @@ function toDoc(cart: Cart): CartDoc {
     createdAt: Timestamp.fromDate(cart.createdAt),
     updatedAt: Timestamp.fromDate(cart.updatedAt),
     expiresAt: Timestamp.fromDate(cart.expiresAt),
+    couponCode: cart.couponCode,
   };
 }
 

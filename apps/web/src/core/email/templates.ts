@@ -108,6 +108,73 @@ export function renderDeliveryConfirmationEmail(data: DeliveryConfirmationEmailD
   };
 }
 
+export interface CustomerEmailVerificationEmailData {
+  verifyUrl: string;
+}
+
+export function renderCustomerEmailVerificationEmail(data: CustomerEmailVerificationEmailData): RenderedEmail {
+  return {
+    subject: "Verify your email address",
+    text: [
+      "Thanks for creating an account with 96 Order.",
+      "",
+      `Please verify your email address by visiting: ${data.verifyUrl}`,
+      "",
+      "This link expires in 24 hours. If you didn't create this account, you can ignore this email.",
+      "",
+      "— 96 Order",
+    ].join("\n"),
+  };
+}
+
+export interface BackInStockEmailData {
+  productName: string;
+  productUrl: string;
+  unsubscribeUrl: string;
+}
+
+export function renderBackInStockEmail(data: BackInStockEmailData): RenderedEmail {
+  return {
+    subject: `${data.productName} is back in stock`,
+    text: [`Good news — ${data.productName} is back in stock.`, "", `Shop now: ${data.productUrl}`, "", `Don't want these alerts? Unsubscribe: ${data.unsubscribeUrl}`, "", "— 96 Order"].join("\n"),
+  };
+}
+
+export interface ProductQuestionAnsweredEmailData {
+  productName: string;
+  question: string;
+  answer: string;
+  productUrl: string;
+}
+
+export function renderProductQuestionAnsweredEmail(data: ProductQuestionAnsweredEmailData): RenderedEmail {
+  return {
+    subject: `Your question about ${data.productName} was answered`,
+    text: [
+      `Your question about ${data.productName} has been answered:`,
+      "",
+      `Q: ${data.question}`,
+      `A: ${data.answer}`,
+      "",
+      `View it here: ${data.productUrl}`,
+      "",
+      "— 96 Order",
+    ].join("\n"),
+  };
+}
+
+export interface ReviewStatusChangedEmailData {
+  productName: string;
+  status: string;
+}
+
+export function renderReviewStatusChangedEmail(data: ReviewStatusChangedEmailData): RenderedEmail {
+  return {
+    subject: `Your review of ${data.productName} was ${data.status}`,
+    text: `Your review of ${data.productName} has been ${data.status}.\n\n— 96 Order`,
+  };
+}
+
 /**
  * Runtime dispatch from `EmailTemplate` to its render function — the one
  * place `infrastructure/email/console-email-provider.ts` (and any future
@@ -126,5 +193,13 @@ export function renderEmailTemplate(template: EmailTemplate, data: Record<string
       return renderPickupConfirmationEmail(data as unknown as PickupConfirmationEmailData);
     case "delivery_confirmation":
       return renderDeliveryConfirmationEmail(data as unknown as DeliveryConfirmationEmailData);
+    case "customer_email_verification":
+      return renderCustomerEmailVerificationEmail(data as unknown as CustomerEmailVerificationEmailData);
+    case "back_in_stock":
+      return renderBackInStockEmail(data as unknown as BackInStockEmailData);
+    case "product_question_answered":
+      return renderProductQuestionAnsweredEmail(data as unknown as ProductQuestionAnsweredEmailData);
+    case "review_status_changed":
+      return renderReviewStatusChangedEmail(data as unknown as ReviewStatusChangedEmailData);
   }
 }

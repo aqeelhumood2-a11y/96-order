@@ -80,6 +80,8 @@ function makePricedLine(overrides: Partial<PricedCartLine> = {}): PricedCartLine
       availability: { inStock: true, lowStock: false },
       trackInventory: false,
       allowBackorder: false,
+      categoryIds: [],
+      brandId: null,
     },
     effectiveQuantity: 2,
     lineTotal: money(3798),

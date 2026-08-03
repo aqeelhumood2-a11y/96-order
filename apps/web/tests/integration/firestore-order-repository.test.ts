@@ -31,6 +31,8 @@ function makeOrder(overrides: Partial<Order> = {}): Order {
     shippingFee: money(2000),
     discountTotal: money(0),
     grandTotal: money(5798),
+    couponCode: null,
+    appliedDiscounts: [],
     currency: "BHD",
     paymentMethod: "cash",
     paymentStatus: "cash_pending",

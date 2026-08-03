@@ -4,6 +4,11 @@ export const EMAIL_TEMPLATES = [
   "payment_failure",
   "pickup_confirmation",
   "delivery_confirmation",
+  // Phase 7 (customer accounts, CMS, wishlist, reviews, promotions)
+  "customer_email_verification",
+  "back_in_stock",
+  "product_question_answered",
+  "review_status_changed",
 ] as const;
 export type EmailTemplate = (typeof EMAIL_TEMPLATES)[number];
 

@@ -105,6 +105,8 @@ export async function createProduct(
       brandName: brand?.name,
       categoryName: primaryCategory.name,
       variantSkus: variants.map((variant) => variant.sku),
+      coffeeOriginCountry: parsed.attributes?.coffee?.originCountry,
+      coffeeRegion: parsed.attributes?.coffee?.region,
     }),
     version: 1,
     createdAt: now,

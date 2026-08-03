@@ -38,8 +38,10 @@ export interface AuthSessionPort {
   verifySessionCookie(sessionCookie: string, checkRevoked: true): Promise<VerifiedIdToken | null>;
   revokeRefreshTokens(uid: string): Promise<void>;
   getUserByEmail(email: string): Promise<AuthUserRecord | null>;
-  /** Creates an Auth user with no password set — they set one via the password-reset email sent immediately after. */
+  /** Creates an Auth user with no password set — they set one via the password-reset email sent immediately after. Staff onboarding only — see `createUserWithPassword` for customer self-registration. */
   createUser(email: string): Promise<AuthUserRecord>;
+  /** Customer self-registration only — unlike `createUser`, the customer sets their password at signup time, so it's created directly rather than via a follow-up reset email. Throws `ConflictError` if the email is already in use (staff and customers share one Firebase Auth project's email namespace — see README's Known limitations). */
+  createUserWithPassword(email: string, password: string): Promise<AuthUserRecord>;
   setSuperAdminClaim(uid: string): Promise<void>;
   /**
    * Triggers Firebase's own hosted password-reset email delivery

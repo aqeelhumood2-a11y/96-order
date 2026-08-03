@@ -1,8 +1,10 @@
+import { after } from "next/server";
 import type { Session } from "@/core/auth/entities";
 import { type AdjustInventoryInput, adjustInventorySchema } from "@/core/catalog/schemas";
 import type { AdjustInventoryResult } from "@/core/interfaces/inventory-repository";
 import { NotFoundError, ValidationError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
+import { notifyBackInStock } from "@/services/back-in-stock/notify-restock";
 import { defaultCatalogDeps, type CatalogDeps } from "./dependencies";
 
 /**
@@ -56,6 +58,14 @@ export async function adjustInventory(
       onHandAfter: result.adjustment.onHandAfter,
     },
   });
+
+  const availableBefore = result.adjustment.onHandBefore - result.record.reserved;
+  const availableAfter = result.adjustment.onHandAfter - result.record.reserved;
+  if (availableBefore <= 0 && availableAfter > 0) {
+    // Fire-and-forget, scheduled after the response — a back-in-stock email
+    // failure must never affect (or slow down) this inventory adjustment.
+    after(() => notifyBackInStock(parsed.productId, parsed.variantId).catch(() => undefined));
+  }
 
   return result;
 }

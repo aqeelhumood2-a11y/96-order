@@ -28,8 +28,13 @@ const definedProcessEnv = Object.fromEntries(
  * `.env.test`, so no real Tap sandbox account is needed here either), and
  * admin-orders.spec.ts (Phase 6 — order management, customers, dashboard,
  * reports; see its own doc comment for why it performs exactly one login
- * for its entire run). All five share this one config rather than each
- * needing their own. Run via
+ * for its entire run), and customer-account.spec.ts (Phase 7 — customer
+ * registration/wishlist/addresses, CMS page rendering, and cart coupons;
+ * exactly one customer registration/login for its entire run, the same
+ * shared-rate-limit-budget discipline admin-orders.spec.ts documents,
+ * except against `config/customer-auth.ts`'s separate customer rate-limit
+ * buckets rather than the staff ones). All six share this one config
+ * rather than each needing their own. Run via
  * `pnpm run test:e2e:auth` at the repo root, which wraps this in
  * `firebase emulators:exec`. The plain `tests/e2e/not-found.spec.ts` is
  * the only spec that needs no Firebase backend at all, so it alone keeps
@@ -37,7 +42,7 @@ const definedProcessEnv = Object.fromEntries(
  */
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: ["auth.spec.ts", "catalog.spec.ts", "storefront.spec.ts", "checkout.spec.ts", "admin-orders.spec.ts"],
+  testMatch: ["auth.spec.ts", "catalog.spec.ts", "storefront.spec.ts", "checkout.spec.ts", "admin-orders.spec.ts", "customer-account.spec.ts"],
   outputDir: "./test-results-auth",
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,

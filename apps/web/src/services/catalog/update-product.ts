@@ -82,6 +82,7 @@ export async function updateProduct(
     deps.categories.findById(nextPrimaryCategoryId),
     nextBrandId ? deps.brands.findById(nextBrandId) : Promise.resolve(null),
   ]);
+  const nextAttributes = fields.attributes ?? existing.attributes;
   const searchTokens = buildSearchTokens({
     name: fields.name ?? existing.name,
     sku: nextSku,
@@ -91,6 +92,8 @@ export async function updateProduct(
     brandName: effectiveBrand?.name,
     categoryName: effectivePrimaryCategory?.name,
     variantSkus: (nextVariants ?? existing.variants).map((variant) => variant.sku),
+    coffeeOriginCountry: nextAttributes?.coffee?.originCountry,
+    coffeeRegion: nextAttributes?.coffee?.region,
   });
 
   const patch: Partial<Product> = {

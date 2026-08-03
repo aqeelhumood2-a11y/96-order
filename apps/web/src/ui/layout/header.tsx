@@ -3,23 +3,23 @@ import { Container } from "./container";
 import { SearchForm } from "./search-form";
 import { MobileNav, type NavLink } from "./mobile-nav";
 
-const NAV_LINKS: NavLink[] = [
-  { href: "/products", label: "Shop" },
-  { href: "/products?productType=coffee", label: "Coffee" },
-  { href: "/products?productType=equipment", label: "Equipment" },
-];
+export interface HeaderProps {
+  storeName: string;
+  navLinks: NavLink[];
+}
 
-export function Header() {
+/** Presentational only — `ui/` may not depend on `services/` (see `eslint-plugin-boundaries`), so every bit of admin-configured content (store name, nav links) is fetched by the caller (`app/(storefront)/layout.tsx`) and passed in as plain props. */
+export function Header({ storeName, navLinks }: HeaderProps) {
   return (
     <header className="border-b border-brand-100 bg-background">
       <Container className="flex h-16 items-center gap-4">
         <Link href="/" className="text-lg font-semibold tracking-tight text-brand-900">
-          96 Order
+          {storeName}
         </Link>
 
         <nav aria-label="Primary" className="hidden md:block">
           <ul className="flex items-center gap-6">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="text-sm font-medium text-brand-800 hover:text-brand-950">
                   {link.label}
@@ -31,7 +31,7 @@ export function Header() {
 
         <SearchForm formId="header-search" className="ml-auto hidden max-w-xs md:flex" />
 
-        <MobileNav links={NAV_LINKS} />
+        <MobileNav links={navLinks} />
       </Container>
     </header>
   );

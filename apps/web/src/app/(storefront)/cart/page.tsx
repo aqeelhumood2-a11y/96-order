@@ -6,7 +6,8 @@ import { CartLineRow } from "@/features/cart/components/cart-line-row";
 import { CartSummary } from "@/features/cart/components/cart-summary";
 import { buildStaticPageMetadata } from "@/services/storefront/seo";
 import { peekCartId } from "@/services/cart/cart-session";
-import { getPricedCart } from "@/services/cart/get-priced-cart";
+import { getCustomerSession } from "@/services/customer-auth/session";
+import { getDiscountedPricedCart } from "@/services/pricing/get-discounted-cart";
 
 export const metadata: Metadata = buildStaticPageMetadata("Your cart", "Review the items in your cart before checking out.", "/cart");
 
@@ -15,7 +16,8 @@ export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
   const cartId = await peekCartId();
-  const priced = cartId ? (await getPricedCart(cartId)).priced : null;
+  const session = await getCustomerSession();
+  const priced = cartId ? (await getDiscountedPricedCart(cartId, session?.email ?? null)).priced : null;
 
   if (!priced || priced.lines.length === 0) {
     return (
@@ -41,7 +43,7 @@ export default async function CartPage() {
         </div>
 
         <div className="flex flex-col gap-4">
-          <CartSummary priced={priced} />
+          <CartSummary priced={priced} editableCoupon />
           <Button asChild size="lg" disabled={priced.hasBlockingIssues} className="w-full">
             <Link href="/checkout" aria-disabled={priced.hasBlockingIssues}>
               Proceed to checkout

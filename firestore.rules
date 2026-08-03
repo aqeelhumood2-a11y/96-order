@@ -63,6 +63,42 @@ rules_version = '2';
 // server-computed from `orders`/`inventory*` collections already denied
 // above; no new collection was needed for those.
 //
+// Phase 7 (customer accounts, CMS, wishlist, reviews, promotions) adds
+// fourteen new collections: `customerAccounts`, `customerEmailVerifications`,
+// `customerAddresses`, `wishlistItems`, `backInStockSubscriptions`,
+// `notificationOutbox`, `reviews`, `reviewAggregates`, `productQuestions`,
+// `cmsPages`, `siteSettings`, `coupons`, `couponRedemptions`, and
+// `promotions`. Every one of them follows the exact same pattern as every
+// collection above: read and written exclusively by server-side code
+// through the Admin SDK (`infrastructure/firebase/repositories/*.ts`),
+// gated by `services/*` — either a `requireCustomerSession()` ownership
+// check (wishlist, addresses, reviews, questions, back-in-stock,
+// email-verification, the customer's own account) or a
+// `requirePermission()` RBAC check (CMS, site settings, coupons,
+// promotions, review/question moderation, back-in-stock/notification-outbox
+// admin views). Notably, a *signed-in customer's own* data
+// (`customerAccounts`, `customerAddresses`, `wishlistItems`, etc.) is
+// **not** opened to "the owning customer" here either, for the same
+// reason `carts`/`orders` aren't in the Phase 5 paragraph above: there is
+// no client-side Firestore access anywhere in this app, authenticated or
+// not — every customer-facing read/write already goes through a Server
+// Component/Action/Route Handler that resolves and enforces the session
+// server-side (`services/customer-auth/session.ts#requireCustomerSession`),
+// so a rule scoped to `request.auth.uid` would be redundant with, not a
+// replacement for, that enforcement, and would need its own separate
+// custom-claims wiring to even express (`request.auth.uid` is the Firebase
+// Auth uid; nothing here uses Firestore Security Rules' custom-claims
+// mechanism to distinguish "signed in as this customer" from "signed in as
+// staff"). `reviewAggregates` and `notificationOutbox` hold no personal
+// data at all but stay denied anyway, for consistency with every other
+// collection's "no client SDK access, ever" baseline. `reviews` and
+// `productQuestions` do have a public-safe read path
+// (`services/reviews/list-product-reviews.ts`,
+// `services/questions/list-questions.ts`, both approved-only) but that
+// path is itself server-side (a Server Component calling the repository
+// through the Admin SDK), never the client SDK reading Firestore directly
+// — so the collection stays denied here too.
+//
 // Every other collection — anything belonging to a future module — stays
 // on the Phase 1 default-deny baseline until that module designs its own
 // real access pattern.
@@ -145,6 +181,62 @@ service cloud.firestore {
     }
 
     match /customers/{customerId} {
+      allow read, write: if false;
+    }
+
+    match /customerAccounts/{uid} {
+      allow read, write: if false;
+    }
+
+    match /customerEmailVerifications/{tokenHash} {
+      allow read, write: if false;
+    }
+
+    match /customerAddresses/{addressId} {
+      allow read, write: if false;
+    }
+
+    match /wishlistItems/{itemId} {
+      allow read, write: if false;
+    }
+
+    match /backInStockSubscriptions/{subscriptionId} {
+      allow read, write: if false;
+    }
+
+    match /notificationOutbox/{entryId} {
+      allow read, write: if false;
+    }
+
+    match /reviews/{reviewId} {
+      allow read, write: if false;
+    }
+
+    match /reviewAggregates/{productId} {
+      allow read, write: if false;
+    }
+
+    match /productQuestions/{questionId} {
+      allow read, write: if false;
+    }
+
+    match /cmsPages/{pageId} {
+      allow read, write: if false;
+    }
+
+    match /siteSettings/{docId} {
+      allow read, write: if false;
+    }
+
+    match /coupons/{code} {
+      allow read, write: if false;
+    }
+
+    match /couponRedemptions/{redemptionId} {
+      allow read, write: if false;
+    }
+
+    match /promotions/{promotionId} {
       allow read, write: if false;
     }
 

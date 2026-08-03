@@ -143,6 +143,9 @@ export function buildSearchTokens(input: {
   brandName?: string;
   categoryName?: string;
   variantSkus?: readonly string[];
+  /** Phase 7: `CoffeeAttributes.originCountry`/`.region` — "Ethiopia", "Yirgacheffe", etc. become searchable words, same as name/brand/category; never barcode-like exact-match fields. */
+  coffeeOriginCountry?: string;
+  coffeeRegion?: string;
 }): string[] {
   const tokens = new Set<string>();
 
@@ -159,6 +162,8 @@ export function buildSearchTokens(input: {
   addWordsAndPrefixes(input.productType);
   addWordsAndPrefixes(input.brandName);
   addWordsAndPrefixes(input.categoryName);
+  addWordsAndPrefixes(input.coffeeOriginCountry);
+  addWordsAndPrefixes(input.coffeeRegion);
   for (const tag of input.tags) addWordsAndPrefixes(tag);
 
   const addExactCode = (value: string | undefined) => {

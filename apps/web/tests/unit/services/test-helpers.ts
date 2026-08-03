@@ -40,6 +40,7 @@ export function createMockDeps(overrides: Partial<AuthDeps> = {}): AuthDeps {
       revokeRefreshTokens: vi.fn().mockResolvedValue(undefined),
       getUserByEmail: vi.fn().mockResolvedValue(null),
       createUser: vi.fn(),
+      createUserWithPassword: vi.fn(),
       setSuperAdminClaim: vi.fn().mockResolvedValue(undefined),
       sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
     },

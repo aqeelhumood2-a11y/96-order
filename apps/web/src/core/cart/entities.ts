@@ -33,4 +33,13 @@ export interface Cart {
   updatedAt: Date;
   /** Cart expiry policy — see `config/cart.ts`'s `CART_EXPIRY_MS` for the actual duration. */
   expiresAt: Date;
+  /**
+   * Phase 7: the coupon code the shopper has applied, if any — stored
+   * (not just held client-side) so it survives a page reload and flows
+   * automatically into checkout. This is only ever a *hint*; it is never
+   * trusted as proof the coupon is actually valid — `services/coupons/validate-coupon.ts`
+   * re-validates it fresh (existence, active, dates, subtotal, usage
+   * limits) on every read and again, authoritatively, at order creation.
+   */
+  couponCode: string | null;
 }

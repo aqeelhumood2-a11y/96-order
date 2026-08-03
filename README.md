@@ -9,14 +9,16 @@ multi-tenant, ...) plugs in without restructuring what already exists.
 **Stack:** Next.js (App Router) · React · TypeScript · Firebase (Firestore,
 Auth, Storage, Cloud Functions) · Tailwind CSS · GitHub · Vercel.
 
-**Status:** Phase 1 (Foundation), Phase 2 (Authentication, Admin Access &
-RBAC), Phase 3 (Catalog and Inventory Foundation), Phase 4 (Public
-Storefront, Search, and Product Discovery), and Phase 5 (Cart, Checkout,
-Delivery, Pickup, Payments, and Order Creation) are complete. Guest
-checkout, Bahrain delivery/pickup scheduling, cash and Tap-card payments,
-and public order tracking now exist end-to-end. No customer accounts,
-wishlist, reviews, CMS editor, advanced promotions/coupons, refund
-execution, ERP sync, POS, or wholesale modules exist yet.
+**Status:** Phase 1 (Foundation) through Phase 7 (Customer Accounts, CMS,
+Wishlist, Reviews, Promotions, and Full Site Management) are complete.
+Guest and registered-customer checkout, Bahrain delivery/pickup
+scheduling, cash and Tap-card payments, public order tracking, customer
+accounts with saved addresses/wishlist/back-in-stock alerts, product
+reviews and Q&A, coupons and automatic promotions, an admin-editable CMS
+and site settings/homepage/navigation, and the full admin back office
+(order management, customers, inventory operations, dashboard, reporting)
+now exist end-to-end. No refund execution, ERP sync, POS, wholesale, or
+multi-tenant modules exist yet.
 
 ## Repository layout
 
@@ -2448,6 +2450,434 @@ per-file seriality.
   validates one transition at a time in a way a bulk wrapper could loop
   over directly.
 
+## Phase 7 — Customer Accounts, CMS, Wishlist, Reviews, Promotions, and Full Site Management
+
+Adds a customer-facing identity layer (separate from staff/admin auth by
+construction) and everything that hangs off it — account area, saved
+addresses, wishlist, back-in-stock alerts, product reviews and Q&A — plus
+the marketing/merchandising side: coupons, automatic promotions, CMS
+pages, site settings, an admin-configurable homepage, and admin-controlled
+header/footer navigation. Every Phase 1-6 architectural pattern (clean
+layering, RBAC, optimistic concurrency, idempotent writes, rate limiting,
+enumeration-resistant errors, append-only audit logs, cursor pagination,
+server-authoritative pricing) is reused, not redesigned.
+
+### Architecture
+
+```
+core/customer-auth/            entities.ts (CustomerAccount, CustomerSession, NotificationPreferences),
+                                rules.ts (email-verification token gen/hash/expiry), schemas.ts
+core/customer-address/         entities.ts (CustomerAddress, reuses DeliveryAddress), schemas.ts
+core/wishlist/                 entities.ts (WishlistItem, deterministic id + membership key)
+core/back-in-stock/            entities.ts (BackInStockSubscription — pending/notified/cancelled)
+core/notification-outbox/      entities.ts (NotificationOutboxEntry — separate durable retry-seam
+                                from Phase 5's emailOutbox, see below)
+core/reviews/                  entities.ts (Review, deterministic id per customer+product),
+                                rules.ts, schemas.ts, aggregate.ts (ReviewAggregate sum/count)
+core/questions/                entities.ts (ProductQuestion — status doubles as moderation +
+                                answered state), schemas.ts
+core/cms/                      entities.ts (CmsPage, optimistic-concurrency version), schemas.ts
+core/site-settings/             entities.ts (SiteSettings singleton — store identity, footer,
+                                nav, homepage sections, maintenance mode), schemas.ts
+core/coupons/                  entities.ts (Coupon, keyed by its own code), rules.ts, schemas.ts
+core/promotions/               entities.ts (Promotion — percentage/fixed/free_shipping,
+                                scope+priority+stackable), schemas.ts
+core/pricing/                  discount-engine.ts (pure scope-matching + amount calc, shared by
+                                coupons and promotions), apply-discounts.ts (stacking rules),
+                                priced-cart.ts (layers discounts onto Phase 5's PricedCart)
+core/interfaces/                customer-account-repository.ts, customer-email-verification-
+                                repository.ts, customer-address-repository.ts, wishlist-
+                                repository.ts, back-in-stock-repository.ts, notification-
+                                outbox-repository.ts, review-repository.ts, review-aggregate-
+                                repository.ts, product-question-repository.ts, cms-page-
+                                repository.ts, site-settings-repository.ts, coupon-repository.ts,
+                                promotion-repository.ts
+infrastructure/firebase/        firestore-customer-account-repository.ts, firestore-customer-
+  repositories/                email-verification-repository.ts, firestore-customer-address-
+                                repository.ts, firestore-wishlist-repository.ts, firestore-back-
+                                in-stock-repository.ts, firestore-notification-outbox-
+                                repository.ts, firestore-review-repository.ts, firestore-review-
+                                aggregate-repository.ts, firestore-product-question-
+                                repository.ts, firestore-cms-page-repository.ts, firestore-site-
+                                settings-repository.ts, firestore-coupon-repository.ts,
+                                firestore-promotion-repository.ts
+services/customer-auth/         register/login/logout, request-password-reset, send/resend/
+                                verify-email, link-guest-orders, update-profile, get-account,
+                                session.ts (getCustomerSession/requireCustomerSession)
+services/customer-addresses/    addresses.ts (CRUD + setDefault, ownership via NotFoundError)
+services/customer-orders/       list-my-orders.ts, reorder.ts
+services/wishlist/              wishlist.ts (list/add/remove/moveToCart)
+services/back-in-stock/         subscribe.ts, unsubscribe.ts (token-based + session-based),
+                                notify-restock.ts (the outbox/retry fan-out), list-my-
+                                subscriptions.ts, admin-list.ts
+services/reviews/               create/update/moderate-review.ts, list-product-reviews.ts,
+                                admin-list-reviews.ts, verified-purchase.ts
+services/questions/             ask-question.ts, answer-question.ts (answering == approving —
+                                see core/questions/entities.ts), list-questions.ts
+services/cms/                   manage-pages.ts (CRUD + optimistic concurrency + slug
+                                uniqueness), get-public-page.ts (published-only + nav/footer list)
+services/site-settings/         manage-settings.ts (admin), get-public-settings.ts (cached,
+                                tag-invalidated)
+services/coupons/               manage-coupons.ts (admin CRUD)
+services/promotions/            manage-promotions.ts (admin CRUD)
+services/pricing/               validate-coupon.ts, evaluate-cart-discounts.ts, get-discounted-
+                                cart.ts, apply-coupon-to-cart.ts (rate-limited by cart id)
+features/customer-auth/         login/register/forgot-password/logout/profile/notification-
+  , customer-addresses/,        preferences forms, addresses list/form, orders table/reorder
+  customer-orders/               button, all client components + Server Actions
+features/wishlist/              local-wishlist.ts (guest localStorage seam), wishlist-context.tsx
+                                (client Context — signed-in vs. guest membership), wishlist-
+                                button.tsx, wishlist-grid.tsx
+features/back-in-stock/         subscribe-form.tsx, subscriptions-list.tsx, actions.ts
+features/reviews/                review-form.tsx, reviews-section.tsx, star-rating-*.tsx, actions.ts
+features/questions/              questions-section.tsx, actions.ts
+features/admin-cms/, admin-site-settings/, admin-coupons/, admin-promotions/, admin-reviews/,
+  admin-questions/, admin-notifications/  admin CRUD/moderation UI for every area above
+app/(storefront)/account/       login, register, forgot-password, verify-email (public) +
+                                (protected)/ layout + overview/orders/profile/addresses/
+                                wishlist/notifications
+app/(storefront)/pages/[slug]/  public CMS page renderer
+app/(storefront)/unsubscribe/back-in-stock/  token-based unsubscribe landing page
+app/admin/*/cms/, site-settings/, coupons/, promotions/, reviews/, questions/,
+  notifications/back-in-stock/  admin routes (reusing the existing admin shell)
+app/api/customer-auth/          session, register, forgot-password Route Handlers (IP-rate-
+                                limited, CSRF-checked — same pattern as staff auth)
+app/api/back-in-stock/subscribe/  Route Handler (needs IP for rate limiting; a Server Action
+                                has no request object to key that off)
+app/api/wishlist/keys/          lightweight membership-key fetch for the client wishlist context
+```
+
+No admin/staff route, permission check, or Firestore collection from Phase
+1-6 was touched beyond additive fields (see Data model changes below).
+
+### Customer identity — isolated from staff/admin by construction
+
+A customer account (`customerAccounts/{uid}`) is a completely separate
+Firestore document, Firebase Auth flow, and session cookie
+(`__Host-customer-session`, `services/customer-auth/session.ts`) from a
+staff account (`users/{uid}`, `__Host-session`). A customer can never
+satisfy `requireSession()` (staff) and a staff member's cookie is never
+even read by `requireCustomerSession()` — this is a structural guarantee,
+not a permission check that could be misconfigured. Password auth uses a
+new `AuthSessionPort.createUserWithPassword()` method, distinct from
+staff's passwordless `createUser` (staff sign in via a magic-link-style
+flow from Phase 2; customers set a password at registration).
+
+**Guest order linking** needed no data migration or per-order claim
+mechanism: Phase 6's `customerKeyFromEmail`-based keying already means
+every guest order is stored under a `Customer` aggregate keyed by the
+shopper's email. `link-guest-orders.ts` runs once email verification
+succeeds (never before — an unverified registration can't expose someone
+else's order history just by matching an email string) and only updates
+that `Customer` aggregate's `kind`/`userId` fields; `listMyOrders` was
+already querying by the same key, so past orders become visible with no
+further wiring.
+
+**Email verification tokens** live in their own `customerEmailVerifications`
+collection, storing only a SHA-256 hash — never a field on
+`CustomerAccount` itself, and never a plaintext token anywhere at rest.
+Password reset reuses Firebase's own hosted reset-email flow
+(`AuthSessionPort.sendPasswordResetEmail`) rather than a second custom
+system, scheduled via Next's `after()` the same way
+`services/auth/request-password-reset.ts` already does, so the response
+time never leaks whether an account exists.
+
+### Wishlist — guest seam is client-only, not a server identity
+
+A cart has a signed guest cookie identity (Phase 5); a wishlist doesn't.
+Rather than invent one, a guest's wishlist lives entirely in
+`localStorage` (`features/wishlist/local-wishlist.ts`) as a set of
+`productId:variantId` keys. `WishlistProvider`
+(`features/wishlist/wishlist-context.tsx`) is the one place guest vs.
+signed-in is resolved: signed in, it fetches `/api/wishlist/keys` and
+mutates through Server Actions against `wishlistItems/{customerUid}:
+{productId}:{variantId}`; signed out, it reads/writes `localStorage`
+directly. On mount with a session and leftover guest keys, it replays each
+one as a real `addToWishlist` call and clears `localStorage` — "merge on
+login" without a server-side guest-wishlist concept ever existing.
+
+### Back-in-stock — a second, dedicated outbox
+
+`notificationOutbox` is deliberately separate from Phase 5's `emailOutbox`
+(`core/notification-outbox/entities.ts`'s doc comment): `emailOutbox`
+records "did we try to send this email"; `notificationOutbox` records "did
+this subscription get notified for this restock", which is what
+`/admin/notifications/back-in-stock` needs to show. `adjustInventory`
+(`services/catalog/adjust-inventory.ts`) detects a `0-or-below → positive`
+available-quantity transition and schedules `notifyBackInStock` via
+`after()` — fire-and-forget, so an email failure can never block or slow
+down the inventory write that triggered it. Each subscription gets one
+notification per restock (subscriptions are filtered to `status ==
+"pending"`, flipped to `"notified"` only after a successful send); a
+customer who's since turned off `notificationPreferences.backInStock` is
+skipped without even enqueueing an outbox job. Unsubscribe works two ways:
+a signed-in customer cancels from `/account/notifications`; a guest (or
+anyone) uses the token-based link every email includes
+(`/unsubscribe/back-in-stock?id=&token=`) — the token is a plain,
+non-hashed field on the subscription itself (not the customer-auth-style
+hashed/single-use kind), a deliberate choice since the worst case of
+disclosure is someone cancelling one low-value alert, not an account
+takeover.
+
+### Reviews and Q&A
+
+**Reviews** are keyed `${customerUid}:${productId}` — one review per
+customer per product, structurally (a second submission is a
+`ConflictError`, never a silent overwrite or a duplicate row).
+`verifiedPurchase` is computed at submission time from a `"completed"`
+order containing the product under the reviewer's own email — never
+client-supplied. Moderation (`pending → approved/rejected/hidden`) is the
+only place a review's contribution to `reviewAggregates/{productId}`
+changes: crossing the approved boundary applies `±rating` to `sum` and
+`±1` to `count` inside a Firestore transaction; every other transition
+(e.g. `rejected → hidden`) leaves the aggregate untouched. A customer can
+edit or delete their own review only while it's still `"pending"`.
+
+**Product questions** fold moderation and "answered" into one state
+(`core/questions/entities.ts`'s doc comment): the granted permission set
+is `questions:view`/`questions:answer` only (no separate `questions:
+moderate`), so a staff member approving a question *is* answering it —
+`"approved"` always has a non-null `answer`, `"pending"`/`"rejected"`
+never do. Public reads only ever see `"approved"` rows.
+
+### Coupons, promotions, and the discount pipeline
+
+`core/pricing/discount-engine.ts` is the one place a `"percentage"`/
+`"fixed"`/`"free_shipping"` discount's monetary amount is computed from a
+category/brand-matched, exclusion-filtered subset of cart lines — shared
+by coupon and promotion evaluation so the two can never disagree for the
+same scope/type/value. `core/pricing/apply-discounts.ts` combines them:
+
+1. Every *eligible* automatic promotion (active, in date range, scope
+   matches at least one line) is found.
+2. If any eligible promotion is `stackable: false`, only the single
+   **lowest-`priority`** one applies — admins rank precedence explicitly
+   via a `priority` field rather than the engine guessing "biggest
+   discount wins"; every other eligible promotion is dropped for this cart.
+3. Otherwise, every eligible `stackable: true` promotion applies and their
+   amounts sum.
+4. A coupon (already fully validated server-side —
+   `services/pricing/validate-coupon.ts`) then either **adds on top**
+   (`stackable: true`) or **replaces every promotion entirely**
+   (`stackable: false`) — a non-stackable coupon is the shopper's explicit
+   choice to use *that* code instead of whatever automatic promotion would
+   otherwise apply.
+
+**Shipping-threshold decision (explicitly documented, per spec
+requirement):** the shipping fee is always computed from the cart's
+**pre-discount** subtotal (`core/cart/rules.ts#priceCart`, untouched by
+Phase 7). A coupon/promotion can never change which shipping tier a cart
+lands in — it can only override the fee to zero outright via a
+`"free_shipping"`-type discount. Boundary cases (a cart just above the
+free-shipping threshold keeps free shipping even after a coupon drops its
+*discounted* total back below the threshold; a plain subtotal discount,
+without an explicit free-shipping discount, never zeroes the fee) are
+covered by `tests/unit/pricing/priced-cart.test.ts`.
+
+**Server-authoritative, idempotent redemption:** `Cart.couponCode` is only
+ever a *hint* — `evaluateCartDiscounts` re-validates it fresh on every
+read (existence, active, date range, min subtotal, usage limit,
+per-customer limit, first-order-only), and checkout
+(`services/checkout/create-order.ts`) re-runs the exact same validation
+with the now-known checkout email before ever computing the charged total.
+`FirestoreCouponRepository.redeem()` increments `usageCount` and writes a
+`couponRedemptions/{code}:{orderId}` row inside one transaction, keyed
+deterministically so retrying the same order id can never double-count,
+and refuses (returns `false`, no throw) once `usageLimit` is reached — the
+caller treats that as "no longer available," not a hard error, since a
+concurrent order could have claimed the last slot between validation and
+redemption. **Documented cancelled/failed-order release policy:** a
+cancelled order's coupon usage is **not** automatically released back to
+the coupon's `usageCount` — the same class of intentionally-deferred
+reconciliation edge case Phase 5/6 left documented rather than built (see
+Known limitations).
+
+`Order.couponCode`/`Order.appliedDiscounts` are immutable snapshots taken
+at checkout — the same "the order keeps its own permanent copy" principle
+`OrderLine` already uses for catalog data, so a later coupon edit or
+deactivation can never change what an already-placed order shows was
+charged. Both fields are optional on the `Order` type (matching
+`customerId`'s existing precedent) since every pre-Phase-7 order predates
+them and is never migrated.
+
+### CMS, site settings, homepage, and navigation
+
+**CMS pages** (`cmsPages`) use the same optimistic-concurrency pattern as
+`Product` (`version`/`expectedVersion`, `ConflictError` on mismatch) plus
+slug-uniqueness enforcement (query-checked, not transactionally claimed
+like SKUs — an accepted simplification given this is a low-volume,
+admin-only write path, not a public-facing race). The public route
+(`/pages/[slug]`) only ever resolves `status == "published"` pages.
+
+**Site settings** (`siteSettings`, a single `"singleton"` document)
+deliberately **consolidates** what the spec's site-settings and
+nav/footer-admin-control sections both describe — store identity,
+contact, social links, footer columns, payment logos, shipping-policy
+text, maintenance mode, header nav links, category/brand-menu toggles,
+and homepage-section visibility/order/title overrides — into one document
+and one `/admin/site-settings` screen, rather than a separate
+`navigationConfig`/`homepageSections` collection each. In practice an
+admin edits all of this together; documenting the decision here (per the
+spec's own "document embedded-vs-separate document decisions
+intentionally" instruction) is the seam a future split would start from.
+Reads go through `services/site-settings/get-public-settings.ts`, cached
+and tag-invalidated the same way every other storefront read is
+(`services/storefront/cache.ts`); an admin save calls
+`revalidateStorefrontTag` immediately, so the next request never sees
+stale settings. `ui/layout/header.tsx`/`footer.tsx` are now pure
+presentational components (props only, no `services/*` import — the
+`eslint-plugin-boundaries` rule that `ui/` can't depend on `services/`
+applies here same as everywhere else); `app/(storefront)/layout.tsx` does
+the fetching and composes the props.
+
+**Homepage sections** are config-driven
+(`SiteSettings.homepageSections`): `features/storefront/home/home-page.tsx`
+renders whichever sections are `visible`, in `sortOrder`, with an optional
+admin-supplied title/subtitle override, falling back to a built-in default
+per section. A category grid is **not** one of the section keys — per the
+spec, category browsing lives only in the header/hamburger nav now; the
+Phase 4 homepage's `FeaturedCategories` section and component were removed.
+
+**Maintenance mode** is informational only — an admin-configured banner
+shown on every storefront page, not an access gate (see Known
+limitations).
+
+### Search enhancements
+
+`core/catalog/rules.ts#buildSearchTokens` gained two new optional inputs,
+`coffeeOriginCountry`/`coffeeRegion` (from `CoffeeAttributes.originCountry`/
+`.region`), indexed the same word-prefix way name/brand/category/tags
+already are — wired into both `create-product.ts` and `update-product.ts`.
+Product type, tags, and SKU were already indexed before Phase 7; barcode
+was already an exact-match search token (not display) from Phase 3/4 and
+is untouched — it was already never exposed in any public DTO.
+
+### Permissions
+
+Six new/activated namespace-action combinations, RBAC-checked in every
+service exactly the way Phase 2 established (`requirePermission`, `super_admin`
+bypass, `manage` wildcard): `cms:view/create/edit/delete`,
+`settings:view/manage`, `promotions:view/manage` (covers both coupons and
+promotions — the spec's permission list has no separate `coupons:*`),
+`reviews:view/moderate`, `questions:view/answer`, `notifications:view/manage`
+(back-in-stock admin views). Every customer-facing mutation is instead
+gated by `requireCustomerSession()`/ownership checks (a wishlist item, an
+address, a review, a subscription — `NotFoundError`, never `ForbiddenError`,
+when the resource belongs to someone else, so a caller can never learn
+that a given id exists). `/admin/roles`'s permission-picker UI is fully
+generated from `PERMISSION_NAMESPACES`/`PERMISSION_ACTIONS`, so every new
+permission here was immediately grantable with no UI change.
+
+### Data model changes to existing entities
+
+- `Cart` gained `couponCode: string | null` (the applied-coupon hint).
+- `CartLineCatalogSnapshot` gained `categoryIds`/`brandId` — purely so the
+  discount engine can scope-match a line; `priceCart` itself never reads
+  either field.
+- `Order` gained optional `couponCode`/`appliedDiscounts` (see above).
+- `Money` (`core/money/money.ts`) gained `min()` and `percentageOf()` —
+  generic, reusable arithmetic helpers the discount engine needed, not
+  coupon-specific.
+- `AUDIT_LOG_EVENT_TYPES`/`PERMISSION_NAMESPACES`/`PERMISSION_ACTIONS`/
+  `EMAIL_TEMPLATES` all gained Phase 7 entries additively (see `core/auth/
+  entities.ts`, `core/auth/permissions.ts`, `core/interfaces/email-port.ts`).
+
+### New Firestore collections
+
+`customerAccounts`, `customerEmailVerifications`, `customerAddresses`,
+`wishlistItems`, `backInStockSubscriptions`, `notificationOutbox`,
+`reviews`, `reviewAggregates`, `productQuestions`, `cmsPages`,
+`siteSettings`, `coupons`, `couponRedemptions`, `promotions` — fourteen
+total. Every one follows the exact same Firestore Security Rules posture
+as every Phase 1-6 collection: `allow read, write: if false`, real
+enforcement is server-side-only Admin SDK access gated by `services/*`
+(see `firestore.rules`'s Phase 7 comment block for why even a signed-in
+customer's own data isn't scoped to `request.auth.uid` — there is no
+client-side Firestore access anywhere in this app, authenticated or not).
+Composite indexes for every multi-field query these collections'
+repositories issue are in `firestore.indexes.json`.
+
+### Security
+
+- Customer and staff sessions are fully isolated (separate cookie,
+  collection, and session-resolution service — see above), never sharing
+  a permission-check code path.
+- Every customer-facing write goes through `requireCustomerSession()` plus
+  an ownership check scoped to `session.uid`/`session.email` — addresses,
+  wishlist, reviews, back-in-stock subscriptions, Q&A.
+- Rate limiting: customer register/login/forgot-password/resend-
+  verification (IP + email, `config/customer-auth.ts`), review submission
+  (per-customer, `config/reviews.ts`), question asking (per-customer,
+  `config/questions.ts`), back-in-stock subscribe (per-IP,
+  `config/customer-auth.ts`), and coupon application (per-cart-id — a
+  Server Action has no request object to key an IP-based limit off,
+  `config/pricing.ts`) — guards specifically against brute-forcing coupon
+  codes via repeated "Apply" submissions.
+- Every enumeration-sensitive lookup (a wishlist item, an address, a
+  review, a subscription belonging to someone else; an invalid/expired
+  back-in-stock unsubscribe token) returns the identical generic
+  `NotFoundError`, never a distinguishing error.
+- Public reads (CMS pages, reviews, Q&A) are hard-gated at the repository
+  method level (`findPublishedBySlug`, `listApprovedByProduct`) — there is
+  no method on any of these ports that can return a draft/pending/rejected
+  row under any circumstance.
+- CSRF/same-origin checks on every customer-auth Route Handler
+  (`verifySameOriginRequest`, the same mechanism Phase 2's staff auth
+  uses); every Server Action gets Next's built-in Origin/Host check.
+
+### Emulator and e2e setup
+
+`tests/e2e/customer-account.spec.ts` shares `playwright.auth.config.ts`'s
+config with every prior phase's auth-backed spec, performing **exactly
+one customer registration/login for its entire run** (register auto-logs
+in) — the same shared-rate-limit-budget discipline
+`admin-orders.spec.ts` documents, except against `config/customer-auth.ts`'s
+separate customer-scoped rate-limit buckets, never the staff ones. It
+seeds a CMS page and a coupon directly through the real Firestore
+repositories (not the admin UI) for the same reason `storefront-
+fixtures.ts` does — avoiding extra staff logins this run's shared budget
+doesn't have room for.
+
+### Known limitations
+
+- Coupon usage is **not** released when an order is later cancelled or
+  fails — `usageCount`/`couponRedemptions` reflect redemptions at
+  checkout time only (documented above).
+- Maintenance mode shows a banner; it does not gate storefront access.
+- Site settings' footer columns, social links, header links, and payment
+  logos are edited via structured line/JSON textareas in
+  `/admin/site-settings`, not a drag-and-drop builder — an intentional
+  "structured, not a visual page builder" simplification the spec itself
+  calls for.
+- No automated GDPR-style data deletion — `customer_data_deletion_requested`
+  is audit-logged and the request is recorded, but nothing yet purges the
+  underlying documents.
+- Review/CMS image attachments are seams only (`Review.imageUrls: []`,
+  always empty) — no upload UI exists yet.
+- "Shop by use" (spec section 13, called out as optional) was not built —
+  no catalog attribute exists to group by yet.
+- E2E coverage for Phase 7 is one representative flow per major area
+  (customer registration → wishlist → addresses, CMS page + footer link,
+  coupon apply/reject) rather than one spec file per feature the way
+  Phases 2-6 have — reviews, Q&A, back-in-stock, and admin moderation UI
+  are covered by unit + Firestore-emulator integration tests only.
+- `notificationOutbox`/`emailOutbox` `"failed"` entries have no automatic
+  retry worker — the durable record exists for one to scan, same
+  Phase 5-documented limitation.
+
+### Future integration seams
+
+- **Automated GDPR deletion**: `customerDataRequests`-style audit events
+  already exist; wiring an actual purge job is additive.
+- **Coupon usage release on cancellation**: `CouponRepository.redeem()`'s
+  transactional shape is the same one a `release()` counterpart would use.
+- **A dedicated `navigationConfig`/`homepageSections` split**: if
+  `siteSettings` ever grows unwieldy as one document, `core/site-settings/
+  entities.ts`'s consolidation doc comment is the starting point for
+  splitting it back out.
+- **Real image uploads for reviews/CMS**: `Review.imageUrls`/`CmsPage`
+  already have the field shape; only the Storage upload path is missing.
+
 ## Backlog (ideas noted, not implemented)
 
 - Firebase App Check / reCAPTCHA in front of Identity Platform, as an
@@ -2484,14 +2914,6 @@ per-file seriality.
 - Real tax/currency/pricing-rule engine behind `taxClass`/`costPrice`.
 - Wholesale price-list and ERP sync collections referencing `productId`/
   `variantId`.
-- Customer accounts, wishlist, and product reviews — Phase 5's guest cart
-  cookie already separates cart identity from browser session, so a
-  future account cart-merge is additive; Phase 6's `Customer.kind`/
-  `userId` fields are the matching seam on the customer-directory side.
-- Coupons/discounts and a real promotions engine.
-- A CMS editor for homepage sections (hero copy, featured picks) — Phase 4
-  ships the layout/data-fetching seam, not an admin-editable content
-  model.
 - Real relevance-ranked/fuzzy search via an external engine (Algolia,
   Typesense, Meilisearch) — see Phase 4's Search strategy for the exact
   seam this would replace.
@@ -2528,5 +2950,25 @@ per-file seriality.
   collection) — Phase 5 ships one fixed location via `config/pickup.ts`.
 - Real multi-currency support — `Money`/`CurrencyCode` already seam for
   it, only `BHD` is ever constructed today.
-- A real discounts/coupons engine behind `Order.discountTotal`, which is
-  always zero today.
+- Automated coupon-usage release when an order is later cancelled or
+  fails — Phase 7's `usageCount`/`couponRedemptions` only ever increment.
+- Automated GDPR-style customer data deletion — the request/audit-event
+  seam exists (Phase 7), nothing purges the underlying documents yet.
+- Real image upload UI for review attachments and CMS page assets —
+  `Review.imageUrls` is a seam only (always empty).
+- A visual/drag-and-drop editor for site settings' footer columns, social
+  links, header links, and payment logos — Phase 7 ships structured
+  line/JSON-textarea editing, deliberately not a page builder.
+- "Shop by use" homepage section/catalog attribute (spec-noted as
+  optional) — no catalog attribute exists to group products by yet.
+- A background worker retrying `"failed"` `notificationOutbox` entries
+  with backoff — mirrors the existing `emailOutbox` retry-worker backlog
+  item above.
+- Splitting `siteSettings` back into separate `navigationConfig`/
+  `homepageSections` collections if the single consolidated document ever
+  becomes unwieldy — see Phase 7's CMS/site-settings section for the
+  consolidation rationale.
+- Per-slug/per-review CMS and review moderation e2e coverage — Phase 7's
+  e2e suite covers one representative flow per major area; reviews, Q&A,
+  back-in-stock, and admin moderation UI rely on unit + integration tests
+  only.

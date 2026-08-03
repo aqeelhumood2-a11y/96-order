@@ -49,6 +49,8 @@ function toDomain(doc: QueryDocumentSnapshot): Order {
     updatedAt: data.updatedAt.toDate(),
     cancelledAt: data.cancelledAt?.toDate(),
     completedAt: data.completedAt?.toDate(),
+    couponCode: data.couponCode ?? null,
+    appliedDiscounts: data.appliedDiscounts ?? [],
   };
 }
 
@@ -75,6 +77,8 @@ function toDoc(order: Order): OrderDoc {
     updatedAt: Timestamp.fromDate(order.updatedAt),
     cancelledAt: order.cancelledAt ? Timestamp.fromDate(order.cancelledAt) : undefined,
     completedAt: order.completedAt ? Timestamp.fromDate(order.completedAt) : undefined,
+    couponCode: order.couponCode ?? null,
+    appliedDiscounts: order.appliedDiscounts ?? [],
   };
 }
 

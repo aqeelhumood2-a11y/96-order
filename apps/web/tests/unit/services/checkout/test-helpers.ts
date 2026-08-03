@@ -87,6 +87,34 @@ export function createMockCheckoutDeps(): CheckoutDeps {
       },
     },
     auditLogs: { record: vi.fn().mockResolvedValue(undefined), list: vi.fn() },
+    pricing: {
+      coupons: {
+        findByCode: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(undefined),
+        list: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+        redeem: vi.fn().mockResolvedValue(true),
+        countRedemptionsByCustomer: vi.fn().mockResolvedValue(0),
+      },
+      promotions: {
+        findById: vi.fn().mockResolvedValue(null),
+        listActive: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(undefined),
+        list: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+      },
+      orders: {
+        findById: vi.fn().mockResolvedValue(null),
+        findByOrderNumber: vi.fn().mockResolvedValue(null),
+        findByIdempotencyKey: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(undefined),
+        list: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+        listByCustomer: vi.fn().mockResolvedValue([]),
+      },
+      auditLogs: { record: vi.fn().mockResolvedValue(undefined), list: vi.fn() },
+      rateLimiter: { consume: vi.fn().mockResolvedValue({ allowed: true }) },
+    },
   };
 }
 

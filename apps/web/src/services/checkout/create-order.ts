@@ -9,11 +9,11 @@ import type { Order } from "@/core/orders/entities";
 import { buildOrderLinesFromPricedCart, buildOrderNumber, buildOrderSearchTokens, ORDER_NUMBER_RANDOM_LENGTH } from "@/core/orders/rules";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/core/payments/entities";
 import { clearCart } from "@/services/cart/clear-cart";
-import { getPricedCart } from "@/services/cart/get-priced-cart";
 import { upsertCustomerFromOrder } from "@/services/customers/upsert-customer-from-order";
 import { sendTransactionalEmail } from "@/services/email/send-transactional-email";
 import { reserveOrderLines, type ReservationLineInput } from "@/services/inventory/reservations";
 import { createPayment } from "@/services/payments/create-payment";
+import { getDiscountedPricedCart } from "@/services/pricing/get-discounted-cart";
 import { defaultCheckoutDeps, type CheckoutDeps } from "./dependencies";
 import { validateCustomer, validateFulfillment, type CheckoutCustomerInput } from "./validation";
 
@@ -104,7 +104,7 @@ export async function createOrder(input: CheckoutInput, deps: CheckoutDeps = def
   }
 
   try {
-    const { priced } = await getPricedCart(input.cartId, deps.cart);
+    const { priced } = await getDiscountedPricedCart(input.cartId, customer.email, deps.cart, deps.pricing);
     if (priced.lines.length === 0) {
       throw new ValidationError("Your cart is empty.");
     }
@@ -129,6 +129,8 @@ export async function createOrder(input: CheckoutInput, deps: CheckoutDeps = def
         shippingFee: priced.shippingFee,
         discountTotal: priced.discountTotal,
         grandTotal: priced.grandTotal,
+        couponCode: priced.appliedDiscounts.find((discount) => discount.source === "coupon")?.id ?? null,
+        appliedDiscounts: priced.appliedDiscounts,
         currency: ACTIVE_CURRENCY.code,
         paymentMethod: input.paymentMethod,
         paymentStatus: input.paymentMethod === "tap" ? "pending" : "cash_pending",
@@ -173,6 +175,25 @@ export async function createOrder(input: CheckoutInput, deps: CheckoutDeps = def
     // never needs its spend reversed later.
     await deps.orderEvents.record({ orderId: order.id, fromStatus: null, toStatus: order.status, actorId: "system:checkout" });
     await upsertCustomerFromOrder(order.customer, order.grandTotal, order.createdAt, deps.customers);
+
+    const couponDiscount = order.appliedDiscounts?.find((discount) => discount.source === "coupon");
+    if (order.couponCode && couponDiscount) {
+      // Transactional, idempotent (`${code}:${orderId}` key) — see
+      // `FirestoreCouponRepository.redeem`'s doc comment. Best-effort: if
+      // the coupon's usage limit was hit by a concurrent order between
+      // this cart's last revalidation and now, the redemption silently
+      // isn't recorded — the order still shows the discount the shopper
+      // was quoted (never re-priced after the fact), but the coupon's
+      // `usageCount` simply undercounts by one in that rare race. See
+      // README's Coupon/promotion section for this documented tradeoff.
+      await deps.pricing.coupons.redeem(order.couponCode, order.id, customer.email, couponDiscount.amount.amount).catch(() => undefined);
+      await deps.auditLogs.record({
+        type: "coupon_redeemed",
+        actorUid: null,
+        actorEmail: customer.email,
+        metadata: { orderId: order.id, orderNumber: order.orderNumber, code: order.couponCode, amount: couponDiscount.amount.amount },
+      });
+    }
 
     await deps.auditLogs.record({
       type: "cart_checkout_started",

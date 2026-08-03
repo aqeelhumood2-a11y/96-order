@@ -1,4 +1,7 @@
 import type { PublicProduct, PublicProductSummary } from "@/core/storefront/dto";
+import type { Review } from "@/core/reviews/entities";
+import type { ProductQuestion } from "@/core/questions/entities";
+import { QuestionsSection } from "@/features/questions/components/questions-section";
 import { Container } from "@/ui/layout/container";
 import { Badge } from "@/ui/primitives";
 import { Breadcrumbs } from "@/features/storefront/shared/breadcrumbs";
@@ -7,6 +10,9 @@ import { AvailabilityBadge } from "@/features/storefront/shared/availability-bad
 import { ProductCard } from "@/features/storefront/shared/product-card";
 import { StructuredData } from "@/features/storefront/shared/structured-data";
 import { AddToCartButton } from "@/features/cart/components/add-to-cart-button";
+import { WishlistButton } from "@/features/wishlist/components/wishlist-button";
+import { BackInStockSubscribeForm } from "@/features/back-in-stock/components/subscribe-form";
+import { ReviewsSection } from "@/features/reviews/components/reviews-section";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
 import { AttributesTable } from "./attributes-table";
@@ -18,9 +24,28 @@ export interface ProductDetailProps {
   rawSelections: Record<string, string>;
   relatedProducts: PublicProductSummary[];
   structuredData?: Record<string, unknown>[];
+  signedInEmail?: string;
+  reviews: Review[];
+  averageRating: number;
+  reviewCount: number;
+  myReview: Review | null;
+  signedInAsCustomer: boolean;
+  questions: ProductQuestion[];
 }
 
-export function ProductDetail({ product, rawSelections, relatedProducts, structuredData }: ProductDetailProps) {
+export function ProductDetail({
+  product,
+  rawSelections,
+  relatedProducts,
+  structuredData,
+  signedInEmail,
+  reviews,
+  averageRating,
+  reviewCount,
+  myReview,
+  signedInAsCustomer,
+  questions,
+}: ProductDetailProps) {
   const { attributeNames, selections, matchedVariant } = resolveVariantSelection(product.variants, rawSelections);
 
   const price = matchedVariant?.price ?? product.basePrice;
@@ -76,12 +101,19 @@ export function ProductDetail({ product, rawSelections, relatedProducts, structu
             <VariantSelector basePath={basePath} variants={product.variants} attributeNames={attributeNames} selections={selections} />
           )}
 
-          <AddToCartButton
-            productId={product.id}
-            variantId={matchedVariant?.id ?? null}
-            disabled={!purchaseAvailable}
-            disabledReason={product.hasVariants && !matchedVariant ? "Select an available option to continue." : !availability.inStock ? "Out of stock." : undefined}
-          />
+          <div className="flex items-start gap-3">
+            <AddToCartButton
+              productId={product.id}
+              variantId={matchedVariant?.id ?? null}
+              disabled={!purchaseAvailable}
+              disabledReason={product.hasVariants && !matchedVariant ? "Select an available option to continue." : !availability.inStock ? "Out of stock." : undefined}
+            />
+            <WishlistButton productId={product.id} variantId={matchedVariant?.id ?? null} />
+          </div>
+
+          {!purchaseAvailable && (!product.hasVariants || matchedVariant !== null) && (
+            <BackInStockSubscribeForm productId={product.id} variantId={matchedVariant?.id ?? null} signedInEmail={signedInEmail} />
+          )}
 
           <AttributesTable coffee={product.attributes?.coffee} equipment={product.attributes?.equipment} weightGrams={weightGrams} dimensions={product.dimensions} />
 
@@ -90,6 +122,18 @@ export function ProductDetail({ product, rawSelections, relatedProducts, structu
           )}
         </div>
       </div>
+
+      <ReviewsSection
+        productId={product.id}
+        productSlug={product.slug}
+        reviews={reviews}
+        averageRating={averageRating}
+        reviewCount={reviewCount}
+        myReview={myReview}
+        signedIn={signedInAsCustomer}
+      />
+
+      <QuestionsSection productId={product.id} productSlug={product.slug} questions={questions} signedIn={signedInAsCustomer} />
 
       {relatedProducts.length > 0 && (
         <section className="mt-16">

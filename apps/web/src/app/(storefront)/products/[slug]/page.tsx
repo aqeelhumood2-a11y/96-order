@@ -6,8 +6,14 @@ import { buildProductMetadata, absoluteUrl } from "@/services/storefront/seo";
 import { buildBreadcrumbJsonLd, buildProductJsonLd } from "@/core/storefront/structured-data";
 import { ProductDetail } from "@/features/storefront/detail/product-detail";
 import { firstValue } from "@/features/storefront/listing/parse-search-params";
+import { getCustomerSession } from "@/services/customer-auth/session";
+import { listProductReviews } from "@/services/reviews/list-product-reviews";
+import { getMyReviewForProduct } from "@/services/reviews/get-my-review";
+import { listProductQuestions } from "@/services/questions/list-questions";
 
 const RELATED_PRODUCTS_LIMIT = 8;
+const REVIEWS_PAGE_LIMIT = 20;
+const QUESTIONS_PAGE_LIMIT = 20;
 
 /** See `app/(storefront)/page.tsx`'s doc comment — this page reads Firestore, so it can't be statically prerendered at build time. */
 export const dynamic = "force-dynamic";
@@ -37,6 +43,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   }
 
   const relatedProducts = await listRelatedProducts(product, RELATED_PRODUCTS_LIMIT);
+  const session = await getCustomerSession();
+  const reviewsView = await listProductReviews(product.id, { limit: REVIEWS_PAGE_LIMIT });
+  const myReview = session ? await getMyReviewForProduct(session, product.id) : null;
+  const questionsPage = await listProductQuestions(product.id, { limit: QUESTIONS_PAGE_LIMIT });
 
   const canonicalUrl = absoluteUrl(`/products/${product.slug}`);
   const structuredData = [
@@ -48,5 +58,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     ]),
   ];
 
-  return <ProductDetail product={product} rawSelections={rawSelections} relatedProducts={relatedProducts} structuredData={structuredData} />;
+  return (
+    <ProductDetail
+      product={product}
+      rawSelections={rawSelections}
+      relatedProducts={relatedProducts}
+      structuredData={structuredData}
+      signedInEmail={session?.email}
+      reviews={reviewsView.reviews.items}
+      averageRating={reviewsView.averageRating}
+      reviewCount={reviewsView.reviewCount}
+      myReview={myReview}
+      signedInAsCustomer={session !== null}
+      questions={questionsPage.items}
+    />
+  );
 }

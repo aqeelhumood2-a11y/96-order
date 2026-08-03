@@ -14,6 +14,7 @@ export const STOREFRONT_CACHE_TAGS = {
   products: "storefront:products",
   categories: "storefront:categories",
   brands: "storefront:brands",
+  siteSettings: "storefront:site-settings",
 } as const;
 
 /**

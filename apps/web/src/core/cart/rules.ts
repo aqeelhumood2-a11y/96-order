@@ -65,6 +65,16 @@ export interface CartLineCatalogSnapshot {
   trackInventory: boolean;
   /** Present only when inventory is tracked and backorder isn't allowed — an unbounded (untracked or backorderable) line has no cap. */
   maxQuantity?: number;
+  /**
+   * Phase 7: the product's category/brand identity, purely so
+   * `core/pricing/discount-engine.ts` can evaluate a coupon/promotion's
+   * category/brand scope against this line — `priceCart` itself never
+   * reads these two fields, so their addition doesn't change anything
+   * about how a line is priced, only what data is available to the
+   * discount layer built on top of it.
+   */
+  categoryIds: string[];
+  brandId: string | null;
 }
 
 export const CART_LINE_ISSUES = ["product_unavailable", "out_of_stock", "quantity_reduced"] as const;

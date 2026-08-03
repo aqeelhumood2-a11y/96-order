@@ -1,6 +1,7 @@
 import type { CurrencyCode, Money } from "@/core/money/money";
 import type { DeliveryAddress, FulfillmentMethod, FulfillmentSchedule, PickupSelection } from "@/core/delivery/entities";
 import type { PaymentMethod, PaymentStatus } from "@/core/payments/entities";
+import type { AppliedDiscount } from "@/core/pricing/apply-discounts";
 
 /**
  * Only the statuses actually reachable during Phase 5's checkout flow are
@@ -79,10 +80,21 @@ export interface Order {
   fulfillment: OrderFulfillment;
   lines: OrderLine[];
   subtotal: Money;
+  /** The fee actually charged — already reflects a `"free_shipping"` coupon/promotion, if one applied. See `couponCode`/`appliedDiscounts` for what produced `discountTotal`/this. */
   shippingFee: Money;
-  /** Always zero in Phase 5 — see README's Discount seam (same placeholder as the cart's). */
   discountTotal: Money;
   grandTotal: Money;
+  /**
+   * Phase 7: the coupon redeemed for this order, if any. Optional (not
+   * `| null` alone) for the same reason `customerId` above is optional —
+   * every Phase 5/6 order predates this field and is never migrated;
+   * treat a missing value the same as `null`, never as "unknown".
+   * Persisted so a later coupon edit/deactivation can never change what
+   * this order already shows was charged.
+   */
+  couponCode?: string | null;
+  /** Phase 7: an immutable snapshot of every promotion/coupon discount applied at checkout — same "the order keeps its own permanent copy" principle `OrderLine`'s doc comment describes for catalog data. Optional for the same pre-Phase-7-order reason as `couponCode`. */
+  appliedDiscounts?: AppliedDiscount[];
   currency: CurrencyCode;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;

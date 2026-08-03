@@ -27,6 +27,18 @@ describe("buildSearchTokens", () => {
     expect(tokens).toEqual(expect.arrayContaining(["ac", "acm", "acme", "wh", "who", "whol", "whole", "si", "sin", "single"]));
   });
 
+  it("includes the coffee origin country and region as searchable words", () => {
+    const tokens = buildSearchTokens({
+      name: "Yirgacheffe",
+      sku: "SKU-4",
+      tags: [],
+      productType: "coffee",
+      coffeeOriginCountry: "Ethiopia",
+      coffeeRegion: "Yirgacheffe Zone",
+    });
+    expect(tokens).toEqual(expect.arrayContaining(["et", "eth", "ethi", "ethiopia", "yi", "yir", "zo", "zon", "zone"]));
+  });
+
   it("drops words shorter than the minimum word length", () => {
     const tokens = buildSearchTokens({ name: "A B Coffee", sku: "SKU-2", tags: [], productType: "coffee" });
     expect(tokens).not.toContain("a");

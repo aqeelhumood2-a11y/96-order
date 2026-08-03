@@ -16,7 +16,7 @@ import type { Cart, CartLine } from "@/core/cart/entities";
 const NOW = new Date("2026-01-01T00:00:00Z");
 
 function makeCart(lines: CartLine[]): Cart {
-  return { id: "cart-1", customerId: null, lines, createdAt: NOW, updatedAt: NOW, expiresAt: NOW };
+  return { id: "cart-1", customerId: null, lines, createdAt: NOW, updatedAt: NOW, expiresAt: NOW, couponCode: null };
 }
 
 function makeSnapshot(overrides: Partial<CartLineCatalogSnapshot> = {}): CartLineCatalogSnapshot {
@@ -30,6 +30,8 @@ function makeSnapshot(overrides: Partial<CartLineCatalogSnapshot> = {}): CartLin
     availability: { inStock: true, lowStock: false },
     allowBackorder: false,
     trackInventory: false,
+    categoryIds: [],
+    brandId: null,
     ...overrides,
   };
 }

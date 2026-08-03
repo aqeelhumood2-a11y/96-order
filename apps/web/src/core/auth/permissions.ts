@@ -18,6 +18,11 @@ export const PERMISSION_NAMESPACES = [
   "integrations",
   "staff",
   "audit_logs",
+  // Phase 7 (customer accounts, CMS, wishlist, reviews, promotions)
+  "promotions",
+  "reviews",
+  "questions",
+  "notifications",
 ] as const;
 
 /**
@@ -27,7 +32,13 @@ export const PERMISSION_NAMESPACES = [
  * from `inventory:edit` — a role can be given one without the other. The
  * `manage` wildcard still covers it like every other action in a namespace.
  */
-export const PERMISSION_ACTIONS = ["view", "create", "edit", "delete", "export", "manage", "adjust"] as const;
+/**
+ * `moderate` (Phase 7, reviews) and `answer` (Phase 7, product questions)
+ * follow the same precedent `adjust` set: each is a distinct, more
+ * sensitive action than plain `edit`, grantable separately from it, with
+ * `manage` still covering both.
+ */
+export const PERMISSION_ACTIONS = ["view", "create", "edit", "delete", "export", "manage", "adjust", "moderate", "answer"] as const;
 
 export type PermissionNamespace = (typeof PERMISSION_NAMESPACES)[number];
 export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];

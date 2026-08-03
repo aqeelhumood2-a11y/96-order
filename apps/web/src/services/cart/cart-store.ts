@@ -13,7 +13,7 @@ export async function getCartOrEmpty(cartId: string, deps: CartDeps): Promise<Ca
   if (existing) return existing;
 
   const now = new Date();
-  return { id: cartId, customerId: null, lines: [], createdAt: now, updatedAt: now, expiresAt: new Date(now.getTime() + CART_EXPIRY_MS) };
+  return { id: cartId, customerId: null, lines: [], createdAt: now, updatedAt: now, expiresAt: new Date(now.getTime() + CART_EXPIRY_MS), couponCode: null };
 }
 
 /** Bumps `updatedAt`/`expiresAt` and persists — every cart-mutating use case ends by calling this. */

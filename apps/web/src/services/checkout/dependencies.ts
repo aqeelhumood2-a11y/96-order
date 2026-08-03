@@ -11,6 +11,7 @@ import { defaultCartDeps, type CartDeps } from "@/services/cart/dependencies";
 import { defaultEmailDeps, type EmailDeps } from "@/services/email/dependencies";
 import { defaultInventoryReservationDeps, type InventoryReservationDeps } from "@/services/inventory/dependencies";
 import { defaultPaymentDeps, type PaymentDeps } from "@/services/payments/dependencies";
+import { defaultPricingDeps, type PricingDeps } from "@/services/pricing/dependencies";
 
 /**
  * Checkout is the one use case that touches every other Phase 5 seam at
@@ -31,6 +32,8 @@ export interface CheckoutDeps {
   auditLogs: AuditLogRepository;
   /** Phase 6: folds the new order into its customer aggregate — see `services/customers/upsert-customer-from-order.ts`. */
   customers: CustomerRepository;
+  /** Phase 7: coupon/promotion evaluation and redemption — see `services/pricing/*`. */
+  pricing: PricingDeps;
 }
 
 export const defaultCheckoutDeps: CheckoutDeps = {
@@ -43,4 +46,5 @@ export const defaultCheckoutDeps: CheckoutDeps = {
   email: defaultEmailDeps,
   auditLogs: new FirestoreAuditLogRepository(),
   customers: new FirestoreCustomerRepository(),
+  pricing: defaultPricingDeps,
 };
