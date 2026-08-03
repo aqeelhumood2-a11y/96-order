@@ -81,6 +81,14 @@ itself can.
 `services/`, and the UI in `features/catalog/`. Nothing in `app/`, `ui/`, or
 any other feature needs to change.
 
+## Production operations documentation
+
+For deploying, monitoring, and running this app in production — separate
+from this README's phase-by-phase architecture/feature history — see
+[docs/](./docs/README.md): deployment guide, environment variable
+reference, backup/disaster-recovery, operations & maintenance, monitoring,
+troubleshooting, security checklist, and release checklist.
+
 ## Getting started
 
 Requires Node.js 22 and [Corepack](https://nodejs.org/api/corepack.html)
