@@ -198,10 +198,34 @@ test.describe("admin order management", () => {
     await expect(page.getByText("Total orders")).toBeVisible();
     await expect(page.getByText("Completed", { exact: true }).first()).toBeVisible();
 
-    // --- Reports: the reporting foundation screens render. ---
+    // --- Reports: the reporting foundation screens render, including
+    // Phase 8's cash/online payments summaries and the pending-cash
+    // collection worklist. ---
     await page.goto("/admin/reports");
     await expect(page.getByRole("heading", { name: "Reports" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Best selling products" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Orders by status" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Cash payments" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Online payments (Tap)" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Pending cash collection" })).toBeVisible();
+    // This order was confirmed above, so it no longer counts as pending —
+    // the section renders its empty state rather than a stale row.
+    await expect(page.getByText("No cash payments are waiting to be collected.")).toBeVisible();
+
+    // --- Integrations: renders with no runtime error. ORDERS_MANAGER has
+    // no integrations:view (least-privilege — see global-setup.ts), so
+    // this also doubles as coverage that the permission gate itself works. ---
+    await page.goto("/admin/integrations");
+    await expect(page.getByText("You don't have permission to view this page.")).toBeVisible();
+
+    // --- AI Admin Assistant: renders and answers using the rules-based
+    // fallback (no ANTHROPIC_API_KEY in this test environment — see
+    // infrastructure/ai/rule-based-assistant-provider.ts). ---
+    await page.goto("/admin/ai-assistant");
+    await expect(page.getByRole("heading", { name: "AI Admin Assistant" })).toBeVisible();
+    await page.getByLabel("Ask about your store").fill("How's business?");
+    await page.getByRole("button", { name: "Ask" }).click();
+    await expect(page.getByText(/Total orders:/)).toBeVisible();
+    await expect(page.getByText("Store data snapshot")).toBeVisible();
   });
 });
