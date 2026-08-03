@@ -64,4 +64,17 @@ export class FirestoreNotificationOutboxRepository implements NotificationOutbox
     const snap = await this.db().collection(COLLECTION).doc(id).get();
     return snap.exists ? ((snap.data() as NotificationOutboxDoc).attempts ?? 0) : 0;
   }
+
+  async listRetryable(maxAttempts: number, limit: number): Promise<NotificationOutboxEntry[]> {
+    const snap = await this.db()
+      .collection(COLLECTION)
+      .where("status", "==", "failed")
+      .where("attempts", "<", maxAttempts)
+      .orderBy("attempts", "asc")
+      .orderBy("updatedAt", "asc")
+      .limit(limit)
+      .get();
+
+    return snap.docs.map((doc) => toDomain(doc as QueryDocumentSnapshot));
+  }
 }

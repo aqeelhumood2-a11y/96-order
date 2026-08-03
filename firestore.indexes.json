@@ -848,6 +848,15 @@
       ]
     },
     {
+      "collectionGroup": "notificationOutbox",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "attempts", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "reviews",
       "queryScope": "COLLECTION",
       "fields": [

@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  uuid: ^11.1.1
+
 importers:
 
   .:
@@ -53,6 +56,9 @@ importers:
       next:
         specifier: 16.2.12
         version: 16.2.12(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.62.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      nodemailer:
+        specifier: ^9.0.3
+        version: 9.0.3
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -84,6 +90,9 @@ importers:
       '@types/node':
         specifier: ^22.10.5
         version: 22.20.1
+      '@types/nodemailer':
+        specifier: ^8.0.1
+        version: 8.0.1
       '@types/react':
         specifier: ^19
         version: 19.2.17
@@ -2029,6 +2038,9 @@ packages:
 
   '@types/node@22.20.1':
     resolution: {integrity: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==}
+
+  '@types/nodemailer@8.0.1':
+    resolution: {integrity: sha512-PxpaInm8V1JQDd4j0ds5HfvWQk8JupS1C0Picb96QJsrrRDjBH+DlK7L4ZdNSqNULhiZRQHc40nLVShaGxXAMw==}
 
   '@types/qs@6.15.1':
     resolution: {integrity: sha512-GZHUBZR9hckSUhrxmp1nG6NwdpM9fCunJwyThLW1X3AyHgd9IlHb6VANpQQqDr2o/qQp6McZ3y/IA2rVzKzSbw==}
@@ -4527,6 +4539,10 @@ packages:
     resolution: {integrity: sha512-wRNIrw4DmVLKQlbgOMdkMx27Wrpzes2hh5Jtbi2bjPd+4wJstWIqP5A+lscnqbm0xxmT5Bpg8Lec5ItEBwx6BQ==}
     engines: {node: '>=18'}
 
+  nodemailer@9.0.3:
+    resolution: {integrity: sha512-n+YP+NKwR5zRWa60k3GiQ6Q3B4KXCoAw40dAKeCtYn020iNN74aWK2liXIC3ZEATeGql7we3tE3t8QwhY0eskw==}
+    engines: {node: '>=6.0.0'}
+
   nopt@10.0.1:
     resolution: {integrity: sha512-df3sBr/6ax9hSGuC3CspvLlbnX8cP5L5nZwXF8cGN8l0zSWR6BvzmQ6jPUKjvo6+/xdpkNvEcucBNUdBeeV13g==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
@@ -5609,13 +5625,8 @@ packages:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
 
-  uuid@14.0.1:
-    resolution: {integrity: sha512-6ZxzVpzDXDa3bJWaHilVayA+BH/1zmxCJoVgvmqJnid/gPoKHxUrS/aC/T6LGQtNHT+XHG9fXPJB4d+IrU30Ew==}
-    hasBin: true
-
-  uuid@9.0.1:
-    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
-    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+  uuid@11.1.1:
+    resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
     hasBin: true
 
   valid-url@1.0.9:
@@ -7743,6 +7754,10 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/nodemailer@8.0.1':
+    dependencies:
+      '@types/node': 22.20.1
+
   '@types/qs@6.15.1': {}
 
   '@types/range-parser@1.2.7': {}
@@ -9631,7 +9646,7 @@ snapshots:
       https-proxy-agent: 7.0.6
       is-stream: 2.0.1
       node-fetch: 2.7.0
-      uuid: 9.0.1
+      uuid: 11.1.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -9802,7 +9817,7 @@ snapshots:
       proto3-json-serializer: 2.0.2
       protobufjs: 7.6.5
       retry-request: 7.0.2
-      uuid: 9.0.1
+      uuid: 11.1.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -10698,6 +10713,8 @@ snapshots:
     optional: true
 
   node-releases@2.0.51: {}
+
+  nodemailer@9.0.3: {}
 
   nopt@10.0.1:
     dependencies:
@@ -11751,7 +11768,7 @@ snapshots:
       https-proxy-agent: 5.0.1
       node-fetch: 2.7.0
       stream-events: 1.0.5
-      uuid: 9.0.1
+      uuid: 11.1.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -11943,7 +11960,7 @@ snapshots:
   universal-analytics@0.5.4:
     dependencies:
       debug: 4.4.3
-      uuid: 14.0.1
+      uuid: 11.1.1
     transitivePeerDependencies:
       - supports-color
 
@@ -12032,9 +12049,7 @@ snapshots:
 
   utils-merge@1.0.1: {}
 
-  uuid@14.0.1: {}
-
-  uuid@9.0.1: {}
+  uuid@11.1.1: {}
 
   valid-url@1.0.9: {}
 

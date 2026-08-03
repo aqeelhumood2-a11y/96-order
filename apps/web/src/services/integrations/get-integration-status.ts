@@ -1,11 +1,13 @@
 import type { Session } from "@/core/auth/entities";
 import { hasAnthropicCredentials } from "@/infrastructure/ai/anthropic-env";
+import { hasSmtpCredentials } from "@/infrastructure/email/smtp-env";
 import { hasTapCredentials } from "@/infrastructure/payments/tap/env";
 import { requirePermission } from "@/services/auth/session";
 
 export interface IntegrationStatus {
   tapConfigured: boolean;
   anthropicConfigured: boolean;
+  smtpConfigured: boolean;
   jobSecretConfigured: boolean;
 }
 
@@ -21,6 +23,7 @@ export function getIntegrationStatus(actor: Session): IntegrationStatus {
   return {
     tapConfigured: hasTapCredentials(),
     anthropicConfigured: hasAnthropicCredentials(),
+    smtpConfigured: hasSmtpCredentials(),
     jobSecretConfigured: Boolean(process.env.JOB_SECRET),
   };
 }

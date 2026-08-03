@@ -17,11 +17,13 @@ describe("getIntegrationStatus", () => {
     vi.stubEnv("JOB_SECRET", "some-secret");
     vi.stubEnv("TAP_SECRET_KEY", "");
     vi.stubEnv("ANTHROPIC_API_KEY", "");
+    vi.stubEnv("SMTP_HOST", "");
     const actor = makeSession({ effectivePermissions: new Set(["integrations:view"]) });
 
     const status = getIntegrationStatus(actor);
     expect(status.jobSecretConfigured).toBe(true);
     expect(status.tapConfigured).toBe(false);
     expect(status.anthropicConfigured).toBe(false);
+    expect(status.smtpConfigured).toBe(false);
   });
 });
