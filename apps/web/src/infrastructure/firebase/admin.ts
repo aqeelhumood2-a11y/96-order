@@ -1,51 +1,116 @@
 import "server-only";
-import { getApps, initializeApp, applicationDefault, type App } from "firebase-admin/app";
+import { getApps, initializeApp, applicationDefault, cert, type App, type Credential } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getStorage, type Storage } from "firebase-admin/storage";
 
 /**
- * Server-only Firebase Admin SDK singleton. Deliberately does NOT accept a
- * service-account JSON blob through env vars:
+ * Server-only Firebase Admin SDK singleton. Supports two credential modes:
  *
- * - Deployed on a Google Cloud runtime (Cloud Functions, Cloud Run, GCE):
- *   `applicationDefault()` picks up that runtime's attached service account
- *   automatically — no credential material to manage at all.
- * - Local development: run `gcloud auth application-default login` once, or
- *   point `GOOGLE_APPLICATION_CREDENTIALS` at a local, gitignored key file.
- *   Never commit that file or paste its contents into an env var.
- * - Any other server-side secret this project needs later should go through
- *   Secret Manager, not a raw env var.
+ * - Explicit service-account credentials via `FIREBASE_ADMIN_PROJECT_ID` /
+ *   `FIREBASE_ADMIN_CLIENT_EMAIL` / `FIREBASE_ADMIN_PRIVATE_KEY` — required
+ *   on hosting platforms with no Google metadata server to query (Vercel,
+ *   most non-GCP hosts), where `applicationDefault()` has nothing to
+ *   discover. Populate these three from a downloaded service-account JSON's
+ *   `project_id` / `client_email` / `private_key` fields — never commit
+ *   that JSON file, and never paste its contents anywhere else in this repo.
+ * - `applicationDefault()` (Application Default Credentials) when none of
+ *   the three are set — the right choice on a Google Cloud runtime (Cloud
+ *   Functions, Cloud Run, GCE, Firebase App Hosting), which attaches
+ *   credentials automatically, or locally after
+ *   `gcloud auth application-default login` / a `GOOGLE_APPLICATION_CREDENTIALS`-
+ *   pointed key file.
+ *
+ * Setting only one or two of the three `FIREBASE_ADMIN_*` variables is
+ * always a misconfiguration (a truncated or partially-copied credential),
+ * never a deliberate choice — that fails loudly with a diagnostic naming
+ * exactly what's missing, instead of silently falling back to ADC under
+ * the wrong identity.
  *
  * Against the Firebase Emulator Suite, the Admin SDK auto-detects the
  * `FIRESTORE_EMULATOR_HOST` / `FIREBASE_AUTH_EMULATOR_HOST` /
  * `FIREBASE_STORAGE_EMULATOR_HOST` env vars that `firebase emulators:start`
  * exports and needs no credential at all in that mode.
  */
+function resolveAdminCredential(): { credential: Credential; projectId?: string } {
+  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+  const presentCount = [projectId, clientEmail, privateKey].filter(Boolean).length;
+
+  if (presentCount === 3) {
+    return {
+      credential: cert({
+        projectId,
+        clientEmail,
+        // Env vars can't carry real newlines portably (Vercel's dashboard,
+        // shell exports, CI secret stores all flatten them to literal
+        // "\n" sequences) — this reverses that so the PEM block parses.
+        privateKey: privateKey!.replace(/\\n/g, "\n"),
+      }),
+      projectId,
+    };
+  }
+
+  if (presentCount === 0) {
+    return { credential: applicationDefault() };
+  }
+
+  const missing = [
+    !projectId && "FIREBASE_ADMIN_PROJECT_ID",
+    !clientEmail && "FIREBASE_ADMIN_CLIENT_EMAIL",
+    !privateKey && "FIREBASE_ADMIN_PRIVATE_KEY",
+  ].filter((name): name is string => Boolean(name));
+
+  throw new Error(
+    `Incomplete Firebase Admin service-account credentials — missing ${missing.join(", ")}. ` +
+      "Set all three of FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, and " +
+      "FIREBASE_ADMIN_PRIVATE_KEY together (from your service account's project_id / " +
+      "client_email / private_key fields), or leave all three unset to use Application " +
+      "Default Credentials instead.",
+  );
+}
+
 function createAdminApp(): App {
   const existing = getApps();
   if (existing.length > 0 && existing[0]) {
     return existing[0];
   }
 
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const usingEmulators = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true";
+
+  if (usingEmulators) {
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    if (!projectId) {
+      throw new Error(
+        "NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set. Required even against the Firebase " +
+          "Emulator Suite so the Admin SDK knows which demo project to address.",
+      );
+    }
+    // The `credential` key must be entirely absent for the emulator case —
+    // Firebase's own options validation rejects `credential: undefined` just
+    // as strictly as an invalid credential object.
+    return initializeApp({
+      projectId,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    });
+  }
+
+  const resolved = resolveAdminCredential();
+  const projectId = resolved.projectId ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
   if (!projectId) {
     throw new Error(
       "NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set. This is required at runtime for every " +
         "Firestore/Auth/Storage-backed route to reach the correct Firebase project — set it " +
-        "in your deployment platform's environment variables (see docs/environment-variables.md). " +
+        "in your deployment platform's environment variables (see docs/environment-variables.md), " +
+        "or set FIREBASE_ADMIN_PROJECT_ID as part of a full service-account credential. " +
         "This only breaks on first use of a Firebase-backed route, not at build time.",
     );
   }
 
-  // The `credential` key must be entirely absent for the emulator case —
-  // Firebase's own options validation rejects `credential: undefined` just
-  // as strictly as an invalid credential object, so this can't be a
-  // ternary on the value alone.
   return initializeApp({
-    ...(usingEmulators ? {} : { credential: applicationDefault() }),
+    credential: resolved.credential,
     projectId,
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   });

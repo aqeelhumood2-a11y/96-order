@@ -19,12 +19,18 @@ exists in a code sandbox.
 Verify these before going live — an over-permissioned service account is a
 real production risk, not a formality:
 
-- **Hosting platform's default service account** (what runs the deployed
-  app and thus the Firebase Admin SDK): needs `roles/datastore.user`
-  (Firestore read/write), `roles/firebaseauth.admin` (session cookie
-  verification, user lookup for `bootstrap:super-admin`-created accounts),
-  and `roles/storage.objectAdmin` scoped to the product-image bucket only
-  — not project-wide Storage admin.
+- **The identity the Firebase Admin SDK runs as** — either the hosting
+  platform's default service account (Cloud Run, Cloud Functions, GCE,
+  Firebase App Hosting — via Application Default Credentials automatically)
+  or an explicit service account you create and hand to the app via
+  `FIREBASE_ADMIN_PROJECT_ID`/`FIREBASE_ADMIN_CLIENT_EMAIL`/`FIREBASE_ADMIN_PRIVATE_KEY`
+  (required on Vercel and any other non-GCP host, which has no metadata
+  server for ADC to query — see
+  [environment-variables.md](./environment-variables.md)). Either way it
+  needs `roles/datastore.user` (Firestore read/write),
+  `roles/firebaseauth.admin` (session cookie verification, user lookup for
+  `bootstrap:super-admin`-created accounts), and `roles/storage.objectAdmin`
+  scoped to the product-image bucket only — not project-wide Storage admin.
 - **Whoever runs `pnpm run bootstrap:super-admin`**: the same three roles,
   temporarily, from a trusted machine only — this script is a one-time
   setup action, not something CI should ever run.
@@ -107,10 +113,21 @@ instead of pasting the raw value — the exact binding mechanism depends on
 the platform (Cloud Run: `--set-secrets`; Firebase App Hosting: `apphosting.yaml`'s
 `env` with `secret:`; Vercel: secrets aren't native, so use Vercel's own
 encrypted env vars, which serve the same purpose for that platform).
-`TAP_SECRET_KEY`/`ANTHROPIC_API_KEY`/`SMTP_*`/`JOB_SECRET` are the only
-application secrets this repo has today — Firebase Admin access itself
-uses your hosting platform's default service account (Application Default
-Credentials), never a service-account JSON in an env var at all.
+`TAP_SECRET_KEY`/`ANTHROPIC_API_KEY`/`SMTP_*`/`JOB_SECRET` are the
+application-level secrets this repo has today.
+
+Firebase Admin access itself uses Application Default Credentials on a
+Google Cloud runtime — never a service-account JSON in an env var there.
+**On Vercel (or any host without ADC), it's the opposite**: set
+`FIREBASE_ADMIN_PROJECT_ID` / `FIREBASE_ADMIN_CLIENT_EMAIL` /
+`FIREBASE_ADMIN_PRIVATE_KEY` as encrypted Vercel env vars, sourced from a
+downloaded service-account JSON's `project_id` / `client_email` /
+`private_key` fields — see
+[environment-variables.md](./environment-variables.md). Never commit that
+JSON file (the repo's `.gitignore` catches Firebase console's default
+`*firebase-adminsdk*.json` download filename) and never paste its contents
+into source code; only those three env vars, entered directly into
+Vercel's dashboard.
 
 ## 5. Bootstrap the first super admin
 

@@ -39,13 +39,33 @@ it's receiving traffic," not "required to build."
 
 ## Required for server-side Firebase Admin access
 
-No env var — server code authenticates via **Application Default
-Credentials**, not a service-account JSON blob in an env var (see
-`apps/web/src/infrastructure/firebase/admin.ts`). Locally, point
-`GOOGLE_APPLICATION_CREDENTIALS` at a gitignored service-account key file;
-on Vercel/Cloud Run/App Hosting, the platform's default service account is
-used automatically — grant it the roles listed in
-[deployment.md#iam](./deployment.md#iam-permissions).
+`apps/web/src/infrastructure/firebase/admin.ts` supports two credential
+modes, chosen automatically based on what's set — never both at once:
+
+| Variable | Purpose | Notes |
+|---|---|---|
+| `FIREBASE_ADMIN_PROJECT_ID` | Service-account credential — the downloaded JSON's `project_id` field. | Required together with the two vars below on any host with no Google metadata server (Vercel, most non-GCP hosts). Setting only one or two of the three throws a clear error at first use instead of silently misauthenticating. |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | Service-account credential — the JSON's `client_email` field. | Not a secret by itself, but only ever meaningful paired with the private key below — treat the pair as sensitive. |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | Service-account credential — the JSON's `private_key` field, pasted with its literal `\n` sequences intact (the app normalizes them internally). | **Secret.** Store only in your platform's encrypted env var / secret store, never in a committed file. |
+
+- **All three set** → authenticates with `cert()` using exactly those
+  three values (matching the downloaded service-account JSON's
+  `project_id` / `client_email` / `private_key` — no other field from that
+  JSON is used or needed). This is the required path on Vercel.
+- **None set** → falls back to **Application Default Credentials** — the
+  right choice on a Google Cloud runtime (Cloud Run, Cloud Functions, GCE,
+  Firebase App Hosting), which attaches credentials automatically, or
+  locally after `gcloud auth application-default login` / a
+  `GOOGLE_APPLICATION_CREDENTIALS`-pointed key file. Grant that identity
+  the roles listed in [deployment.md#iam](./deployment.md#iam-permissions).
+- **Only one or two set** → throws immediately, naming exactly which of
+  the three is missing.
+
+Never commit the downloaded service-account JSON file itself (the repo's
+`.gitignore` has a `*firebase-adminsdk*.json` pattern to catch Firebase
+console's default download filename), and never paste its contents into
+source code — only these three env vars, set through your deployment
+platform's environment/secret manager.
 
 ## Optional — each has a safe, fully-functional fallback with zero config
 
@@ -89,4 +109,5 @@ These are all set for you by `apps/web/.env.test` when running
 - [ ] `JOB_SECRET` is a fresh random value, matching what's configured in Cloud Scheduler (`ops/setup-cloud-scheduler.sh`).
 - [ ] `PICKUP_LOCATION_*` reflects the real store location.
 - [ ] `ANTHROPIC_API_KEY` set only if you want the live AI Assistant (optional).
+- [ ] On Vercel (or any non-GCP host): `FIREBASE_ADMIN_PROJECT_ID` / `FIREBASE_ADMIN_CLIENT_EMAIL` / `FIREBASE_ADMIN_PRIVATE_KEY` all set together from the production service account's `project_id` / `client_email` / `private_key` — Application Default Credentials has no metadata server to query there and every Firebase-backed route will fail without these.
 - [ ] Every secret above is stored in your platform's secret manager, never in a checked-in `.env` file — see [deployment.md](./deployment.md).

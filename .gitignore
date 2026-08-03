@@ -9,6 +9,7 @@ node_modules/
 *.pem
 *service-account*.json
 *serviceAccountKey*.json
+*firebase-adminsdk*.json
 firebase-debug.log
 firebase-debug.*.log
 firestore-debug.log
