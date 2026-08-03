@@ -60,6 +60,35 @@ describe("createOrder", () => {
     expect(deps.idempotency.begin).not.toHaveBeenCalled();
   });
 
+  it("rejects a checkout whose payment method/fulfillment combination the admin has disabled", async () => {
+    const deps = createMockCheckoutDeps();
+    deps.siteSettings.get = vi.fn().mockResolvedValue({
+      paymentProviders: { tapEnabled: true, cashOnDeliveryEnabled: true, cashOnPickupEnabled: false },
+    });
+    await seedCart(deps, 1);
+
+    await expect(createOrder(baseInput({ paymentMethod: "cash", fulfillmentMethod: "pickup" }), deps)).rejects.toThrow(ValidationError);
+    expect(deps.idempotency.begin).not.toHaveBeenCalled();
+  });
+
+  it("allows a still-enabled payment method/fulfillment combination when a settings doc exists", async () => {
+    const deps = createMockCheckoutDeps();
+    deps.siteSettings.get = vi.fn().mockResolvedValue({
+      paymentProviders: { tapEnabled: true, cashOnDeliveryEnabled: true, cashOnPickupEnabled: false },
+    });
+    await seedCart(deps, 1);
+
+    const result = await createOrder(
+      baseInput({
+        paymentMethod: "cash",
+        fulfillmentMethod: "delivery",
+        deliveryAddress: { country: "BH", area: "Manama", block: "304", road: "1502", building: "96" },
+      }),
+      deps,
+    );
+    expect(result.order.paymentMethod).toBe("cash");
+  });
+
   it("rejects an empty cart and marks the idempotency key failed", async () => {
     const deps = createMockCheckoutDeps();
     await expect(createOrder(baseInput(), deps)).rejects.toThrow(ValidationError);

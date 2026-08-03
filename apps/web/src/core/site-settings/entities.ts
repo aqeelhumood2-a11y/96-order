@@ -1,3 +1,6 @@
+import type { FulfillmentMethod } from "@/core/delivery/entities";
+import type { PaymentMethod } from "@/core/payments/entities";
+
 export interface FooterLink {
   label: string;
   href: string;
@@ -35,6 +38,29 @@ export function defaultHomepageSections(): HomepageSectionConfig[] {
 }
 
 /**
+ * Phase 8: which of the three supported payment providers an admin has
+ * turned on. Cash on delivery and cash on pickup are toggled separately —
+ * both share the same `"cash"` `PaymentMethod` (see `core/payments/entities.ts`),
+ * distinguished only by `OrderFulfillment.method`, so this is the one
+ * place that split is modeled as two independent switches rather than one.
+ */
+export interface PaymentProviderSettings {
+  tapEnabled: boolean;
+  cashOnDeliveryEnabled: boolean;
+  cashOnPickupEnabled: boolean;
+}
+
+export function defaultPaymentProviderSettings(): PaymentProviderSettings {
+  return { tapEnabled: true, cashOnDeliveryEnabled: true, cashOnPickupEnabled: true };
+}
+
+/** Server-side gate checkout must pass before an order can be created with this method/fulfillment combination — see `services/checkout/create-order.ts`. */
+export function isPaymentMethodEnabled(paymentMethod: PaymentMethod, fulfillmentMethod: FulfillmentMethod, providers: PaymentProviderSettings): boolean {
+  if (paymentMethod === "tap") return providers.tapEnabled;
+  return fulfillmentMethod === "delivery" ? providers.cashOnDeliveryEnabled : providers.cashOnPickupEnabled;
+}
+
+/**
  * A single document (id `"singleton"`) — the site has exactly one of
  * these, never a collection of them. Consolidates what the spec's
  * sections 12 (site settings) and 14 (nav/footer admin control) both
@@ -64,6 +90,7 @@ export interface SiteSettings {
   showCategoryMenu: boolean;
   showBrandMenu: boolean;
   homepageSections: HomepageSectionConfig[];
+  paymentProviders: PaymentProviderSettings;
   updatedAt: Date;
   updatedBy: string;
 }
@@ -88,5 +115,6 @@ export function defaultSiteSettings(): Omit<SiteSettings, "updatedAt" | "updated
     showCategoryMenu: true,
     showBrandMenu: true,
     homepageSections: defaultHomepageSections(),
+    paymentProviders: defaultPaymentProviderSettings(),
   };
 }

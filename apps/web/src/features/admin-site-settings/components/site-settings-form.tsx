@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { HomepageSectionConfig, SiteSettings } from "@/core/site-settings/entities";
+import type { HomepageSectionConfig, PaymentProviderSettings, SiteSettings } from "@/core/site-settings/entities";
 import type { SiteSettingsInput } from "@/core/site-settings/schemas";
 import { updateSiteSettingsAction } from "@/features/admin-site-settings/actions";
 import { Button, Input, Label, Textarea } from "@/ui/primitives";
@@ -60,6 +60,7 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
   const [paymentLogosText, setPaymentLogosText] = useState(settings.paymentLogos.join("\n"));
   const [footerColumnsJson, setFooterColumnsJson] = useState(JSON.stringify(settings.footerColumns, null, 2));
   const [sections, setSections] = useState<HomepageSectionConfig[]>(settings.homepageSections);
+  const [paymentProviders, setPaymentProviders] = useState<PaymentProviderSettings>(settings.paymentProviders);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -100,6 +101,7 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
         showCategoryMenu,
         showBrandMenu,
         homepageSections: sections,
+        paymentProviders,
       };
       const result = await updateSiteSettingsAction(input);
       if (!result.ok) {
@@ -220,6 +222,40 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
             />
           </div>
         ))}
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-3">
+        <legend className="text-lg font-semibold text-brand-950">Payment providers</legend>
+        <p className="text-xs text-foreground/50">Turn a provider off to hide it at checkout immediately — existing orders are unaffected.</p>
+        <div className="flex flex-wrap gap-4">
+          <label className="flex items-center gap-2 text-sm text-foreground/80">
+            <input
+              type="checkbox"
+              checked={paymentProviders.tapEnabled}
+              onChange={(event) => setPaymentProviders((current) => ({ ...current, tapEnabled: event.target.checked }))}
+              disabled={isSubmitting}
+            />
+            Card payments (Tap)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-foreground/80">
+            <input
+              type="checkbox"
+              checked={paymentProviders.cashOnDeliveryEnabled}
+              onChange={(event) => setPaymentProviders((current) => ({ ...current, cashOnDeliveryEnabled: event.target.checked }))}
+              disabled={isSubmitting}
+            />
+            Cash on delivery
+          </label>
+          <label className="flex items-center gap-2 text-sm text-foreground/80">
+            <input
+              type="checkbox"
+              checked={paymentProviders.cashOnPickupEnabled}
+              onChange={(event) => setPaymentProviders((current) => ({ ...current, cashOnPickupEnabled: event.target.checked }))}
+              disabled={isSubmitting}
+            />
+            Cash on pickup
+          </label>
+        </div>
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">

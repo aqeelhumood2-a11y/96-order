@@ -1,6 +1,7 @@
 import { ACTIVE_CURRENCY, add, type Money } from "@/core/money/money";
 import { ORDER_STATUSES, type OrderLine, type OrderStatus } from "@/core/orders/entities";
-import type { BestSellingProductRow, OrdersByStatusRow, SalesBucket } from "./entities";
+import type { PaymentMethod, PaymentStatus } from "@/core/payments/entities";
+import type { BestSellingProductRow, CashPaymentsSummary, OnlinePaymentsSummary, OrdersByStatusRow, SalesBucket } from "./entities";
 import { zeroMoney } from "./entities";
 
 /**
@@ -79,6 +80,9 @@ export interface OrderForReport {
   status: OrderStatus;
   grandTotal: Money;
   createdAt: Date;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  fulfillmentMethod: "delivery" | "pickup";
 }
 
 /**
@@ -163,6 +167,86 @@ export function computeBestSellingProducts(orders: readonly OrderLinesForReport[
   return Array.from(rows.values())
     .sort((a, b) => b.quantitySold - a.quantitySold)
     .slice(0, limit);
+}
+
+/**
+ * Cash orders that were cancelled before ever being confirmed count in
+ * neither bucket — same "only what's real" spirit as `countsTowardRevenue`,
+ * applied to the cash-specific `pending`/`confirmed` split rather than
+ * order status.
+ */
+export function computeCashPaymentsSummary(orders: readonly OrderForReport[]): CashPaymentsSummary {
+  const currency = ACTIVE_CURRENCY.code;
+  const summary: CashPaymentsSummary = {
+    pendingCount: 0,
+    pendingTotal: zeroMoney(currency),
+    confirmedCount: 0,
+    confirmedTotal: zeroMoney(currency),
+    deliveryCount: 0,
+    pickupCount: 0,
+  };
+
+  for (const order of orders) {
+    if (order.paymentMethod !== "cash") continue;
+    if (order.paymentStatus === "cash_pending") {
+      summary.pendingCount += 1;
+      summary.pendingTotal = add(summary.pendingTotal, order.grandTotal);
+    } else if (order.paymentStatus === "cash_confirmed") {
+      summary.confirmedCount += 1;
+      summary.confirmedTotal = add(summary.confirmedTotal, order.grandTotal);
+    } else {
+      continue;
+    }
+    if (order.fulfillmentMethod === "delivery") summary.deliveryCount += 1;
+    else summary.pickupCount += 1;
+  }
+
+  return summary;
+}
+
+/** Every `tap` order in range, bucketed by its own payment status — never overlaps with `computeCashPaymentsSummary`, since `paymentStatus` values are method-exclusive (see `core/payments/entities.ts`). */
+export function computeOnlinePaymentsSummary(orders: readonly OrderForReport[]): OnlinePaymentsSummary {
+  const currency = ACTIVE_CURRENCY.code;
+  const summary: OnlinePaymentsSummary = {
+    paidCount: 0,
+    paidTotal: zeroMoney(currency),
+    pendingCount: 0,
+    authorizedCount: 0,
+    failedCount: 0,
+    cancelledCount: 0,
+    refundedCount: 0,
+    refundedTotal: zeroMoney(currency),
+  };
+
+  for (const order of orders) {
+    if (order.paymentMethod !== "tap") continue;
+    switch (order.paymentStatus) {
+      case "paid":
+        summary.paidCount += 1;
+        summary.paidTotal = add(summary.paidTotal, order.grandTotal);
+        break;
+      case "pending":
+        summary.pendingCount += 1;
+        break;
+      case "authorized":
+        summary.authorizedCount += 1;
+        break;
+      case "failed":
+        summary.failedCount += 1;
+        break;
+      case "cancelled":
+        summary.cancelledCount += 1;
+        break;
+      case "refunded":
+        summary.refundedCount += 1;
+        summary.refundedTotal = add(summary.refundedTotal, order.grandTotal);
+        break;
+      default:
+        break;
+    }
+  }
+
+  return summary;
 }
 
 export const DEFAULT_CURRENCY = ACTIVE_CURRENCY.code;

@@ -115,6 +115,10 @@ export function createMockCheckoutDeps(): CheckoutDeps {
       auditLogs: { record: vi.fn().mockResolvedValue(undefined), list: vi.fn() },
       rateLimiter: { consume: vi.fn().mockResolvedValue({ allowed: true }) },
     },
+    siteSettings: {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+    },
   };
 }
 

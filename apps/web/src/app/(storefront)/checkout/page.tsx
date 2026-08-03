@@ -7,6 +7,7 @@ import { CheckoutForm } from "@/features/checkout/checkout-form";
 import { peekCartId } from "@/services/cart/cart-session";
 import { getCustomerSession } from "@/services/customer-auth/session";
 import { getDiscountedPricedCart } from "@/services/pricing/get-discounted-cart";
+import { getPublicSiteSettings } from "@/services/site-settings/get-public-settings";
 import { buildStaticPageMetadata } from "@/services/storefront/seo";
 import { Container } from "@/ui/layout/container";
 import { Button } from "@/ui/primitives/button";
@@ -38,12 +39,18 @@ export default async function CheckoutPage() {
   // Delivery/pickup share the exact same slot rule today (see
   // `core/scheduling/rules.ts`'s doc comment) — one list serves both.
   const availableSlots = listAvailableSlots(new Date(), "delivery");
+  const { paymentProviders } = await getPublicSiteSettings();
 
   return (
     <Container className="py-8 sm:py-12">
       <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Checkout</h1>
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
-        <CheckoutForm availableSlots={availableSlots} pickupLocationName={PICKUP_LOCATION.locationName} pickupLocationAddress={PICKUP_LOCATION.locationAddress} />
+        <CheckoutForm
+          availableSlots={availableSlots}
+          pickupLocationName={PICKUP_LOCATION.locationName}
+          pickupLocationAddress={PICKUP_LOCATION.locationAddress}
+          paymentProviders={paymentProviders}
+        />
         <CartSummary priced={priced} />
       </div>
     </Container>

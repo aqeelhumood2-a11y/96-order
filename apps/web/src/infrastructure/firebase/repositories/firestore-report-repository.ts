@@ -3,6 +3,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import { Timestamp } from "firebase-admin/firestore";
 import { ACTIVE_CURRENCY, add, type Money } from "@/core/money/money";
 import { ORDER_STATUSES, type OrderStatus } from "@/core/orders/entities";
+import type { PaymentMethod, PaymentStatus } from "@/core/payments/entities";
 import { countsTowardRevenue, type OrderForReport, type OrderLinesForReport } from "@/core/reports/rules";
 import type { DashboardCounts, ReportRepository } from "@/core/interfaces/report-repository";
 import { moneyFromDoc, type MoneyDoc } from "../money-mapping";
@@ -21,6 +22,9 @@ interface ReportOrderDoc {
   status: OrderStatus;
   grandTotal: MoneyDoc;
   createdAt: Timestamp;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  fulfillment?: { method: "delivery" | "pickup" };
   lines?: { productId: string; variantId: string | null; productName: string; sku: string; quantity: number; lineTotal: MoneyDoc }[];
 }
 
@@ -69,13 +73,20 @@ export class FirestoreReportRepository implements ReportRepository {
       .where("createdAt", ">=", Timestamp.fromDate(from))
       .where("createdAt", "<=", Timestamp.fromDate(to))
       .orderBy("createdAt", "asc")
-      .select("status", "grandTotal", "createdAt")
+      .select("status", "grandTotal", "createdAt", "paymentMethod", "paymentStatus", "fulfillment.method")
       .limit(limit)
       .get();
 
     return snap.docs.map((doc) => {
       const data = doc.data() as ReportOrderDoc;
-      return { status: data.status, grandTotal: moneyFromDoc(data.grandTotal), createdAt: data.createdAt.toDate() };
+      return {
+        status: data.status,
+        grandTotal: moneyFromDoc(data.grandTotal),
+        createdAt: data.createdAt.toDate(),
+        paymentMethod: data.paymentMethod,
+        paymentStatus: data.paymentStatus,
+        fulfillmentMethod: data.fulfillment?.method ?? "delivery",
+      };
     });
   }
 

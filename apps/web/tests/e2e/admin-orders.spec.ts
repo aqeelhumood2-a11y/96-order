@@ -127,7 +127,7 @@ test.describe("admin order management", () => {
     await page.getByLabel("Mobile number").fill("36007777");
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Pickup", { exact: true }).check();
-    await page.getByLabel("Cash on delivery/pickup").check();
+    await page.getByLabel("Cash on pickup").check();
     await page.getByRole("button", { name: "Place order" }).click();
 
     await expect(page).toHaveURL(/\/checkout\/success\?order=/);

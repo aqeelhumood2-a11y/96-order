@@ -12,6 +12,11 @@ const homepageSectionSchema = z.object({
   title: z.string().trim().min(1).nullable(),
   subtitle: z.string().trim().min(1).nullable(),
 });
+const paymentProviderSettingsSchema = z.object({
+  tapEnabled: z.boolean(),
+  cashOnDeliveryEnabled: z.boolean(),
+  cashOnPickupEnabled: z.boolean(),
+});
 
 export const siteSettingsInputSchema = z.object({
   storeName: z.string().trim().min(1, "Please enter a store name.").max(200),
@@ -32,5 +37,6 @@ export const siteSettingsInputSchema = z.object({
   showCategoryMenu: z.boolean(),
   showBrandMenu: z.boolean(),
   homepageSections: z.array(homepageSectionSchema),
+  paymentProviders: paymentProviderSettingsSchema,
 });
 export type SiteSettingsInput = z.infer<typeof siteSettingsInputSchema>;

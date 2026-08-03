@@ -8,6 +8,7 @@ import { customerKeyFromEmail } from "@/core/customer/rules";
 import type { Order } from "@/core/orders/entities";
 import { buildOrderLinesFromPricedCart, buildOrderNumber, buildOrderSearchTokens, ORDER_NUMBER_RANDOM_LENGTH } from "@/core/orders/rules";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/core/payments/entities";
+import { defaultPaymentProviderSettings, isPaymentMethodEnabled } from "@/core/site-settings/entities";
 import { clearCart } from "@/services/cart/clear-cart";
 import { upsertCustomerFromOrder } from "@/services/customers/upsert-customer-from-order";
 import { sendTransactionalEmail } from "@/services/email/send-transactional-email";
@@ -70,6 +71,12 @@ export async function createOrder(input: CheckoutInput, deps: CheckoutDeps = def
   }
   if (input.paymentMethod === "tap" && !input.returnUrl) {
     throw new ValidationError("A return URL is required for card payments.");
+  }
+
+  const siteSettings = await deps.siteSettings.get();
+  const paymentProviders = siteSettings?.paymentProviders ?? defaultPaymentProviderSettings();
+  if (!isPaymentMethodEnabled(input.paymentMethod, input.fulfillmentMethod, paymentProviders)) {
+    throw new ValidationError("This payment method is currently unavailable. Please choose another.");
   }
 
   const now = new Date();

@@ -15,8 +15,8 @@ describe("getOrdersByStatusReport", () => {
   it("returns a count per status, including zero rows", async () => {
     const deps = createMockReportDeps();
     deps.reports.listOrdersForReport = async () => [
-      { status: "confirmed", grandTotal: money(1000), createdAt: new Date() },
-      { status: "confirmed", grandTotal: money(1000), createdAt: new Date() },
+      { status: "confirmed", grandTotal: money(1000), createdAt: new Date(), paymentMethod: "cash", paymentStatus: "cash_confirmed", fulfillmentMethod: "delivery" },
+      { status: "confirmed", grandTotal: money(1000), createdAt: new Date(), paymentMethod: "cash", paymentStatus: "cash_confirmed", fulfillmentMethod: "delivery" },
     ];
     const actor = makeSession({ effectivePermissions: new Set(["reports:view"]) });
 

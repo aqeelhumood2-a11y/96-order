@@ -14,7 +14,16 @@ describe("sales reports", () => {
 
   it("buckets by day/week/month using the requested engine", async () => {
     const deps = createMockReportDeps();
-    deps.reports.listOrdersForReport = async () => [{ status: "confirmed", grandTotal: money(1000), createdAt: new Date("2026-08-01T00:00:00Z") }];
+    deps.reports.listOrdersForReport = async () => [
+      {
+        status: "confirmed",
+        grandTotal: money(1000),
+        createdAt: new Date("2026-08-01T00:00:00Z"),
+        paymentMethod: "cash",
+        paymentStatus: "cash_confirmed",
+        fulfillmentMethod: "delivery",
+      },
+    ];
     const actor = makeSession({ effectivePermissions: new Set(["reports:view"]) });
 
     const daily = await getDailySalesReport(actor, new Date("2026-08-01"), new Date("2026-08-01"), deps);

@@ -1,11 +1,16 @@
 import type { SiteSettings } from "@/core/site-settings/entities";
-import { defaultSiteSettings } from "@/core/site-settings/entities";
+import { defaultPaymentProviderSettings, defaultSiteSettings } from "@/core/site-settings/entities";
 import { STOREFRONT_CACHE_TAGS, withStorefrontCache } from "@/services/storefront/cache";
 import { defaultSiteSettingsDeps } from "./dependencies";
 
 async function fetchPublicSiteSettings(): Promise<SiteSettings> {
   const stored = await defaultSiteSettingsDeps.settings.get();
-  if (stored) return stored;
+  if (stored) {
+    // `paymentProviders` (Phase 8) is missing from any settings doc saved
+    // before this field existed — treat that the same as "every provider
+    // on", matching the app's actual behavior before this field existed.
+    return { ...stored, paymentProviders: stored.paymentProviders ?? defaultPaymentProviderSettings() };
+  }
   return { ...defaultSiteSettings(), updatedAt: new Date(0), updatedBy: "system" };
 }
 

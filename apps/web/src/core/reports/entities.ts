@@ -31,6 +31,50 @@ export interface OrdersByStatusRow {
   count: number;
 }
 
+/**
+ * Cash-on-delivery/pickup summary over a date range — README's Cash order
+ * lifecycle. `pending` is cash collected but not yet confirmed by an
+ * admin (inventory only reserved, not committed); `confirmed` is cash an
+ * admin has verified was received (see `services/payments/confirm-cash-payment.ts`).
+ * A cancelled cash order counts in neither bucket, matching
+ * `countsTowardRevenue`.
+ */
+export interface CashPaymentsSummary {
+  pendingCount: number;
+  pendingTotal: Money;
+  confirmedCount: number;
+  confirmedTotal: Money;
+  deliveryCount: number;
+  pickupCount: number;
+}
+
+/** Online (Tap) payment summary over a date range — every `PaymentStatus` that only ever applies to a `tap` order. */
+export interface OnlinePaymentsSummary {
+  paidCount: number;
+  paidTotal: Money;
+  pendingCount: number;
+  authorizedCount: number;
+  failedCount: number;
+  cancelledCount: number;
+  refundedCount: number;
+  refundedTotal: Money;
+}
+
+/**
+ * One live, actionable row per still-`cash_pending` order — not a
+ * historical bucketed report like the two summaries above, but the
+ * "worklist" of cash an admin still needs to go collect/confirm. Oldest
+ * first, so the longest-outstanding order surfaces at the top.
+ */
+export interface PendingCashCollectionRow {
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  fulfillmentMethod: "delivery" | "pickup";
+  grandTotal: Money;
+  createdAt: Date;
+}
+
 export function zeroMoney(currency: CurrencyCode): Money {
   return { amount: 0, currency };
 }

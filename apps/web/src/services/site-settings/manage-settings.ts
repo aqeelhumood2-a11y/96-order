@@ -1,6 +1,6 @@
 import type { Session } from "@/core/auth/entities";
 import type { SiteSettings } from "@/core/site-settings/entities";
-import { defaultSiteSettings } from "@/core/site-settings/entities";
+import { defaultPaymentProviderSettings, defaultSiteSettings } from "@/core/site-settings/entities";
 import { siteSettingsInputSchema, type SiteSettingsInput } from "@/core/site-settings/schemas";
 import { requirePermission } from "@/services/auth/session";
 import { revalidateStorefrontTag, STOREFRONT_CACHE_TAGS } from "@/services/storefront/cache";
@@ -9,7 +9,12 @@ import { defaultSiteSettingsDeps, type SiteSettingsDeps } from "./dependencies";
 export async function getSiteSettingsForAdmin(actor: Session, deps: SiteSettingsDeps = defaultSiteSettingsDeps): Promise<SiteSettings> {
   requirePermission(actor, "settings:view");
   const stored = await deps.settings.get();
-  if (stored) return stored;
+  if (stored) {
+    // See `services/site-settings/get-public-settings.ts`'s doc comment —
+    // same pre-Phase-8-doc fallback, so the admin form always has a value
+    // to bind its checkboxes to.
+    return { ...stored, paymentProviders: stored.paymentProviders ?? defaultPaymentProviderSettings() };
+  }
   return { ...defaultSiteSettings(), updatedAt: new Date(0), updatedBy: "system" };
 }
 
