@@ -70,7 +70,7 @@ export interface SiteSettings {
 
 export function defaultSiteSettings(): Omit<SiteSettings, "updatedAt" | "updatedBy"> {
   return {
-    storeName: "96 Order",
+    storeName: "Ninety Six Degrees Cafe",
     logoUrl: null,
     faviconUrl: null,
     contactEmail: "",
@@ -81,7 +81,7 @@ export function defaultSiteSettings(): Omit<SiteSettings, "updatedAt" | "updated
     paymentLogos: [],
     shippingPolicyText: "",
     freeShippingThresholdText: "",
-    copyrightText: "96 Order. All rights reserved.",
+    copyrightText: "Ninety Six Degrees Cafe. All rights reserved.",
     maintenanceMode: false,
     maintenanceMessage: "",
     hamburgerItems: [],

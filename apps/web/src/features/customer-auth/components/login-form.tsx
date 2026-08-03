@@ -74,7 +74,7 @@ export function CustomerLoginForm() {
           disabled={isSubmitting}
         />
         {fieldErrors.email && (
-          <p id="login-email-error" role="alert" className="text-sm text-red-600">
+          <p id="login-email-error" role="alert" className="text-sm text-danger-600">
             {fieldErrors.email}
           </p>
         )}
@@ -93,14 +93,14 @@ export function CustomerLoginForm() {
           disabled={isSubmitting}
         />
         {fieldErrors.password && (
-          <p id="login-password-error" role="alert" className="text-sm text-red-600">
+          <p id="login-password-error" role="alert" className="text-sm text-danger-600">
             {fieldErrors.password}
           </p>
         )}
       </div>
 
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {formError}
         </p>
       )}

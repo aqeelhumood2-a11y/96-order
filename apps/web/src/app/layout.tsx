@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SITE_NAME, SITE_URL } from "@/config/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "96 Order",
+  metadataBase: new URL(SITE_URL),
+  title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
   description: "A premium coffee and equipment e-commerce platform.",
+  openGraph: {
+    title: SITE_NAME,
+    description: "A premium coffee and equipment e-commerce platform.",
+    siteName: SITE_NAME,
+    type: "website",
+    images: [{ url: "/brand/og-default.png", width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: "A premium coffee and equipment e-commerce platform.",
+    images: ["/brand/og-default.png"],
+  },
+};
+
+// The primary-600 brand purple — matches the browser chrome (mobile address
+// bar, PWA splash) to the logo background rather than the OS default.
+export const viewport = {
+  themeColor: "#52346a",
 };
 
 export default function RootLayout({

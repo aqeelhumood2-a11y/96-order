@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { logger } from "@/lib/logger";
+import { Logo } from "@/ui/layout/logo";
 
 export default function GlobalError({
   error,
@@ -17,13 +18,14 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body className="flex min-h-full flex-col items-center justify-center gap-4 p-8 text-center font-sans">
-        <h1 className="text-3xl font-semibold tracking-tight">Something went wrong</h1>
-        <p className="max-w-sm text-neutral-600">
+        <Logo variant="mark" color="purple" height={40} className="mb-2" />
+        <h1 className="text-3xl font-semibold tracking-tight text-brand-950">Something went wrong</h1>
+        <p className="max-w-sm text-foreground/60">
           The application hit an unexpected error. Please try again.
         </p>
         <button
           onClick={reset}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
+          className="rounded-md bg-brand-900 px-4 py-2 text-sm font-medium text-white"
         >
           Try again
         </button>

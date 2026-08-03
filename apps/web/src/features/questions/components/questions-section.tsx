@@ -45,7 +45,7 @@ export function QuestionsSection({ productId, productSlug, questions, signedIn }
             </label>
             <Textarea id={questionId} value={question} onChange={(event) => setQuestion(event.target.value)} disabled={status === "submitting"} required maxLength={1000} rows={3} />
             {error && (
-              <p role="alert" className="text-sm text-red-600">
+              <p role="alert" className="text-sm text-danger-600">
                 {error}
               </p>
             )}

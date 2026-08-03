@@ -101,7 +101,7 @@ export function AdjustInventoryForm({ productId, variantId }: { productId: strin
       </Button>
 
       {error && (
-        <p role="alert" className="w-full text-sm text-red-600">
+        <p role="alert" className="w-full text-sm text-danger-600">
           {error}
         </p>
       )}

@@ -78,7 +78,7 @@ export function OrderLookupForm({ initialOrderNumber, heading = "Track your orde
           {status === "loading" ? "Looking up…" : "Track order"}
         </Button>
         {status === "error" && error && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-danger-600">
             {error}
           </p>
         )}

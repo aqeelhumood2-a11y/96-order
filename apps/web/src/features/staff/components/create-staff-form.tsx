@@ -78,7 +78,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
           disabled={isSubmitting}
         />
         {fieldError && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-danger-600">
             {fieldError}
           </p>
         )}
@@ -112,7 +112,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
       </fieldset>
 
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {formError}
         </p>
       )}

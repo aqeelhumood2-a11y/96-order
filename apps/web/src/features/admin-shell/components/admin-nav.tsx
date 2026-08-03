@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Session } from "@/core/auth/entities";
 import { hasPermission } from "@/core/auth/permissions";
+import { Logo } from "@/ui/layout/logo";
 import { LogoutButton } from "./logout-button";
 
 /**
@@ -31,8 +32,11 @@ export function AdminNav({ session }: { session: Session }) {
   ];
 
   return (
-    <nav className="flex items-center justify-between border-b border-brand-100 px-6 py-4">
+    <nav className="flex items-center justify-between border-b border-surface-border px-6 py-4">
       <div className="flex items-center gap-6">
+        <Link href="/admin" aria-label="Ninety Six Degrees Cafe admin" className="mr-2 flex items-center">
+          <Logo variant="mark" color="purple" height={28} />
+        </Link>
         {links
           .filter((link) => link.visible)
           .map((link) => (

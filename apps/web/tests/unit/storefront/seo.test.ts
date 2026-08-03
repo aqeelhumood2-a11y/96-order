@@ -35,7 +35,7 @@ describe("buildProductMetadata", () => {
 
   it("falls back to name/shortDescription when seoTitle/seoDescription are absent", () => {
     const metadata = buildProductMetadata(product);
-    expect(metadata.title).toBe("Ethiopia Yirgacheffe | 96 Order");
+    expect(metadata.title).toBe("Ethiopia Yirgacheffe | Ninety Six Degrees Cafe");
     expect(metadata.description).toBe("A bright, floral coffee.");
   });
 
@@ -60,7 +60,7 @@ describe("buildCategoryMetadata", () => {
   it("builds a canonical URL and title from the category", () => {
     const category: PublicCategory = { id: "cat-1", slug: "coffee", name: "Coffee", parent: null };
     const metadata = buildCategoryMetadata(category);
-    expect(metadata.title).toBe("Coffee | 96 Order");
+    expect(metadata.title).toBe("Coffee | Ninety Six Degrees Cafe");
     expect(metadata.alternates?.canonical).toBe("http://localhost:3000/categories/coffee");
   });
 });
@@ -69,7 +69,7 @@ describe("buildBrandMetadata", () => {
   it("builds a canonical URL and title from the brand", () => {
     const brand: PublicBrand = { id: "brand-1", slug: "acme", name: "Acme" };
     const metadata = buildBrandMetadata(brand);
-    expect(metadata.title).toBe("Acme | 96 Order");
+    expect(metadata.title).toBe("Acme | Ninety Six Degrees Cafe");
     expect(metadata.alternates?.canonical).toBe("http://localhost:3000/brands/acme");
   });
 });
@@ -77,7 +77,7 @@ describe("buildBrandMetadata", () => {
 describe("buildStaticPageMetadata", () => {
   it("builds title/description/canonical for a static page", () => {
     const metadata = buildStaticPageMetadata("Search", "Search the catalog.", "/search");
-    expect(metadata.title).toBe("Search | 96 Order");
+    expect(metadata.title).toBe("Search | Ninety Six Degrees Cafe");
     expect(metadata.description).toBe("Search the catalog.");
     expect(metadata.alternates?.canonical).toBe("http://localhost:3000/search");
   });

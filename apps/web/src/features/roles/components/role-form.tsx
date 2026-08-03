@@ -85,7 +85,7 @@ export function RoleForm() {
       </div>
 
       {fieldError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {fieldError}
         </p>
       )}
@@ -130,7 +130,7 @@ export function RoleForm() {
       </fieldset>
 
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {formError}
         </p>
       )}

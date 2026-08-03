@@ -231,7 +231,7 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
         <Input value={maintenanceMessage} onChange={(event) => setMaintenanceMessage(event.target.value)} disabled={isSubmitting} placeholder="Maintenance message" />
       </fieldset>
 
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
 
       <Button type="submit" disabled={isSubmitting} className="w-fit">
         {isSubmitting ? "Saving…" : "Save settings"}

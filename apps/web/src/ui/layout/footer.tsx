@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Container } from "./container";
+import { Logo } from "./logo";
 
 export interface FooterLinkItem {
   href: string;
@@ -33,8 +34,10 @@ const DISCOVERY_LINKS: FooterLinkItem[] = [
 /** Presentational only — see `Header`'s doc comment for why. */
 export function Footer({ footerPages, footerColumns, contactEmail, contactPhone, hoursText, socialLinks, paymentLogos, freeShippingThresholdText, copyrightText }: FooterProps) {
   return (
-    <footer className="mt-auto border-t border-brand-100 bg-background">
+    <footer className="mt-auto border-t border-surface-border bg-background">
       <Container className="flex flex-col gap-8 py-8">
+        <Logo color="purple" height={24} />
+
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           <nav aria-label="Shop">
             <h3 className="text-sm font-semibold text-brand-950">Shop</h3>
@@ -92,7 +95,7 @@ export function Footer({ footerPages, footerColumns, contactEmail, contactPhone,
         </div>
 
         {socialLinks.length > 0 && (
-          <div className="flex flex-wrap gap-4 border-t border-brand-100 pt-6 text-sm text-brand-800">
+          <div className="flex flex-wrap gap-4 border-t border-surface-border pt-6 text-sm text-brand-800">
             {socialLinks.map((link) => (
               <a key={link.platform} href={link.url} target="_blank" rel="noreferrer" className="hover:text-brand-950">
                 {link.platform}
@@ -104,7 +107,7 @@ export function Footer({ footerPages, footerColumns, contactEmail, contactPhone,
         {paymentLogos.length > 0 && (
           <div className="flex flex-wrap gap-3 text-xs text-foreground/50">
             {paymentLogos.map((logo) => (
-              <span key={logo} className="rounded border border-brand-100 px-2 py-1">
+              <span key={logo} className="rounded border border-surface-border px-2 py-1">
                 {logo}
               </span>
             ))}

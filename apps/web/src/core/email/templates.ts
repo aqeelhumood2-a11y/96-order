@@ -37,7 +37,7 @@ export function renderOrderConfirmationEmail(data: OrderConfirmationEmailData): 
       "",
       fulfillmentLine,
       "",
-      "— 96 Order",
+      "— Ninety Six Degrees Cafe",
     ].join("\n"),
   };
 }
@@ -50,7 +50,7 @@ export interface PaymentConfirmationEmailData {
 export function renderPaymentConfirmationEmail(data: PaymentConfirmationEmailData): RenderedEmail {
   return {
     subject: `Payment received for order ${data.orderNumber}`,
-    text: `We've received your payment of ${formatMoney(data.amount)} for order ${data.orderNumber}. Thank you!\n\n— 96 Order`,
+    text: `We've received your payment of ${formatMoney(data.amount)} for order ${data.orderNumber}. Thank you!\n\n— Ninety Six Degrees Cafe`,
   };
 }
 
@@ -61,7 +61,7 @@ export interface PaymentFailureEmailData {
 export function renderPaymentFailureEmail(data: PaymentFailureEmailData): RenderedEmail {
   return {
     subject: `Payment issue with order ${data.orderNumber}`,
-    text: `We weren't able to process payment for order ${data.orderNumber}. No charge was completed. Please try again or choose a different payment method.\n\n— 96 Order`,
+    text: `We weren't able to process payment for order ${data.orderNumber}. No charge was completed. Please try again or choose a different payment method.\n\n— Ninety Six Degrees Cafe`,
   };
 }
 
@@ -84,7 +84,7 @@ export function renderPickupConfirmationEmail(data: PickupConfirmationEmailData)
       "",
       `Pickup window: ${data.scheduleDate}, ${data.scheduleTimeWindow}`,
       "",
-      "— 96 Order",
+      "— Ninety Six Degrees Cafe",
     ].join("\n"),
   };
 }
@@ -104,7 +104,7 @@ export interface DeliveryConfirmationEmailData {
 export function renderDeliveryConfirmationEmail(data: DeliveryConfirmationEmailData): RenderedEmail {
   return {
     subject: `Your order ${data.orderNumber} is scheduled for delivery`,
-    text: `Your order ${data.orderNumber} is scheduled for delivery on ${data.scheduleDate}, ${data.scheduleTimeWindow}.\n\n— 96 Order`,
+    text: `Your order ${data.orderNumber} is scheduled for delivery on ${data.scheduleDate}, ${data.scheduleTimeWindow}.\n\n— Ninety Six Degrees Cafe`,
   };
 }
 
@@ -116,13 +116,13 @@ export function renderCustomerEmailVerificationEmail(data: CustomerEmailVerifica
   return {
     subject: "Verify your email address",
     text: [
-      "Thanks for creating an account with 96 Order.",
+      "Thanks for creating an account with Ninety Six Degrees Cafe.",
       "",
       `Please verify your email address by visiting: ${data.verifyUrl}`,
       "",
       "This link expires in 24 hours. If you didn't create this account, you can ignore this email.",
       "",
-      "— 96 Order",
+      "— Ninety Six Degrees Cafe",
     ].join("\n"),
   };
 }
@@ -136,7 +136,7 @@ export interface BackInStockEmailData {
 export function renderBackInStockEmail(data: BackInStockEmailData): RenderedEmail {
   return {
     subject: `${data.productName} is back in stock`,
-    text: [`Good news — ${data.productName} is back in stock.`, "", `Shop now: ${data.productUrl}`, "", `Don't want these alerts? Unsubscribe: ${data.unsubscribeUrl}`, "", "— 96 Order"].join("\n"),
+    text: [`Good news — ${data.productName} is back in stock.`, "", `Shop now: ${data.productUrl}`, "", `Don't want these alerts? Unsubscribe: ${data.unsubscribeUrl}`, "", "— Ninety Six Degrees Cafe"].join("\n"),
   };
 }
 
@@ -158,7 +158,7 @@ export function renderProductQuestionAnsweredEmail(data: ProductQuestionAnswered
       "",
       `View it here: ${data.productUrl}`,
       "",
-      "— 96 Order",
+      "— Ninety Six Degrees Cafe",
     ].join("\n"),
   };
 }
@@ -171,7 +171,7 @@ export interface ReviewStatusChangedEmailData {
 export function renderReviewStatusChangedEmail(data: ReviewStatusChangedEmailData): RenderedEmail {
   return {
     subject: `Your review of ${data.productName} was ${data.status}`,
-    text: `Your review of ${data.productName} has been ${data.status}.\n\n— 96 Order`,
+    text: `Your review of ${data.productName} has been ${data.status}.\n\n— Ninety Six Degrees Cafe`,
   };
 }
 

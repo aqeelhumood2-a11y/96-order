@@ -62,12 +62,12 @@ describe("renderPickupConfirmationEmail", () => {
   it("includes the location and schedule", () => {
     const email = renderPickupConfirmationEmail({
       orderNumber: "ORD-1",
-      locationName: "96 Order — Seef",
+      locationName: "Ninety Six Degrees Cafe — Seef",
       locationAddress: "Seef District, Manama",
       scheduleDate: "2026-02-01",
       scheduleTimeWindow: "10:00-12:00",
     });
-    expect(email.text).toContain("96 Order — Seef");
+    expect(email.text).toContain("Ninety Six Degrees Cafe — Seef");
     expect(email.text).toContain("10:00-12:00");
   });
 });

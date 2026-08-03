@@ -57,7 +57,7 @@ export function CouponForm({ appliedCoupon }: { appliedCoupon: AppliedDiscount |
         </Button>
       </div>
       {error && (
-        <p role="alert" className="text-xs text-red-600">
+        <p role="alert" className="text-xs text-danger-600">
           {error}
         </p>
       )}

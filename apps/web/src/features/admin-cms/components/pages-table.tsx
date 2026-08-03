@@ -35,7 +35,7 @@ export function CmsPagesTable({ pages }: { pages: CmsPage[] }) {
   return (
     <div className="flex flex-col gap-2">
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {error}
         </p>
       )}

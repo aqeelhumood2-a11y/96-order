@@ -9,6 +9,6 @@
  */
 export const PICKUP_LOCATION = {
   locationId: process.env.PICKUP_LOCATION_ID ?? "main-roastery",
-  locationName: process.env.PICKUP_LOCATION_NAME ?? "96 Order Roastery",
+  locationName: process.env.PICKUP_LOCATION_NAME ?? "Ninety Six Degrees Cafe Roastery",
   locationAddress: process.env.PICKUP_LOCATION_ADDRESS ?? "Building 96, Road 96, Block 96, Manama, Bahrain",
 };

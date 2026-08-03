@@ -61,7 +61,7 @@ export function BackInStockSubscribeForm({ productId, variantId, signedInEmail }
         </Button>
       </div>
       {status === "error" && message && (
-        <p role="alert" className="text-xs text-red-600">
+        <p role="alert" className="text-xs text-danger-600">
           {message}
         </p>
       )}

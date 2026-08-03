@@ -122,7 +122,7 @@ export function PromotionForm({ existing, onDone }: { existing?: Promotion; onDo
         </label>
       </div>
 
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
 
       <Button type="submit" size="sm" disabled={isSubmitting} className="w-fit">
         {isSubmitting ? "Saving…" : existing ? "Save changes" : "Create promotion"}

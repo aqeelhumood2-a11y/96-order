@@ -41,7 +41,7 @@ export function ProfileForm({ fullName, mobile }: { fullName: string; mobile?: s
         <Label htmlFor="profile-mobile">Mobile</Label>
         <Input id="profile-mobile" value={phone} onChange={(event) => setPhone(event.target.value)} disabled={isSubmitting} placeholder="36001234" />
       </div>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
       {message && <p role="status" className="text-sm text-foreground/70">{message}</p>}
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Saving…" : "Save changes"}

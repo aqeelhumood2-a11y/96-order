@@ -49,7 +49,7 @@ export function CartLineRow({ line }: { line: PricedCartLine }) {
           </p>
         )}
         {line.issues.length > 0 && (
-          <p role="alert" className="mt-1 text-xs text-red-600">
+          <p role="alert" className="mt-1 text-xs text-danger-600">
             {line.issues.includes("product_unavailable") && "This item is no longer available and won't be included at checkout."}
             {line.issues.includes("out_of_stock") && "This item is out of stock and won't be included at checkout."}
             {line.issues.includes("quantity_reduced") && `Quantity reduced to ${line.effectiveQuantity} due to limited stock.`}
@@ -71,7 +71,7 @@ export function CartLineRow({ line }: { line: PricedCartLine }) {
         Remove
       </Button>
       {error && (
-        <p role="alert" className="w-full text-xs text-red-600">
+        <p role="alert" className="w-full text-xs text-danger-600">
           {error}
         </p>
       )}

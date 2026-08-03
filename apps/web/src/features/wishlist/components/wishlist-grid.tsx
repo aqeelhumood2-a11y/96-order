@@ -73,7 +73,7 @@ export function WishlistGrid({ items }: { items: WishlistItemView[] }) {
                   Remove
                 </Button>
                 {messages[item.id] && (
-                  <p role="alert" className="text-xs text-red-600">
+                  <p role="alert" className="text-xs text-danger-600">
                     {messages[item.id]}
                   </p>
                 )}

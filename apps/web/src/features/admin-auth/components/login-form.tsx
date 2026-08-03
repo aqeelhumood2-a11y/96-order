@@ -80,7 +80,7 @@ export function LoginForm() {
           disabled={isSubmitting}
         />
         {fieldErrors.email && (
-          <p id="email-error" role="alert" className="text-sm text-red-600">
+          <p id="email-error" role="alert" className="text-sm text-danger-600">
             {fieldErrors.email}
           </p>
         )}
@@ -100,14 +100,14 @@ export function LoginForm() {
           disabled={isSubmitting}
         />
         {fieldErrors.password && (
-          <p id="password-error" role="alert" className="text-sm text-red-600">
+          <p id="password-error" role="alert" className="text-sm text-danger-600">
             {fieldErrors.password}
           </p>
         )}
       </div>
 
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {formError}
         </p>
       )}

@@ -6,4 +6,4 @@
  */
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
-export const SITE_NAME = "96 Order";
+export const SITE_NAME = "Ninety Six Degrees Cafe";

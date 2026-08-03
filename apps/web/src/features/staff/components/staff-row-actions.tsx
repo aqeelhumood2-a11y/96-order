@@ -84,7 +84,7 @@ export function StaffRowActions({
         Reset password
       </Button>
       {message && (
-        <p role="alert" className="text-xs text-red-600">
+        <p role="alert" className="text-xs text-danger-600">
           {message}
         </p>
       )}

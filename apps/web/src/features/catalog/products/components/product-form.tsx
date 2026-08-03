@@ -485,7 +485,7 @@ export function ProductForm({ product, categories, brands }: { product?: Product
 
       <div className="flex flex-col gap-2 border-t border-brand-100 pt-6">
         {formError && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-danger-600">
             {formError}
           </p>
         )}

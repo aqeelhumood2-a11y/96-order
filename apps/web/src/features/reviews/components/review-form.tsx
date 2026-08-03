@@ -58,7 +58,7 @@ export function ReviewForm({ productId, productSlug, existing, onDone }: ReviewF
         <Textarea id={bodyId} value={body} onChange={(event) => setBody(event.target.value)} disabled={status !== "idle"} required maxLength={5000} rows={4} />
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {error}
         </p>
       )}

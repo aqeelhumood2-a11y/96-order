@@ -82,14 +82,14 @@ export function ForgotPasswordForm() {
           disabled={isSubmitting}
         />
         {fieldError && (
-          <p id="email-error" role="alert" className="text-sm text-red-600">
+          <p id="email-error" role="alert" className="text-sm text-danger-600">
             {fieldError}
           </p>
         )}
       </div>
 
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {formError}
         </p>
       )}

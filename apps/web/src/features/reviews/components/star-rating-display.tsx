@@ -4,7 +4,7 @@ export function StarRatingDisplay({ rating, size = "md" }: { rating: number; siz
   const dimension = size === "sm" ? "14" : "18";
 
   return (
-    <span role="img" aria-label={`${rating} out of 5 stars`} className="inline-flex items-center gap-0.5 text-amber-500">
+    <span role="img" aria-label={`${rating} out of 5 stars`} className="inline-flex items-center gap-0.5 text-warning-500">
       {Array.from({ length: 5 }, (_, index) => {
         const filled = index + 1 <= rounded;
         const half = !filled && index + 0.5 === rounded;

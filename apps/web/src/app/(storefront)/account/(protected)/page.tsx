@@ -13,7 +13,7 @@ export default async function AccountOverviewPage() {
       <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Welcome, {session.displayName}</h1>
 
       {!session.emailVerified && (
-        <div className="flex flex-col gap-2 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="flex flex-col gap-2 rounded-md border border-warning-300 bg-warning-50 p-4 text-sm text-warning-900">
           <p>Please verify your email address to unlock all account features.</p>
           <ResendVerificationButton action={resendVerificationEmailAction} />
         </div>

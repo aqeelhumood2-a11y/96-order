@@ -102,12 +102,12 @@ export function BrandForm({ brand, onSaved }: { brand?: Brand; onSaved?: () => v
       </label>
 
       {fieldError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {fieldError}
         </p>
       )}
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {formError}
         </p>
       )}

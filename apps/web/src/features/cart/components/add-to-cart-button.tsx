@@ -59,7 +59,7 @@ export function AddToCartButton({ productId, variantId, disabled, disabledReason
         </p>
       )}
       {status === "error" && error && (
-        <p role="alert" className="text-xs text-red-600">
+        <p role="alert" className="text-xs text-danger-600">
           {error}
         </p>
       )}

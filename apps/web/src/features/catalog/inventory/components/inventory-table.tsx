@@ -29,8 +29,8 @@ export function InventoryTable({ rows, canAdjust }: { rows: InventoryOverviewRow
               <div className="flex items-center gap-4 text-sm">
                 <span>On hand: {onHand}</span>
                 <span>Reserved: {reserved}</span>
-                <span className={isLowStock ? "font-semibold text-red-600" : ""}>Available: {available}</span>
-                {isLowStock && <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">Low stock</span>}
+                <span className={isLowStock ? "font-semibold text-danger-600" : ""}>Available: {available}</span>
+                {isLowStock && <span className="rounded bg-danger-50 px-2 py-0.5 text-xs font-medium text-danger-700">Low stock</span>}
               </div>
             </div>
             {canAdjust && <AdjustInventoryForm productId={product.id} variantId={variant?.id ?? null} />}

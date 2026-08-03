@@ -66,13 +66,13 @@ export function CustomerRegisterForm() {
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="register-name">Full name</Label>
         <Input id="register-name" value={fullName} onChange={(event) => setFullName(event.target.value)} disabled={isSubmitting} aria-invalid={Boolean(fieldErrors.fullName)} />
-        {fieldErrors.fullName && <p role="alert" className="text-sm text-red-600">{fieldErrors.fullName}</p>}
+        {fieldErrors.fullName && <p role="alert" className="text-sm text-danger-600">{fieldErrors.fullName}</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="register-email">Email</Label>
         <Input id="register-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={isSubmitting} aria-invalid={Boolean(fieldErrors.email)} />
-        {fieldErrors.email && <p role="alert" className="text-sm text-red-600">{fieldErrors.email}</p>}
+        {fieldErrors.email && <p role="alert" className="text-sm text-danger-600">{fieldErrors.email}</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -88,7 +88,7 @@ export function CustomerRegisterForm() {
           aria-describedby="register-password-hint"
         />
         <p id="register-password-hint" className="text-xs text-foreground/60">At least 8 characters.</p>
-        {fieldErrors.password && <p role="alert" className="text-sm text-red-600">{fieldErrors.password}</p>}
+        {fieldErrors.password && <p role="alert" className="text-sm text-danger-600">{fieldErrors.password}</p>}
       </div>
 
       <label className="flex items-start gap-2 text-sm text-foreground/80">
@@ -97,7 +97,7 @@ export function CustomerRegisterForm() {
       </label>
 
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {formError}
         </p>
       )}

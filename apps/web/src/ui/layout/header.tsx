@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Container } from "./container";
+import { Logo } from "./logo";
 import { SearchForm } from "./search-form";
 import { MobileNav, type NavLink } from "./mobile-nav";
 
@@ -11,10 +12,10 @@ export interface HeaderProps {
 /** Presentational only — `ui/` may not depend on `services/` (see `eslint-plugin-boundaries`), so every bit of admin-configured content (store name, nav links) is fetched by the caller (`app/(storefront)/layout.tsx`) and passed in as plain props. */
 export function Header({ storeName, navLinks }: HeaderProps) {
   return (
-    <header className="border-b border-brand-100 bg-background">
+    <header className="border-b border-surface-border bg-background">
       <Container className="flex h-16 items-center gap-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight text-brand-900">
-          {storeName}
+        <Link href="/" aria-label={storeName} className="flex items-center">
+          <Logo color="purple" height={28} priority />
         </Link>
 
         <nav aria-label="Primary" className="hidden md:block">

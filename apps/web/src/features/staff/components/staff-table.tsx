@@ -29,7 +29,7 @@ export function StaffTable({ staff, roles, canEdit }: { staff: StaffUser[]; role
                   className={
                     user.status === "active"
                       ? "rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700"
-                      : "rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700"
+                      : "rounded-full bg-danger-50 px-2 py-0.5 text-xs font-medium text-danger-700"
                   }
                 >
                   {user.status}

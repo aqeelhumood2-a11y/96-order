@@ -31,7 +31,7 @@ export function DeleteRoleButton({ roleId }: { roleId: string }) {
         Delete
       </Button>
       {error && (
-        <p role="alert" className="text-xs text-red-600">
+        <p role="alert" className="text-xs text-danger-600">
           {error}
         </p>
       )}

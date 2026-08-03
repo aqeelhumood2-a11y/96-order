@@ -31,7 +31,7 @@ export function DeleteCategoryButton({ categoryId }: { categoryId: string }) {
         {isDeleting ? "Deleting…" : "Delete"}
       </Button>
       {error && (
-        <p role="alert" className="max-w-48 text-right text-xs text-red-600">
+        <p role="alert" className="max-w-48 text-right text-xs text-danger-600">
           {error}
         </p>
       )}

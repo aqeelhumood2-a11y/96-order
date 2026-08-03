@@ -106,7 +106,7 @@ export function AddressForm({ existing, onDone }: { existing?: CustomerAddress; 
         Set as default address
       </label>
 
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
 
       <Button type="submit" size="sm" disabled={isSubmitting}>
         {isSubmitting ? "Saving…" : existing ? "Save changes" : "Add address"}

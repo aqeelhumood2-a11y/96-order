@@ -50,7 +50,7 @@ export default async function CartPage() {
             </Link>
           </Button>
           {priced.hasBlockingIssues && (
-            <p role="alert" className="text-xs text-red-600">
+            <p role="alert" className="text-xs text-danger-600">
               Please resolve the issues above before checking out.
             </p>
           )}
