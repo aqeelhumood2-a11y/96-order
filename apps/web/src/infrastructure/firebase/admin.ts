@@ -31,6 +31,15 @@ function createAdminApp(): App {
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const usingEmulators = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true";
 
+  if (!projectId) {
+    throw new Error(
+      "NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set. This is required at runtime for every " +
+        "Firestore/Auth/Storage-backed route to reach the correct Firebase project — set it " +
+        "in your deployment platform's environment variables (see docs/environment-variables.md). " +
+        "This only breaks on first use of a Firebase-backed route, not at build time.",
+    );
+  }
+
   // The `credential` key must be entirely absent for the emulator case —
   // Firebase's own options validation rejects `credential: undefined` just
   // as strictly as an invalid credential object, so this can't be a

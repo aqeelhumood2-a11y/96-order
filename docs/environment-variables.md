@@ -4,13 +4,34 @@ Copy `apps/web/.env.example` to `apps/web/.env.local` for local development.
 In production, set these through your hosting platform's environment/secret
 manager (see [deployment.md](./deployment.md)) — never commit real values.
 
+## Build time vs. runtime
+
+**No environment variable is required for `pnpm build` / `next build` to
+succeed.** Every Firestore/Auth/Storage-reading route and page in this app is
+`export const dynamic = "force-dynamic"`, so none of them execute during
+Next.js's build-time static analysis or prerendering — they only run against
+a real request, at runtime. Firebase Admin SDK initialization
+(`infrastructure/firebase/admin.ts`) and cart-cookie signing
+(`lib/cart-cookie.ts`) are both lazy (function-scoped, not module-top-level),
+so a missing var surfaces as a clear thrown error the first time a request
+actually needs it, never as a build failure and never as a silent `undefined`
+used deep inside a library. This is intentional: a production build must
+succeed even before any of these values are configured, so the same build
+artifact can be deployed once and then configured (or reconfigured) purely
+through environment variables, with no rebuild.
+
+All variables below are therefore **runtime-required or runtime-optional**,
+never build-time-required. The tables below classify each one; "Required in
+every environment" means "required for the app to function correctly once
+it's receiving traffic," not "required to build."
+
 ## Required in every environment
 
 | Variable | Purpose | Notes |
 |---|---|---|
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase client SDK config | Not a secret — safe in the browser bundle by design. |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase client SDK config | |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase client SDK config | |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase client SDK config; also the Admin SDK's target project (`infrastructure/firebase/admin.ts`). | If unset, the first request that touches Firestore/Auth/Storage throws a clear `"NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set"` error instead of failing confusingly inside the Firebase SDK. |
 | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase client SDK config; also drives `next.config.ts`'s image `remotePatterns`. | |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase client SDK config | |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase client SDK config | |
