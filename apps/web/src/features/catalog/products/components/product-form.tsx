@@ -217,7 +217,7 @@ export function ProductForm({ product, categories, brands }: { product?: Product
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex max-w-3xl flex-col gap-8">
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
         <h2 className="text-lg font-semibold text-brand-950">Basics</h2>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="product-name">Name</Label>
@@ -312,7 +312,7 @@ export function ProductForm({ product, categories, brands }: { product?: Product
         </div>
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
         <h2 className="text-lg font-semibold text-brand-950">SEO</h2>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="product-seo-title">SEO title</Label>
@@ -324,7 +324,7 @@ export function ProductForm({ product, categories, brands }: { product?: Product
         </div>
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
         <h2 className="text-lg font-semibold text-brand-950">Identifiers &amp; pricing</h2>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
@@ -351,12 +351,12 @@ export function ProductForm({ product, categories, brands }: { product?: Product
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-tax-class">Tax classification (placeholder — no calculation yet)</Label>
+          <Label htmlFor="product-tax-class">Tax classification (for your records)</Label>
           <Input id="product-tax-class" value={taxClass} onChange={(event) => setTaxClass(event.target.value)} disabled={isSubmitting} />
         </div>
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
         <h2 className="text-lg font-semibold text-brand-950">Inventory</h2>
         <div className="flex gap-6 text-sm">
           <label className="flex items-center gap-2">
@@ -374,7 +374,7 @@ export function ProductForm({ product, categories, brands }: { product?: Product
         </div>
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
         <h2 className="text-lg font-semibold text-brand-950">Shipping</h2>
         <div className="grid grid-cols-4 gap-4">
           <div className="flex flex-col gap-1.5">
@@ -396,7 +396,7 @@ export function ProductForm({ product, categories, brands }: { product?: Product
         </div>
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
         <h2 className="text-lg font-semibold text-brand-950">Coffee attributes (optional)</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
@@ -438,7 +438,7 @@ export function ProductForm({ product, categories, brands }: { product?: Product
         </div>
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
         <h2 className="text-lg font-semibold text-brand-950">Equipment attributes (optional)</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
@@ -472,7 +472,7 @@ export function ProductForm({ product, categories, brands }: { product?: Product
         </div>
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-brand-950">Variants</h2>
           <label className="flex items-center gap-2 text-sm">
@@ -483,14 +483,14 @@ export function ProductForm({ product, categories, brands }: { product?: Product
         {hasVariants && <VariantEditor variants={variants} onChange={setVariants} disabled={isSubmitting} />}
       </section>
 
-      <div className="flex flex-col gap-2 border-t border-brand-100 pt-6">
+      <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 border-t border-brand-100 bg-background/95 px-4 py-4 shadow-[0_-2px_8px_rgba(0,0,0,0.04)] backdrop-blur sm:-mx-6 sm:px-6">
         {formError && (
           <p role="alert" className="text-sm text-danger-600">
             {formError}
           </p>
         )}
         {successMessage && (
-          <p role="status" className="text-sm text-foreground/70">
+          <p role="status" className="text-sm text-success-700">
             {successMessage}
           </p>
         )}

@@ -1,5 +1,6 @@
 import "server-only";
 import { InternalError } from "@/core/errors";
+import { logger } from "@/lib/logger";
 
 /**
  * Thin fetch wrapper around the two Identity Toolkit REST operations that
@@ -62,15 +63,44 @@ export async function signInWithPasswordRest(email: string, password: string): P
 }
 
 /**
- * Fire-and-inspect only in tests: production code never reads or returns
- * the outcome of this call beyond "did the HTTP request complete" — see
- * the port doc comment for why silence is the point.
+ * No caller ever reads or returns the outcome of this call beyond "did the
+ * HTTP request complete" — see the port doc comment for why silence is the
+ * point *for the client*: the HTTP response to the browser must never
+ * distinguish "email sent" from "email failed," or a caller could enumerate
+ * which addresses have accounts.
+ *
+ * That's a client-facing constraint, not a server-side one. This still
+ * logs the real outcome server-side (Vercel/log-aggregator visible only,
+ * never returned to any caller) — `EMAIL_NOT_FOUND` is the expected,
+ * frequent, harmless case (someone requesting a reset for an address with
+ * no account) and logs at `debug`; anything else — a misconfigured Firebase
+ * Auth email template, a restricted API key, a quota limit — is a real
+ * delivery problem and logs at `warn` so it actually shows up when
+ * "password reset emails aren't arriving" needs diagnosing.
  */
 export async function sendOobCodeRest(email: string): Promise<void> {
-  const response = await fetch(`${baseUrl()}/accounts:sendOobCode?key=${apiKey()}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ requestType: "PASSWORD_RESET", email }),
-  });
-  await response.json().catch(() => undefined);
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl()}/accounts:sendOobCode?key=${apiKey()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requestType: "PASSWORD_RESET", email }),
+    });
+  } catch (error) {
+    logger.error("Password reset email: request to Identity Toolkit failed", {
+      message: error instanceof Error ? error.message : "Unknown network error",
+    });
+    return;
+  }
+
+  const body = (await response.json().catch(() => ({}))) as IdentityToolkitErrorBody;
+
+  if (!response.ok) {
+    const code = body.error?.message ?? "UNKNOWN_ERROR";
+    if (code === "EMAIL_NOT_FOUND") {
+      logger.debug("Password reset email: no account for this address", { status: response.status });
+    } else {
+      logger.warn("Password reset email: Identity Toolkit rejected the request", { status: response.status, code });
+    }
+  }
 }
