@@ -299,16 +299,11 @@ body {
 }
 
 /**
- * Display serif treatment — the Fraunces headline face (see layout.tsx),
- * set against the sans body/UI type for the editorial-vs-interface
- * contrast that reads as a considered brand system rather than a single
- * default typeface everywhere. Applied selectively — the header logotype
- * and the homepage hero headline only, never body copy or UI chrome (nav,
- * buttons, forms all stay on the sans). Only sets the family; weight and
- * tracking are left to Tailwind utilities at each call site so they can
- * differ (a hero H1 wants a heavier weight than the header logotype)
- * without fighting this class for cascade priority.
+ * Display heading treatment — tighter tracking and a heavier weight,
+ * evoking the logo's bold condensed wordmark. Applied selectively (hero
+ * headlines, section titles), not to every heading in the app.
  */
 .font-display {
-  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }

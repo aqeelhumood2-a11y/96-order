@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { SITE_NAME, SITE_URL } from "@/config/site";
 import "./globals.css";
 
@@ -11,20 +11,6 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
-
-/**
- * Display serif for the header logotype and hero headline only (see
- * `globals.css`'s `.font-display` doc comment) — the editorial contrast
- * against the clean grotesk UI type is a deliberate premium-brand signal,
- * not a global typeface swap.
- */
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  weight: ["500", "600", "700"],
-  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -60,7 +46,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">{children}</body>
     </html>

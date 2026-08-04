@@ -5,58 +5,29 @@ import { Button } from "@/ui/primitives";
 
 /**
  * Copy is intentionally generic until a CMS module owns this content. The
- * layout (not the words) is what future CMS-driven content slots into.
- *
- * The layered brand-950→brand-800 field (rather than a flat brand-900
- * fill), the oversized "96°" numeral watermark, and the two low-opacity
- * leaf accents are the one "hero" moment this brand system spends its
- * decorative budget on — see `LeafAccent`'s doc comment. The numeral is
- * plain text, not an image: it's the one detail here that's unique to
- * *this* brand specifically (its actual name), not a generic coffee-shop
- * motif any competitor's template could carry too.
+ * layout (not the words) is what future CMS-driven content slots into. The
+ * brand-900 purple field with two low-opacity leaf accents is the one
+ * "hero" moment the tropical-leaf motif is meant for — see `LeafAccent`'s
+ * doc comment.
  */
 export function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800">
+    <section className="relative overflow-hidden bg-brand-900">
       <LeafAccent corner="top-right" size={480} color="white" />
       <LeafAccent corner="bottom-left" size={360} color="white" />
-      <span
-        aria-hidden="true"
-        className="font-display pointer-events-none absolute -right-6 -bottom-16 hidden text-[22rem] leading-none font-medium text-white/[0.05] select-none sm:block lg:-right-2 lg:text-[26rem]"
-      >
-        96°
-      </span>
-
-      <Container className="relative flex flex-col items-start gap-7 py-20 sm:py-28 lg:py-32">
-        <div className="flex items-center gap-2.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-secondary-400" aria-hidden="true" />
-          <span className="text-xs font-semibold tracking-[0.28em] text-white/80 uppercase">Specialty coffee &amp; brewing equipment</span>
-        </div>
-
-        <h1 className="font-display max-w-2xl text-5xl leading-[1.05] font-semibold text-white sm:text-6xl lg:text-7xl">
-          Thoughtfully <em className="text-secondary-300 font-medium italic">sourced</em> coffee,
-          <br />
-          brewed right.
-        </h1>
-
+      <Container className="relative flex flex-col items-start gap-6 py-16 sm:py-24">
+        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white/80">
+          Coffee &amp; brewing equipment
+        </span>
+        <h1 className="font-display max-w-2xl text-4xl text-white sm:text-5xl">Thoughtfully sourced coffee, brewed right.</h1>
         <p className="max-w-xl text-base text-white/70 sm:text-lg">
-          Explore our current lineup of beans and brewing gear — new arrivals and long-time favorites, all in one place.
+          Browse our current selection of beans and brewing gear. New arrivals and favorites, all in one place.
         </p>
-
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Button
-            asChild
-            size="lg"
-            className="bg-white text-brand-900 shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-white/95 hover:shadow-xl hover:shadow-black/20"
-          >
+        <div className="flex flex-wrap gap-3">
+          <Button asChild className="bg-white text-brand-900 hover:bg-white/90">
             <Link href="/products">Shop all products</Link>
           </Button>
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="border-white/30 text-white transition-all hover:-translate-y-0.5 hover:border-white/50 hover:bg-white/10"
-          >
+          <Button asChild variant="outline" className="border-white/30 text-white hover:bg-white/10">
             <Link href="/search">Search the catalog</Link>
           </Button>
         </div>
