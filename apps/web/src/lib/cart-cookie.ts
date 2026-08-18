@@ -1,5 +1,6 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { logger } from "@/lib/logger";
 
 /**
  * Signs/verifies the guest-cart cookie's value — `{cartId}.{hmacSignature}`.
@@ -16,6 +17,13 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 function getSecret(): string {
   const secret = process.env.CART_COOKIE_SECRET;
   if (!secret) {
+    // Every cart mutation (add/update/remove/checkout) calls this before
+    // anything else — a missing secret here fails every one of them
+    // identically, immediately, with no Firestore access ever attempted.
+    // Logged so this is distinguishable in Vercel's function logs from a
+    // Firebase Admin credential failure, which looks identical to the
+    // browser ("Something went wrong.") but has a completely different fix.
+    logger.error("CART_COOKIE_SECRET is not set");
     throw new Error("CART_COOKIE_SECRET is not set. Copy .env.example and fill in a long random value.");
   }
   return secret;

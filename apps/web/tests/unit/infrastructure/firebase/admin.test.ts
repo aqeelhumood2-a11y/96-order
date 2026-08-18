@@ -63,7 +63,10 @@ describe("infrastructure/firebase/admin", () => {
     expect(certMock).toHaveBeenCalledWith({
       projectId: "prod-project",
       clientEmail: "sa@prod-project.iam.gserviceaccount.com",
-      privateKey: "-----BEGIN PRIVATE KEY-----\nline-one\nline-two\n-----END PRIVATE KEY-----\n",
+      // Trailing whitespace/newline is trimmed as part of hardening against
+      // paste artifacts — see the "trims surrounding whitespace and quotes"
+      // test below.
+      privateKey: "-----BEGIN PRIVATE KEY-----\nline-one\nline-two\n-----END PRIVATE KEY-----",
     });
     expect(applicationDefaultMock).not.toHaveBeenCalled();
     expect(initializeAppMock).toHaveBeenCalledWith(expect.objectContaining({ projectId: "prod-project" }));
@@ -83,6 +86,22 @@ describe("infrastructure/firebase/admin", () => {
         privateKey: "-----BEGIN PRIVATE KEY-----\nline-one\nline-two\n-----END PRIVATE KEY-----\n",
       }),
     );
+  });
+
+  it("trims surrounding whitespace and a wrapping pair of quote characters from each credential field", async () => {
+    process.env.FIREBASE_ADMIN_PROJECT_ID = "  prod-project  ";
+    process.env.FIREBASE_ADMIN_CLIENT_EMAIL = '"sa@prod-project.iam.gserviceaccount.com"';
+    process.env.FIREBASE_ADMIN_PRIVATE_KEY =
+      '"-----BEGIN PRIVATE KEY-----\\nline-one\\nline-two\\n-----END PRIVATE KEY-----\\n"\n';
+
+    const { getAdminApp } = await importFreshAdminModule();
+    getAdminApp();
+
+    expect(certMock).toHaveBeenCalledWith({
+      projectId: "prod-project",
+      clientEmail: "sa@prod-project.iam.gserviceaccount.com",
+      privateKey: "-----BEGIN PRIVATE KEY-----\nline-one\nline-two\n-----END PRIVATE KEY-----\n",
+    });
   });
 
   it("throws a clear diagnostic naming exactly the missing variables when only part of the credential set is present", async () => {

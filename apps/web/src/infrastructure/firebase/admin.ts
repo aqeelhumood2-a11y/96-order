@@ -3,6 +3,23 @@ import { getApps, initializeApp, applicationDefault, cert, type App, type Creden
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getStorage, type Storage } from "firebase-admin/storage";
+import { logger } from "@/lib/logger";
+
+/**
+ * Undoes the two most common ways a service-account field gets mangled by a
+ * copy-paste into a dashboard text field: a wrapping pair of quote
+ * characters carried over from viewing the source JSON (`"-----BEGIN...`),
+ * and incidental leading/trailing whitespace or a trailing newline. Applied
+ * to all three `FIREBASE_ADMIN_*` fields, not just the private key — a
+ * stray trailing space on `FIREBASE_ADMIN_CLIENT_EMAIL` fails Google's auth
+ * exchange just as completely as a malformed key, with a far more confusing
+ * error message.
+ */
+function cleanCredentialField(value: string): string {
+  const trimmed = value.trim();
+  const unquoted = (trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'")) ? trimmed.slice(1, -1) : trimmed;
+  return unquoted.trim();
+}
 
 /**
  * Server-only Firebase Admin SDK singleton. Supports two credential modes:
@@ -39,17 +56,34 @@ function resolveAdminCredential(): { credential: Credential; projectId?: string 
   const presentCount = [projectId, clientEmail, privateKey].filter(Boolean).length;
 
   if (presentCount === 3) {
-    return {
-      credential: cert({
-        projectId,
-        clientEmail,
-        // Env vars can't carry real newlines portably (Vercel's dashboard,
-        // shell exports, CI secret stores all flatten them to literal
-        // "\n" sequences) — this reverses that so the PEM block parses.
-        privateKey: privateKey!.replace(/\\n/g, "\n"),
-      }),
-      projectId,
-    };
+    const cleanedProjectId = cleanCredentialField(projectId!);
+    const cleanedClientEmail = cleanCredentialField(clientEmail!);
+    // Env vars can't carry real newlines portably (Vercel's dashboard, shell
+    // exports, CI secret stores all flatten them to literal "\n" sequences)
+    // — this reverses that so the PEM block parses. Applied after
+    // `cleanCredentialField` strips any wrapping quotes, since a quoted
+    // paste from the source JSON file carries literal `\n` sequences too.
+    const cleanedPrivateKey = cleanCredentialField(privateKey!).replace(/\\n/g, "\n");
+
+    try {
+      return {
+        credential: cert({ projectId: cleanedProjectId, clientEmail: cleanedClientEmail, privateKey: cleanedPrivateKey }),
+        projectId: cleanedProjectId,
+      };
+    } catch (error) {
+      // `cert()` throws synchronously on a malformed PEM block or client
+      // email — this is the single most common real-world cause of every
+      // Firestore/Auth-backed action failing identically in production
+      // (page reads can still serve stale cached data; nothing about a
+      // Server Action is ever cached, so it fails immediately and visibly).
+      // Logged here, not just re-thrown, so it shows up as a clean,
+      // searchable line in Vercel's function logs instead of only a raw
+      // stack trace three layers of Next.js internals deep.
+      logger.error("Firebase Admin credential is present but invalid — cert() rejected it", {
+        message: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }
 
   if (presentCount === 0) {
@@ -62,6 +96,7 @@ function resolveAdminCredential(): { credential: Credential; projectId?: string 
     !privateKey && "FIREBASE_ADMIN_PRIVATE_KEY",
   ].filter((name): name is string => Boolean(name));
 
+  logger.error("Firebase Admin credentials are incomplete", { missing });
   throw new Error(
     `Incomplete Firebase Admin service-account credentials — missing ${missing.join(", ")}. ` +
       "Set all three of FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, and " +
@@ -82,6 +117,7 @@ function createAdminApp(): App {
   if (usingEmulators) {
     const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     if (!projectId) {
+      logger.error("NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set (emulator mode)");
       throw new Error(
         "NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set. Required even against the Firebase " +
           "Emulator Suite so the Admin SDK knows which demo project to address.",
@@ -100,6 +136,7 @@ function createAdminApp(): App {
   const projectId = resolved.projectId ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
   if (!projectId) {
+    logger.error("NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set (production mode)");
     throw new Error(
       "NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set. This is required at runtime for every " +
         "Firestore/Auth/Storage-backed route to reach the correct Firebase project — set it " +
