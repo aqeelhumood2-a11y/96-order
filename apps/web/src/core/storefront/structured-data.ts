@@ -1,3 +1,4 @@
+import { ACTIVE_CURRENCY, money } from "@/core/money/money";
 import type { PublicProduct } from "./dto";
 
 export interface BreadcrumbItem {
@@ -19,8 +20,6 @@ export function buildBreadcrumbJsonLd(items: readonly BreadcrumbItem[]): Record<
   };
 }
 
-const MINOR_UNITS_PER_MAJOR = 100;
-
 /**
  * Reflects the product's own base price and aggregate availability, not a
  * client-selected variant — this is generated once per page load from the
@@ -41,8 +40,8 @@ export function buildProductJsonLd(product: PublicProduct, canonicalUrl: string)
     url: canonicalUrl,
     offers: {
       "@type": "Offer",
-      priceCurrency: "USD",
-      price: (product.basePrice / MINOR_UNITS_PER_MAJOR).toFixed(2),
+      priceCurrency: ACTIVE_CURRENCY.code,
+      price: (money(product.basePrice).amount / ACTIVE_CURRENCY.minorUnitsPerMajor).toFixed(ACTIVE_CURRENCY.decimalDigits),
       availability: product.availability.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       url: canonicalUrl,
     },

@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ACTIVE_CURRENCY } from "@/core/money/money";
 import type { Brand, Category, Product } from "@/core/catalog/entities";
 import { PRODUCT_STATUSES, PRODUCT_VISIBILITIES } from "@/core/catalog/entities";
-import { createProductAction, updateProductAction } from "@/features/catalog/products/actions";
+import { PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES } from "@/core/catalog/schemas";
+import { createProductAction, updateProductAction, uploadProductImageAction } from "@/features/catalog/products/actions";
+import { adjustInventoryAction } from "@/features/catalog/inventory/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -35,9 +40,37 @@ function numberOrUndefined(value: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-export function ProductForm({ product, categories, brands }: { product?: Product; categories: Category[]; brands: Brand[] }) {
+/** Converts a BHD major-unit form input (e.g. "2.500") to the fils integer `Product.basePrice` etc. are stored in. */
+function bhdToFils(value: string): number | undefined {
+  const parsed = numberOrUndefined(value);
+  return parsed === undefined ? undefined : Math.round(parsed * ACTIVE_CURRENCY.minorUnitsPerMajor);
+}
+
+function filsToBhdString(amount: number | undefined): string {
+  return amount === undefined ? "" : (amount / ACTIVE_CURRENCY.minorUnitsPerMajor).toString();
+}
+
+/** A short, collision-safe default SKU for the common case where a store owner doesn't want to think one up — still editable under Advanced options. */
+function generateSku(): string {
+  return `SKU-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+const DEFAULT_PRODUCT_TYPE = "general";
+
+export function ProductForm({
+  product,
+  categories,
+  brands,
+  locale = DEFAULT_LOCALE,
+}: {
+  product?: Product;
+  categories: Category[];
+  brands: Brand[];
+  locale?: Locale;
+}) {
   const router = useRouter();
   const isEditing = Boolean(product);
+  const dict = getDictionary(locale).admin.productForm;
 
   const [name, setName] = useState(product?.name ?? "");
   const [slug, setSlug] = useState(product?.slug ?? "");
@@ -47,14 +80,15 @@ export function ProductForm({ product, categories, brands }: { product?: Product
   const [primaryCategoryId, setPrimaryCategoryId] = useState(product?.primaryCategoryId ?? categories[0]?.id ?? "");
   const [additionalCategoryIds, setAdditionalCategoryIds] = useState<string[]>(product?.additionalCategoryIds ?? []);
   const [productType, setProductType] = useState(product?.productType ?? "");
-  const [status, setStatus] = useState(product?.status ?? "draft");
-  const [visibility, setVisibility] = useState(product?.visibility ?? "hidden");
+  // New products default to active/visible — a store owner adding a product wants it live immediately, not stuck in draft until they discover Status/Visibility under Advanced options.
+  const [status, setStatus] = useState(product?.status ?? "active");
+  const [visibility, setVisibility] = useState(product?.visibility ?? "visible");
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [sku, setSku] = useState(product?.sku ?? "");
   const [barcode, setBarcode] = useState(product?.barcode ?? "");
-  const [basePrice, setBasePrice] = useState(product?.basePrice?.toString() ?? "");
-  const [compareAtPrice, setCompareAtPrice] = useState(product?.compareAtPrice?.toString() ?? "");
-  const [costPrice, setCostPrice] = useState(product?.costPrice?.toString() ?? "");
+  const [basePrice, setBasePrice] = useState(filsToBhdString(product?.basePrice));
+  const [compareAtPrice, setCompareAtPrice] = useState(filsToBhdString(product?.compareAtPrice));
+  const [costPrice, setCostPrice] = useState(filsToBhdString(product?.costPrice));
   const [taxClass, setTaxClass] = useState(product?.taxClass ?? "");
   const [trackInventory, setTrackInventory] = useState(product?.trackInventory ?? true);
   const [allowBackorder, setAllowBackorder] = useState(product?.allowBackorder ?? false);
@@ -87,9 +121,19 @@ export function ProductForm({ product, categories, brands }: { product?: Product
   const [voltage, setVoltage] = useState(product?.attributes?.equipment?.voltage ?? "");
   const [warrantyPeriod, setWarrantyPeriod] = useState(product?.attributes?.equipment?.warrantyPeriod ?? "");
 
+  // Create-only conveniences — an existing product already has a dedicated image gallery (ProductImages, on the edit page) and its own inventory record (adjustable from /admin/inventory), so these only make sense before a product exists yet.
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [stockQuantity, setStockQuantity] = useState("");
+
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isActive = status === "active" && visibility === "visible";
+  function setActive(checked: boolean) {
+    setStatus(checked ? "active" : "draft");
+    setVisibility(checked ? "visible" : "hidden");
+  }
 
   function toggleAdditionalCategory(categoryId: string) {
     setAdditionalCategoryIds((current) => (current.includes(categoryId) ? current.filter((id) => id !== categoryId) : [...current, categoryId]));
@@ -100,18 +144,21 @@ export function ProductForm({ product, categories, brands }: { product?: Product
     setFormError(null);
     setSuccessMessage(null);
 
-    if (!name.trim() || !sku.trim() || !primaryCategoryId) {
-      setFormError("Name, SKU, and a primary category are required.");
+    if (!name.trim() || !primaryCategoryId) {
+      setFormError("Name and a category are required.");
       return;
     }
 
-    const basePriceNumber = numberOrUndefined(basePrice);
+    const basePriceNumber = bhdToFils(basePrice);
     if (basePriceNumber === undefined) {
-      setFormError("Base price is required.");
+      setFormError("Price is required.");
       return;
     }
 
     const hasDimensions = lengthCm.trim() || widthCm.trim() || heightCm.trim();
+    // Advanced options left untouched on a new product still need real values for required fields — a generated SKU and a generic product type, both fully editable under Advanced options if expanded.
+    const finalSku = sku.trim() || (isEditing ? sku.trim() : generateSku());
+    const finalProductType = productType.trim() || DEFAULT_PRODUCT_TYPE;
 
     const payload = {
       name: name.trim(),
@@ -121,15 +168,15 @@ export function ProductForm({ product, categories, brands }: { product?: Product
       brandId: brandId || null,
       primaryCategoryId,
       additionalCategoryIds,
-      productType: productType.trim(),
+      productType: finalProductType,
       status,
       visibility,
       featured,
-      sku: sku.trim(),
+      sku: finalSku,
       barcode: barcode.trim() || undefined,
       basePrice: basePriceNumber,
-      compareAtPrice: numberOrUndefined(compareAtPrice),
-      costPrice: numberOrUndefined(costPrice),
+      compareAtPrice: bhdToFils(compareAtPrice),
+      costPrice: bhdToFils(costPrice),
       taxClass: taxClass.trim() || undefined,
       trackInventory,
       allowBackorder,
@@ -208,7 +255,28 @@ export function ProductForm({ product, categories, brands }: { product?: Product
         setFormError(result.message);
         return;
       }
-      setSuccessMessage("Product created.");
+
+      const warnings: string[] = [];
+      const stockQty = numberOrUndefined(stockQuantity);
+      if (stockQty !== undefined && stockQty > 0) {
+        const inventoryResult = await adjustInventoryAction({
+          productId: result.data.id,
+          variantId: null,
+          reason: "initial_stock",
+          quantityDelta: Math.round(stockQty),
+        });
+        if (!inventoryResult.ok) warnings.push(`Stock quantity wasn't saved (${inventoryResult.message}) — set it from the product page.`);
+      }
+      if (imageFile) {
+        const formData = new FormData();
+        formData.set("productId", result.data.id);
+        formData.set("file", imageFile);
+        formData.set("isPrimary", "true");
+        const imageResult = await uploadProductImageAction(formData);
+        if (!imageResult.ok) warnings.push(`Image wasn't uploaded (${imageResult.message}) — add it from the product page.`);
+      }
+
+      setSuccessMessage(warnings.length > 0 ? `Product created. ${warnings.join(" ")}` : "Product created.");
       router.push(`/admin/products/${result.data.id}`);
     } finally {
       setIsSubmitting(false);
@@ -218,44 +286,44 @@ export function ProductForm({ product, categories, brands }: { product?: Product
   return (
     <form onSubmit={handleSubmit} noValidate className="flex max-w-3xl flex-col gap-8">
       <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
-        <h2 className="text-lg font-semibold text-brand-950">Basics</h2>
+        <h2 className="text-lg font-semibold text-brand-950">{dict.essentials}</h2>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-name">Name</Label>
+          <Label htmlFor="product-name">{dict.name}</Label>
           <Input id="product-name" value={name} onChange={(event) => setName(event.target.value)} disabled={isSubmitting} />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-slug">Slug (optional — derived from name if left blank)</Label>
-          <Input id="product-slug" value={slug} onChange={(event) => setSlug(event.target.value)} disabled={isSubmitting} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-type">Product type (e.g. coffee_beans, grinder)</Label>
-          <Input id="product-type" value={productType} onChange={(event) => setProductType(event.target.value)} disabled={isSubmitting} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-short-description">Short description</Label>
-          <Textarea id="product-short-description" value={shortDescription} onChange={(event) => setShortDescription(event.target.value)} disabled={isSubmitting} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-full-description">Full description</Label>
-          <Textarea id="product-full-description" className="min-h-40" value={fullDescription} onChange={(event) => setFullDescription(event.target.value)} disabled={isSubmitting} />
-        </div>
+
+        {!isEditing && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="product-image">{dict.productImage}</Label>
+            <input
+              id="product-image"
+              type="file"
+              accept={PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES.join(",")}
+              onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+              disabled={isSubmitting}
+              className="text-sm text-foreground/80 file:mr-3 file:rounded-md file:border-0 file:bg-brand-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-950"
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-brand">Brand</Label>
-            <Select id="product-brand" value={brandId} onChange={(event) => setBrandId(event.target.value)} disabled={isSubmitting}>
-              <option value="">No brand</option>
-              {brands.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name}
-                </option>
-              ))}
-            </Select>
+            <Label htmlFor="product-base-price">{dict.priceBhd}</Label>
+            <Input
+              id="product-base-price"
+              type="number"
+              step="0.001"
+              min={0}
+              value={basePrice}
+              onChange={(event) => setBasePrice(event.target.value)}
+              disabled={isSubmitting}
+              placeholder="2.500"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-primary-category">Primary category</Label>
+            <Label htmlFor="product-primary-category">{dict.category}</Label>
             <Select id="product-primary-category" value={primaryCategoryId} onChange={(event) => setPrimaryCategoryId(event.target.value)} disabled={isSubmitting}>
-              <option value="">Select a category</option>
+              <option value="">{dict.selectCategory}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -265,223 +333,281 @@ export function ProductForm({ product, categories, brands }: { product?: Product
           </div>
         </div>
 
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="text-sm font-medium text-foreground">Additional categories</legend>
-          <div className="flex flex-wrap gap-3">
-            {categories
-              .filter((category) => category.id !== primaryCategoryId)
-              .map((category) => (
-                <label key={category.id} className="flex items-center gap-1.5 text-sm">
-                  <input type="checkbox" checked={additionalCategoryIds.includes(category.id)} onChange={() => toggleAdditionalCategory(category.id)} disabled={isSubmitting} />
-                  {category.name}
-                </label>
-              ))}
-          </div>
-        </fieldset>
-
-        <div className="grid grid-cols-3 gap-4">
+        {!isEditing && (
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-status">Status</Label>
-            <Select id="product-status" value={status} onChange={(event) => setStatus(event.target.value as (typeof PRODUCT_STATUSES)[number])} disabled={isSubmitting}>
-              {PRODUCT_STATUSES.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </Select>
+            <Label htmlFor="product-stock-quantity">{dict.stockQuantity}</Label>
+            <Input
+              id="product-stock-quantity"
+              type="number"
+              min={0}
+              step="1"
+              className="max-w-40"
+              value={stockQuantity}
+              onChange={(event) => setStockQuantity(event.target.value)}
+              disabled={isSubmitting}
+              placeholder="0"
+            />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-visibility">Visibility</Label>
-            <Select id="product-visibility" value={visibility} onChange={(event) => setVisibility(event.target.value as (typeof PRODUCT_VISIBILITIES)[number])} disabled={isSubmitting}>
-              {PRODUCT_VISIBILITIES.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <label className="flex items-center gap-2 self-end pb-2 text-sm">
-            <input type="checkbox" checked={featured} onChange={(event) => setFeatured(event.target.checked)} disabled={isSubmitting} />
-            Featured
-          </label>
-        </div>
+        )}
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-tags">Tags (comma-separated)</Label>
-          <Input id="product-tags" value={tags} onChange={(event) => setTags(event.target.value)} disabled={isSubmitting} />
-        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={isActive} onChange={(event) => setActive(event.target.checked)} disabled={isSubmitting} />
+          {dict.active}
+        </label>
       </section>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
-        <h2 className="text-lg font-semibold text-brand-950">SEO</h2>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-seo-title">SEO title</Label>
-          <Input id="product-seo-title" value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} disabled={isSubmitting} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-seo-description">SEO description</Label>
-          <Textarea id="product-seo-description" value={seoDescription} onChange={(event) => setSeoDescription(event.target.value)} disabled={isSubmitting} />
-        </div>
-      </section>
+      <details className="group rounded-lg border border-surface-border bg-background p-6">
+        <summary className="cursor-pointer text-sm font-medium text-brand-800 select-none">{dict.advancedOptions}</summary>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
-        <h2 className="text-lg font-semibold text-brand-950">Identifiers &amp; pricing</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-sku">SKU</Label>
-            <Input id="product-sku" value={sku} onChange={(event) => setSku(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-barcode">Barcode (optional)</Label>
-            <Input id="product-barcode" value={barcode} onChange={(event) => setBarcode(event.target.value)} disabled={isSubmitting} />
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-base-price">Base price</Label>
-            <Input id="product-base-price" type="number" value={basePrice} onChange={(event) => setBasePrice(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-compare-price">Compare-at price</Label>
-            <Input id="product-compare-price" type="number" value={compareAtPrice} onChange={(event) => setCompareAtPrice(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-cost-price">Cost price</Label>
-            <Input id="product-cost-price" type="number" value={costPrice} onChange={(event) => setCostPrice(event.target.value)} disabled={isSubmitting} />
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-tax-class">Tax classification (for your records)</Label>
-          <Input id="product-tax-class" value={taxClass} onChange={(event) => setTaxClass(event.target.value)} disabled={isSubmitting} />
-        </div>
-      </section>
+        <div className="mt-6 flex flex-col gap-8">
+          <section className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-brand-950">Basics</h2>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-slug">Slug (optional — derived from name if left blank)</Label>
+              <Input id="product-slug" value={slug} onChange={(event) => setSlug(event.target.value)} disabled={isSubmitting} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-type">Product type (e.g. coffee_beans, grinder)</Label>
+              <Input id="product-type" value={productType} onChange={(event) => setProductType(event.target.value)} disabled={isSubmitting} placeholder={DEFAULT_PRODUCT_TYPE} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-short-description">Short description</Label>
+              <Textarea id="product-short-description" value={shortDescription} onChange={(event) => setShortDescription(event.target.value)} disabled={isSubmitting} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-full-description">Full description</Label>
+              <Textarea id="product-full-description" className="min-h-40" value={fullDescription} onChange={(event) => setFullDescription(event.target.value)} disabled={isSubmitting} />
+            </div>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
-        <h2 className="text-lg font-semibold text-brand-950">Inventory</h2>
-        <div className="flex gap-6 text-sm">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={trackInventory} onChange={(event) => setTrackInventory(event.target.checked)} disabled={isSubmitting} />
-            Track inventory
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={allowBackorder} onChange={(event) => setAllowBackorder(event.target.checked)} disabled={isSubmitting} />
-            Allow backorder
-          </label>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-low-stock">Low-stock threshold</Label>
-          <Input id="product-low-stock" type="number" value={lowStockThreshold} onChange={(event) => setLowStockThreshold(event.target.value)} disabled={isSubmitting} className="max-w-40" />
-        </div>
-      </section>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-brand">Brand</Label>
+                <Select id="product-brand" value={brandId} onChange={(event) => setBrandId(event.target.value)} disabled={isSubmitting}>
+                  <option value="">No brand</option>
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-status">Status</Label>
+                <Select id="product-status" value={status} onChange={(event) => setStatus(event.target.value as (typeof PRODUCT_STATUSES)[number])} disabled={isSubmitting}>
+                  {PRODUCT_STATUSES.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
-        <h2 className="text-lg font-semibold text-brand-950">Shipping</h2>
-        <div className="grid grid-cols-4 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-weight">Weight (g)</Label>
-            <Input id="product-weight" type="number" value={weightGrams} onChange={(event) => setWeightGrams(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-length">Length (cm)</Label>
-            <Input id="product-length" type="number" value={lengthCm} onChange={(event) => setLengthCm(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-width">Width (cm)</Label>
-            <Input id="product-width" type="number" value={widthCm} onChange={(event) => setWidthCm(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-height">Height (cm)</Label>
-            <Input id="product-height" type="number" value={heightCm} onChange={(event) => setHeightCm(event.target.value)} disabled={isSubmitting} />
-          </div>
-        </div>
-      </section>
+            <fieldset className="flex flex-col gap-1.5">
+              <legend className="text-sm font-medium text-foreground">Additional categories</legend>
+              <div className="flex flex-wrap gap-3">
+                {categories
+                  .filter((category) => category.id !== primaryCategoryId)
+                  .map((category) => (
+                    <label key={category.id} className="flex items-center gap-1.5 text-sm">
+                      <input type="checkbox" checked={additionalCategoryIds.includes(category.id)} onChange={() => toggleAdditionalCategory(category.id)} disabled={isSubmitting} />
+                      {category.name}
+                    </label>
+                  ))}
+              </div>
+            </fieldset>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
-        <h2 className="text-lg font-semibold text-brand-950">Coffee attributes (optional)</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Bean type</Label>
-            <Input value={beanType} onChange={(event) => setBeanType(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Roast level</Label>
-            <Input value={roastLevel} onChange={(event) => setRoastLevel(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Origin country</Label>
-            <Input value={originCountry} onChange={(event) => setOriginCountry(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Region</Label>
-            <Input value={region} onChange={(event) => setRegion(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Farm or producer</Label>
-            <Input value={farmOrProducer} onChange={(event) => setFarmOrProducer(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Processing method</Label>
-            <Input value={processingMethod} onChange={(event) => setProcessingMethod(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Variety</Label>
-            <Input value={variety} onChange={(event) => setVariety(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Grind type</Label>
-            <Input value={grindType} onChange={(event) => setGrindType(event.target.value)} disabled={isSubmitting} />
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Tasting notes (comma-separated)</Label>
-          <Input value={tastingNotes} onChange={(event) => setTastingNotes(event.target.value)} disabled={isSubmitting} />
-        </div>
-      </section>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-visibility">Visibility</Label>
+                <Select id="product-visibility" value={visibility} onChange={(event) => setVisibility(event.target.value as (typeof PRODUCT_VISIBILITIES)[number])} disabled={isSubmitting}>
+                  {PRODUCT_VISIBILITIES.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <label className="flex items-center gap-2 self-end pb-2 text-sm">
+                <input type="checkbox" checked={featured} onChange={(event) => setFeatured(event.target.checked)} disabled={isSubmitting} />
+                Featured
+              </label>
+            </div>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
-        <h2 className="text-lg font-semibold text-brand-950">Equipment attributes (optional)</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Manufacturer</Label>
-            <Input value={manufacturer} onChange={(event) => setManufacturer(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Model</Label>
-            <Input value={model} onChange={(event) => setModel(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Material</Label>
-            <Input value={material} onChange={(event) => setMaterial(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Color</Label>
-            <Input value={color} onChange={(event) => setColor(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Capacity</Label>
-            <Input value={capacity} onChange={(event) => setCapacity(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Voltage</Label>
-            <Input value={voltage} onChange={(event) => setVoltage(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Warranty period</Label>
-            <Input value={warrantyPeriod} onChange={(event) => setWarrantyPeriod(event.target.value)} disabled={isSubmitting} />
-          </div>
-        </div>
-      </section>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-tags">Tags (comma-separated)</Label>
+              <Input id="product-tags" value={tags} onChange={(event) => setTags(event.target.value)} disabled={isSubmitting} />
+            </div>
+          </section>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-surface-border bg-background p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-brand-950">Variants</h2>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={hasVariants} onChange={(event) => setHasVariants(event.target.checked)} disabled={isSubmitting} />
-            This product has variants
-          </label>
+          <section className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-brand-950">SEO</h2>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-seo-title">SEO title</Label>
+              <Input id="product-seo-title" value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} disabled={isSubmitting} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-seo-description">SEO description</Label>
+              <Textarea id="product-seo-description" value={seoDescription} onChange={(event) => setSeoDescription(event.target.value)} disabled={isSubmitting} />
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-brand-950">Identifiers &amp; pricing</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-sku">SKU {!isEditing && "(auto-generated if left blank)"}</Label>
+                <Input id="product-sku" value={sku} onChange={(event) => setSku(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-barcode">Barcode (optional)</Label>
+                <Input id="product-barcode" value={barcode} onChange={(event) => setBarcode(event.target.value)} disabled={isSubmitting} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-compare-price">Compare-at price (BHD)</Label>
+                <Input id="product-compare-price" type="number" step="0.001" min={0} value={compareAtPrice} onChange={(event) => setCompareAtPrice(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-cost-price">Cost price (BHD)</Label>
+                <Input id="product-cost-price" type="number" step="0.001" min={0} value={costPrice} onChange={(event) => setCostPrice(event.target.value)} disabled={isSubmitting} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-tax-class">Tax classification (for your records)</Label>
+              <Input id="product-tax-class" value={taxClass} onChange={(event) => setTaxClass(event.target.value)} disabled={isSubmitting} />
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-brand-950">Inventory</h2>
+            <div className="flex gap-6 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={trackInventory} onChange={(event) => setTrackInventory(event.target.checked)} disabled={isSubmitting} />
+                Track inventory
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={allowBackorder} onChange={(event) => setAllowBackorder(event.target.checked)} disabled={isSubmitting} />
+                Allow backorder
+              </label>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-low-stock">Low-stock threshold</Label>
+              <Input id="product-low-stock" type="number" value={lowStockThreshold} onChange={(event) => setLowStockThreshold(event.target.value)} disabled={isSubmitting} className="max-w-40" />
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-brand-950">Shipping</h2>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-weight">Weight (g)</Label>
+                <Input id="product-weight" type="number" value={weightGrams} onChange={(event) => setWeightGrams(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-length">Length (cm)</Label>
+                <Input id="product-length" type="number" value={lengthCm} onChange={(event) => setLengthCm(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-width">Width (cm)</Label>
+                <Input id="product-width" type="number" value={widthCm} onChange={(event) => setWidthCm(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-height">Height (cm)</Label>
+                <Input id="product-height" type="number" value={heightCm} onChange={(event) => setHeightCm(event.target.value)} disabled={isSubmitting} />
+              </div>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-brand-950">Coffee attributes (optional)</h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Bean type</Label>
+                <Input value={beanType} onChange={(event) => setBeanType(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Roast level</Label>
+                <Input value={roastLevel} onChange={(event) => setRoastLevel(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Origin country</Label>
+                <Input value={originCountry} onChange={(event) => setOriginCountry(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Region</Label>
+                <Input value={region} onChange={(event) => setRegion(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Farm or producer</Label>
+                <Input value={farmOrProducer} onChange={(event) => setFarmOrProducer(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Processing method</Label>
+                <Input value={processingMethod} onChange={(event) => setProcessingMethod(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Variety</Label>
+                <Input value={variety} onChange={(event) => setVariety(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Grind type</Label>
+                <Input value={grindType} onChange={(event) => setGrindType(event.target.value)} disabled={isSubmitting} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Tasting notes (comma-separated)</Label>
+              <Input value={tastingNotes} onChange={(event) => setTastingNotes(event.target.value)} disabled={isSubmitting} />
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-brand-950">Equipment attributes (optional)</h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Manufacturer</Label>
+                <Input value={manufacturer} onChange={(event) => setManufacturer(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Model</Label>
+                <Input value={model} onChange={(event) => setModel(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Material</Label>
+                <Input value={material} onChange={(event) => setMaterial(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Color</Label>
+                <Input value={color} onChange={(event) => setColor(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Capacity</Label>
+                <Input value={capacity} onChange={(event) => setCapacity(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Voltage</Label>
+                <Input value={voltage} onChange={(event) => setVoltage(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Warranty period</Label>
+                <Input value={warrantyPeriod} onChange={(event) => setWarrantyPeriod(event.target.value)} disabled={isSubmitting} />
+              </div>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-brand-950">Variants</h2>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={hasVariants} onChange={(event) => setHasVariants(event.target.checked)} disabled={isSubmitting} />
+                This product has variants
+              </label>
+            </div>
+            {hasVariants && <VariantEditor variants={variants} onChange={setVariants} disabled={isSubmitting} />}
+          </section>
         </div>
-        {hasVariants && <VariantEditor variants={variants} onChange={setVariants} disabled={isSubmitting} />}
-      </section>
+      </details>
 
       <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 border-t border-brand-100 bg-background/95 px-4 py-4 shadow-[0_-2px_8px_rgba(0,0,0,0.04)] backdrop-blur sm:-mx-6 sm:px-6">
         {formError && (
@@ -495,7 +621,7 @@ export function ProductForm({ product, categories, brands }: { product?: Product
           </p>
         )}
         <Button type="submit" disabled={isSubmitting} className="w-fit">
-          {isSubmitting ? "Saving…" : isEditing ? "Save changes" : "Create product"}
+          {isSubmitting ? dict.saving : isEditing ? dict.saveChanges : dict.createProduct}
         </Button>
       </div>
     </form>

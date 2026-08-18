@@ -1,22 +1,21 @@
+import { ACTIVE_CURRENCY } from "@/core/money/money";
 import type { ParsedListProductsQuery } from "@/core/storefront/schemas";
-
-const MINOR_UNITS_PER_MAJOR = 100;
 
 /**
  * Rebuilds the canonical filter/sort query string from the already-parsed
  * query — used to build "Next page"/"Previous page"/view-toggle links that
  * preserve every active filter. `minPrice`/`maxPrice` (minor units,
- * matching storage) are converted back to the `minPriceUsd`/`maxPriceUsd`
- * dollar fields `FilterPanel`'s form actually submits, so the URL stays in
- * one consistent dialect throughout — see `FilterPanel`'s doc comment.
+ * matching storage) are converted back to the `minPriceBhd`/`maxPriceBhd`
+ * major-unit fields `FilterPanel`'s form actually submits, so the URL stays
+ * in one consistent dialect throughout — see `FilterPanel`'s doc comment.
  */
 export function buildFilterQueryString(query: ParsedListProductsQuery): string {
   const params = new URLSearchParams();
   if (query.category) params.set("category", query.category);
   if (query.brand) params.set("brand", query.brand);
   if (query.productType) params.set("productType", query.productType);
-  if (query.minPrice !== undefined) params.set("minPriceUsd", String(query.minPrice / MINOR_UNITS_PER_MAJOR));
-  if (query.maxPrice !== undefined) params.set("maxPriceUsd", String(query.maxPrice / MINOR_UNITS_PER_MAJOR));
+  if (query.minPrice !== undefined) params.set("minPriceBhd", String(query.minPrice / ACTIVE_CURRENCY.minorUnitsPerMajor));
+  if (query.maxPrice !== undefined) params.set("maxPriceBhd", String(query.maxPrice / ACTIVE_CURRENCY.minorUnitsPerMajor));
   if (query.availability && query.availability !== "all") params.set("availability", query.availability);
   if (query.featured !== undefined) params.set("featured", String(query.featured));
   if (query.sort !== "newest") params.set("sort", query.sort);

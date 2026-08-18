@@ -102,12 +102,12 @@ describe("positiveDifference", () => {
 
 describe("formatMoney", () => {
   it("formats BHD with three decimal places", () => {
-    expect(formatMoney(money(18990))).toBe("BHD 18.990");
-    expect(formatMoney(money(1500))).toBe("BHD 1.500");
-    expect(formatMoney(ZERO_BHD)).toBe("BHD 0.000");
+    expect(formatMoney(money(18990))).toBe("18.990 BHD");
+    expect(formatMoney(money(1500))).toBe("1.500 BHD");
+    expect(formatMoney(ZERO_BHD)).toBe("0.000 BHD");
   });
 
   it("formats a whole-number amount with trailing zeros", () => {
-    expect(formatMoney(money(30_000))).toBe("BHD 30.000");
+    expect(formatMoney(money(30_000))).toBe("30.000 BHD");
   });
 });

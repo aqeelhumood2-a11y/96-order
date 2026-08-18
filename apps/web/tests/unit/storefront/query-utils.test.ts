@@ -14,11 +14,11 @@ describe("buildFilterQueryString", () => {
     expect(buildFilterQueryString(query)).toBe("");
   });
 
-  it("converts minor-unit prices back to dollar amounts", () => {
+  it("converts minor-unit (fils) prices back to BHD major-unit amounts", () => {
     const query = listProductsQuerySchema.parse({ minPrice: 500, maxPrice: 1500 });
     const qs = buildFilterQueryString(query);
-    expect(qs).toContain("minPriceUsd=5");
-    expect(qs).toContain("maxPriceUsd=15");
+    expect(qs).toContain("minPriceBhd=0.5");
+    expect(qs).toContain("maxPriceBhd=1.5");
   });
 
   it("includes non-default filters", () => {

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import type { Category } from "@/core/catalog/entities";
 import { createCategoryAction, updateCategoryAction } from "@/features/catalog/categories/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -26,13 +28,16 @@ export function CategoryForm({
   category,
   allCategories,
   onSaved,
+  locale = DEFAULT_LOCALE,
 }: {
   category?: Category;
   allCategories: Category[];
   onSaved?: () => void;
+  locale?: Locale;
 }) {
   const router = useRouter();
   const isEditing = Boolean(category);
+  const dict = getDictionary(locale).admin.categoryForm;
   const [name, setName] = useState(category?.name ?? "");
   const [slug, setSlug] = useState(category?.slug ?? "");
   const [description, setDescription] = useState(category?.description ?? "");
@@ -100,52 +105,56 @@ export function CategoryForm({
   return (
     <form onSubmit={handleSubmit} noValidate className="flex max-w-xl flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="category-name">Name</Label>
+        <Label htmlFor="category-name">{dict.name}</Label>
         <Input id="category-name" value={name} onChange={(event) => setName(event.target.value)} disabled={isSubmitting} />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="category-slug">Slug (optional — derived from name if left blank)</Label>
-        <Input id="category-slug" value={slug} onChange={(event) => setSlug(event.target.value)} disabled={isSubmitting} />
-      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} disabled={isSubmitting} />
+        {dict.active}
+      </label>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="category-description">Description</Label>
-        <Textarea id="category-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={isSubmitting} />
-      </div>
+      <details className="group rounded-lg border border-surface-border p-4">
+        <summary className="cursor-pointer text-sm font-medium text-brand-800 select-none">{dict.advancedOptions}</summary>
+        <div className="mt-4 flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="category-slug">Slug (optional — derived from name if left blank)</Label>
+            <Input id="category-slug" value={slug} onChange={(event) => setSlug(event.target.value)} disabled={isSubmitting} />
+          </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="category-parent">Parent category</Label>
-        <Select id="category-parent" value={parentId} onChange={(event) => setParentId(event.target.value)} disabled={isSubmitting}>
-          <option value="">No parent (top-level)</option>
-          {availableParents.map((candidate) => (
-            <option key={candidate.id} value={candidate.id}>
-              {candidate.name}
-            </option>
-          ))}
-        </Select>
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="category-description">Description</Label>
+            <Textarea id="category-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={isSubmitting} />
+          </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="category-sort-order">Sort order</Label>
-          <Input id="category-sort-order" type="number" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} disabled={isSubmitting} />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="category-parent">Parent category</Label>
+            <Select id="category-parent" value={parentId} onChange={(event) => setParentId(event.target.value)} disabled={isSubmitting}>
+              <option value="">No parent (top-level)</option>
+              {availableParents.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="category-sort-order">Sort order</Label>
+            <Input id="category-sort-order" type="number" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} disabled={isSubmitting} className="max-w-40" />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="category-seo-title">SEO title</Label>
+            <Input id="category-seo-title" value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} disabled={isSubmitting} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="category-seo-description">SEO description</Label>
+            <Textarea id="category-seo-description" value={seoDescription} onChange={(event) => setSeoDescription(event.target.value)} disabled={isSubmitting} />
+          </div>
         </div>
-        <label className="flex items-center gap-2 self-end pb-2 text-sm">
-          <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} disabled={isSubmitting} />
-          Active
-        </label>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="category-seo-title">SEO title</Label>
-        <Input id="category-seo-title" value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} disabled={isSubmitting} />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="category-seo-description">SEO description</Label>
-        <Textarea id="category-seo-description" value={seoDescription} onChange={(event) => setSeoDescription(event.target.value)} disabled={isSubmitting} />
-      </div>
+      </details>
 
       {fieldError && (
         <p role="alert" className="text-sm text-danger-600">
@@ -164,7 +173,7 @@ export function CategoryForm({
       )}
 
       <Button type="submit" disabled={isSubmitting} className="w-fit">
-        {isSubmitting ? "Saving…" : isEditing ? "Save changes" : "Create category"}
+        {isSubmitting ? "Saving…" : isEditing ? dict.saveChanges : dict.createCategory}
       </Button>
     </form>
   );

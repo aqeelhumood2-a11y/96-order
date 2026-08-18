@@ -3,8 +3,7 @@
  * every price/total in the codebase is computed and stored in. BHD's minor
  * unit is the fils (1 BHD = 1,000 fils, three decimal places), not the more
  * common two, which is why `minorUnitsPerMajor`/`decimalDigits` live on the
- * currency definition instead of a hardcoded "divide by 100" the way
- * Phase 1-4's USD-only `lib/format.ts` did. Every arithmetic helper here
+ * currency definition instead of a hardcoded "divide by 100". Every arithmetic helper here
  * works in integers (`Math.round` only ever appears in `multiply`, for
  * quantity scaling) — nothing in this module ever does currency math with
  * a JS float, which is what makes it safe to total up a cart.
@@ -124,12 +123,14 @@ export function positiveDifference(a: Money, b: Money): Money {
 }
 
 /**
- * `"BHD 18.990"` for BHD. Locale-agnostic and deliberately plain (no
- * `Intl.NumberFormat` grouping/symbol quirks to fight with across locales)
- * — good enough for Phase 5's single-currency, single-market scope; a
- * richer locale-aware formatter is future work if a second market needs it.
+ * `"18.990 BHD"` for BHD — amount before the code, matching how BHD prices
+ * are written locally (and how the Arabic "٢.٥٠٠ د.ب" form reads too).
+ * Locale-agnostic and deliberately plain (no `Intl.NumberFormat` grouping/
+ * symbol quirks to fight with) — every price/total in the app, storefront
+ * and admin alike, renders through this one function, so this is the only
+ * place the display format is ever decided.
  */
 export function formatMoney(m: Money, definition: CurrencyDefinition = ACTIVE_CURRENCY): string {
   const majorUnits = m.amount / definition.minorUnitsPerMajor;
-  return `${definition.code} ${majorUnits.toFixed(definition.decimalDigits)}`;
+  return `${majorUnits.toFixed(definition.decimalDigits)} ${definition.code}`;
 }

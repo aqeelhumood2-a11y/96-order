@@ -16,10 +16,10 @@ describe("firstValue", () => {
 });
 
 describe("parseListingSearchParams", () => {
-  it("converts minPriceUsd/maxPriceUsd dollar amounts to minor-unit minPrice/maxPrice", () => {
-    const query = parseListingSearchParams({ minPriceUsd: "5", maxPriceUsd: "15" });
-    expect(query.minPrice).toBe(500);
-    expect(query.maxPrice).toBe(1500);
+  it("converts minPriceBhd/maxPriceBhd major-unit amounts to minor-unit (fils) minPrice/maxPrice", () => {
+    const query = parseListingSearchParams({ minPriceBhd: "5", maxPriceBhd: "15" });
+    expect(query.minPrice).toBe(5000);
+    expect(query.maxPrice).toBe(15000);
   });
 
   it("falls back to defaults (no filters) on a malformed query instead of throwing", () => {

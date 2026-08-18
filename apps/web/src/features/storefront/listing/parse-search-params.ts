@@ -1,6 +1,5 @@
+import { ACTIVE_CURRENCY } from "@/core/money/money";
 import { listProductsQuerySchema, type ParsedListProductsQuery } from "@/core/storefront/schemas";
-
-const MINOR_UNITS_PER_MAJOR = 100;
 
 /** Next.js hands page `searchParams` as possibly-repeated values; every filter here is single-valued, so the first occurrence wins. */
 export function firstValue(value: string | string[] | undefined): string | undefined {
@@ -9,22 +8,22 @@ export function firstValue(value: string | string[] | undefined): string | undef
 
 /**
  * Converts raw URL search params into a validated `ParsedListProductsQuery`.
- * `minPriceUsd`/`maxPriceUsd` (the dollar amounts `FilterPanel` submits) are
- * converted to the `minPrice`/`maxPrice` minor-unit fields the schema (and
- * storage) actually use. Anything that fails validation degrades to "no
- * filters" rather than throwing — a hand-edited or stale query string must
- * never 500 the page.
+ * `minPriceBhd`/`maxPriceBhd` (the major-unit amounts `FilterPanel` submits)
+ * are converted to the `minPrice`/`maxPrice` minor-unit (fils) fields the
+ * schema (and storage) actually use. Anything that fails validation degrades
+ * to "no filters" rather than throwing — a hand-edited or stale query string
+ * must never 500 the page.
  */
 export function parseListingSearchParams(raw: Record<string, string | string[] | undefined>): ParsedListProductsQuery {
-  const minPriceUsd = firstValue(raw.minPriceUsd);
-  const maxPriceUsd = firstValue(raw.maxPriceUsd);
+  const minPriceBhd = firstValue(raw.minPriceBhd);
+  const maxPriceBhd = firstValue(raw.maxPriceBhd);
 
   const candidate = {
     category: firstValue(raw.category),
     brand: firstValue(raw.brand),
     productType: firstValue(raw.productType),
-    minPrice: minPriceUsd ? Number(minPriceUsd) * MINOR_UNITS_PER_MAJOR : undefined,
-    maxPrice: maxPriceUsd ? Number(maxPriceUsd) * MINOR_UNITS_PER_MAJOR : undefined,
+    minPrice: minPriceBhd ? Math.round(Number(minPriceBhd) * ACTIVE_CURRENCY.minorUnitsPerMajor) : undefined,
+    maxPrice: maxPriceBhd ? Math.round(Number(maxPriceBhd) * ACTIVE_CURRENCY.minorUnitsPerMajor) : undefined,
     availability: firstValue(raw.availability),
     featured: firstValue(raw.featured),
     sort: firstValue(raw.sort),

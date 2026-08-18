@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Category } from "@/core/catalog/entities";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { CategoriesTree } from "./categories-tree";
 import { CategoryForm } from "./category-form";
@@ -12,20 +14,21 @@ import { CategoryForm } from "./category-form";
  * listed in the README, and a category edit doesn't need its own route
  * when the form already renders here.
  */
-export function CategoriesManager({ categories, canManage }: { categories: Category[]; canManage: boolean }) {
+export function CategoriesManager({ categories, canManage, locale = DEFAULT_LOCALE }: { categories: Category[]; canManage: boolean; locale?: Locale }) {
   const [editing, setEditing] = useState<Category | null>(null);
+  const dict = getDictionary(locale).admin;
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Categories</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.categoriesPage.heading}</h1>
         <CategoriesTree categories={categories} canManage={canManage} onEdit={setEditing} />
       </div>
 
       {canManage && (
         <div className="flex flex-col gap-4 border-t border-brand-100 pt-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-brand-950">{editing ? `Edit "${editing.name}"` : "Create category"}</h2>
+            <h2 className="text-lg font-semibold text-brand-950">{editing ? `Edit "${editing.name}"` : dict.categoryForm.createCategory}</h2>
             {editing && (
               <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
                 Cancel edit
@@ -37,6 +40,7 @@ export function CategoriesManager({ categories, canManage }: { categories: Categ
             category={editing ?? undefined}
             allCategories={categories}
             onSaved={() => setEditing(null)}
+            locale={locale}
           />
         </div>
       )}

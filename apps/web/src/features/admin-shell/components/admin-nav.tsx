@@ -8,6 +8,10 @@ import { hasPermission } from "@/core/auth/permissions";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "@/ui/primitives";
 import { Logo } from "@/ui/layout/logo";
 import { cn } from "@/lib/cn";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { LanguageSwitcher } from "@/lib/i18n/language-switcher";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { LogoutButton } from "./logout-button";
 
 interface NavLinkItem {
@@ -26,59 +30,60 @@ interface NavGroup {
  * Grouped by what a store owner is actually trying to do, not by the order
  * features happened to ship in — see the admin-panel redesign's report for
  * why (previously: 18 links in one flat row with no hierarchy at all).
- * Every href/label/permission check is unchanged from before this pass —
- * only the grouping and layout changed, so nothing that depended on a
- * specific link existing or being permission-gated moved or broke.
+ * Every href/permission check is unchanged from before this pass — only the
+ * grouping, layout, and (now) the label's language changed, so nothing that
+ * depended on a specific link existing or being permission-gated moved or
+ * broke.
  */
-function buildNavGroups(session: Session): NavGroup[] {
+function buildNavGroups(session: Session, dict: Dictionary): NavGroup[] {
   return [
-    { title: null, links: [{ href: "/admin", label: "Dashboard", visible: true }] },
+    { title: null, links: [{ href: "/admin", label: dict.admin.dashboard, visible: true }] },
     {
-      title: "Catalog",
+      title: dict.admin.catalog,
       links: [
-        { href: "/admin/products", label: "Products", visible: hasPermission(session, "products:view") },
-        { href: "/admin/categories", label: "Categories", visible: hasPermission(session, "categories:view") },
-        { href: "/admin/brands", label: "Brands", visible: hasPermission(session, "brands:view") },
-        { href: "/admin/inventory", label: "Inventory", visible: hasPermission(session, "inventory:view") },
+        { href: "/admin/products", label: dict.admin.products, visible: hasPermission(session, "products:view") },
+        { href: "/admin/categories", label: dict.admin.categories, visible: hasPermission(session, "categories:view") },
+        { href: "/admin/brands", label: dict.admin.brands, visible: hasPermission(session, "brands:view") },
+        { href: "/admin/inventory", label: dict.admin.inventory, visible: hasPermission(session, "inventory:view") },
       ],
     },
     {
-      title: "Sales",
+      title: dict.admin.sales,
       links: [
-        { href: "/admin/orders", label: "Orders", visible: hasPermission(session, "orders:view") },
-        { href: "/admin/customers", label: "Customers", visible: hasPermission(session, "customers:view") },
+        { href: "/admin/orders", label: dict.admin.orders, visible: hasPermission(session, "orders:view") },
+        { href: "/admin/customers", label: dict.admin.customers, visible: hasPermission(session, "customers:view") },
       ],
     },
     {
-      title: "Marketing",
+      title: dict.admin.marketing,
       links: [
-        { href: "/admin/promotions", label: "Promotions", visible: hasPermission(session, "promotions:view") },
-        { href: "/admin/coupons", label: "Coupons", visible: hasPermission(session, "promotions:view") },
-        { href: "/admin/reviews", label: "Reviews", visible: hasPermission(session, "reviews:view") },
-        { href: "/admin/questions", label: "Questions", visible: hasPermission(session, "questions:view") },
+        { href: "/admin/promotions", label: dict.admin.promotions, visible: hasPermission(session, "promotions:view") },
+        { href: "/admin/coupons", label: dict.admin.coupons, visible: hasPermission(session, "promotions:view") },
+        { href: "/admin/reviews", label: dict.admin.reviews, visible: hasPermission(session, "reviews:view") },
+        { href: "/admin/questions", label: dict.admin.questions, visible: hasPermission(session, "questions:view") },
       ],
     },
     {
-      title: "Content",
+      title: dict.admin.content,
       links: [
-        { href: "/admin/cms/pages", label: "CMS", visible: hasPermission(session, "cms:view") },
-        { href: "/admin/site-settings", label: "Site Settings", visible: hasPermission(session, "settings:view") },
+        { href: "/admin/cms/pages", label: dict.admin.cms, visible: hasPermission(session, "cms:view") },
+        { href: "/admin/site-settings", label: dict.admin.siteSettings, visible: hasPermission(session, "settings:view") },
       ],
     },
     {
-      title: "Insights",
+      title: dict.admin.insights,
       links: [
-        { href: "/admin/reports", label: "Reports", visible: hasPermission(session, "reports:view") },
-        { href: "/admin/ai-assistant", label: "AI Assistant", visible: hasPermission(session, "reports:view") },
+        { href: "/admin/reports", label: dict.admin.reports, visible: hasPermission(session, "reports:view") },
+        { href: "/admin/ai-assistant", label: dict.admin.aiAssistant, visible: hasPermission(session, "reports:view") },
       ],
     },
     {
-      title: "System",
+      title: dict.admin.system,
       links: [
-        { href: "/admin/staff", label: "Staff", visible: hasPermission(session, "staff:view") },
-        { href: "/admin/roles", label: "Roles", visible: hasPermission(session, "staff:view") },
-        { href: "/admin/integrations", label: "Integrations", visible: hasPermission(session, "integrations:view") },
-        { href: "/admin/notifications/back-in-stock", label: "Notifications", visible: hasPermission(session, "notifications:view") },
+        { href: "/admin/staff", label: dict.admin.staff, visible: hasPermission(session, "staff:view") },
+        { href: "/admin/roles", label: dict.admin.roles, visible: hasPermission(session, "staff:view") },
+        { href: "/admin/integrations", label: dict.admin.integrations, visible: hasPermission(session, "integrations:view") },
+        { href: "/admin/notifications/back-in-stock", label: dict.admin.notifications, visible: hasPermission(session, "notifications:view") },
       ],
     },
   ];
@@ -124,9 +129,10 @@ function NavLinks({ groups, pathname, onNavigate }: { groups: NavGroup[]; pathna
   );
 }
 
-export function AdminNav({ session }: { session: Session }) {
+export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Session; locale?: Locale }) {
   const pathname = usePathname();
-  const groups = buildNavGroups(session);
+  const dict = getDictionary(locale);
+  const groups = buildNavGroups(session, dict);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -141,8 +147,9 @@ export function AdminNav({ session }: { session: Session }) {
         <NavLinks groups={groups} pathname={pathname} />
 
         <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
+          <LanguageSwitcher locale={locale} className="px-1 text-xs" />
           <span className="truncate px-1 text-xs text-foreground/65">{session.email}</span>
-          <LogoutButton />
+          <LogoutButton>{dict.admin.signOut}</LogoutButton>
         </div>
       </aside>
 
@@ -184,8 +191,9 @@ export function AdminNav({ session }: { session: Session }) {
               <NavLinks groups={groups} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
             </div>
             <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
+              <LanguageSwitcher locale={locale} className="px-1 text-xs" />
               <span className="truncate px-1 text-xs text-foreground/65">{session.email}</span>
-              <LogoutButton />
+              <LogoutButton>{dict.admin.signOut}</LogoutButton>
             </div>
           </DialogContent>
         </Dialog>

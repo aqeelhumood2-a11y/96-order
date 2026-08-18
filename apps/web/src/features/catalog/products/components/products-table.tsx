@@ -1,17 +1,21 @@
 import Link from "next/link";
 import type { Product } from "@/core/catalog/entities";
 import { Badge } from "@/ui/primitives/badge";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { ArchiveProductButton } from "./archive-product-button";
 
 const STATUS_BADGE_VARIANT = { draft: "neutral", active: "success", archived: "danger" } as const;
 const VISIBILITY_BADGE_VARIANT = { visible: "accent", hidden: "neutral" } as const;
 
-export function ProductsTable({ products, canManage }: { products: Product[]; canManage: boolean }) {
+export function ProductsTable({ products, canManage, locale = DEFAULT_LOCALE }: { products: Product[]; canManage: boolean; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.productsPage;
+
   if (products.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-surface-border p-10 text-center">
-        <p className="text-sm font-medium text-brand-950">No products yet</p>
-        <p className="mt-1 text-sm text-foreground/69">Products you add will show up here.</p>
+        <p className="text-sm font-medium text-brand-950">{dict.noProducts}</p>
+        <p className="mt-1 text-sm text-foreground/69">{dict.noProductsHint}</p>
       </div>
     );
   }
@@ -32,7 +36,7 @@ export function ProductsTable({ products, canManage }: { products: Product[]; ca
           {canManage && (
             <div className="flex shrink-0 items-center gap-2">
               <Link href={`/admin/products/${product.id}`} className="text-sm font-medium text-brand-700 hover:underline">
-                Edit
+                {dict.edit}
               </Link>
               {product.status !== "archived" && <ArchiveProductButton productId={product.id} />}
             </div>

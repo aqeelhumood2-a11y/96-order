@@ -3,6 +3,8 @@ import { PRODUCT_STATUSES, type ProductStatus } from "@/core/catalog/entities";
 import { ForbiddenError } from "@/core/errors";
 import { hasPermission } from "@/core/auth/permissions";
 import { ProductsTable } from "@/features/catalog/products/components/products-table";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { listProducts } from "@/services/catalog/list-products";
 import { requireSession } from "@/services/auth/session";
 import { Button } from "@/ui/primitives/button";
@@ -17,7 +19,8 @@ function isProductStatus(value: string): value is ProductStatus {
 }
 
 export default async function ProductsPage({ searchParams }: PageProps) {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
+  const dict = getDictionary(locale).admin.productsPage;
   const raw = await searchParams;
   const statusParam = typeof raw.status === "string" ? raw.status : "";
   const status = isProductStatus(statusParam) ? statusParam : undefined;
@@ -38,10 +41,10 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Products</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.heading}</h1>
         {canManage && (
           <Button asChild>
-            <Link href="/admin/products/new">Add product</Link>
+            <Link href="/admin/products/new">{dict.addProduct}</Link>
           </Button>
         )}
       </div>
@@ -49,10 +52,10 @@ export default async function ProductsPage({ searchParams }: PageProps) {
       <form action="/admin/products" method="get" className="flex items-end gap-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="product-status-filter" className="text-sm font-medium text-foreground">
-            Status
+            {dict.status}
           </label>
           <Select id="product-status-filter" name="status" defaultValue={status ?? ""} className="w-44">
-            <option value="">All statuses</option>
+            <option value="">{dict.allStatuses}</option>
             {PRODUCT_STATUSES.map((value) => (
               <option key={value} value={value}>
                 {value}
@@ -61,16 +64,16 @@ export default async function ProductsPage({ searchParams }: PageProps) {
           </Select>
         </div>
         <Button type="submit" variant="outline" size="sm">
-          Filter
+          {dict.filter}
         </Button>
         {status && (
           <Link href="/admin/products" className="pb-2 text-sm text-brand-700 hover:underline">
-            Clear
+            {dict.clear}
           </Link>
         )}
       </form>
 
-      <ProductsTable products={products.items} canManage={hasPermission(session, "products:edit")} />
+      <ProductsTable products={products.items} canManage={hasPermission(session, "products:edit")} locale={locale} />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Container } from "./container";
 import { Logo } from "./logo";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
 export interface FooterLinkItem {
   href: string;
@@ -22,27 +24,40 @@ export interface FooterProps {
   paymentLogos: string[];
   freeShippingThresholdText: string;
   copyrightText: string;
+  locale?: Locale;
 }
 
-const DISCOVERY_LINKS: FooterLinkItem[] = [
-  { href: "/products", label: "Shop all" },
-  { href: "/products?productType=coffee", label: "Coffee" },
-  { href: "/products?productType=equipment", label: "Equipment" },
-  { href: "/search", label: "Search" },
-];
-
 /** Presentational only — see `Header`'s doc comment for why. */
-export function Footer({ footerPages, footerColumns, contactEmail, contactPhone, hoursText, socialLinks, paymentLogos, freeShippingThresholdText, copyrightText }: FooterProps) {
+export function Footer({
+  footerPages,
+  footerColumns,
+  contactEmail,
+  contactPhone,
+  hoursText,
+  socialLinks,
+  paymentLogos,
+  freeShippingThresholdText,
+  copyrightText,
+  locale = DEFAULT_LOCALE,
+}: FooterProps) {
+  const dict = getDictionary(locale);
+  const discoveryLinks: FooterLinkItem[] = [
+    { href: "/products", label: dict.footer.shopAll },
+    { href: "/products?productType=coffee", label: dict.nav.coffee },
+    { href: "/products?productType=equipment", label: dict.nav.equipment },
+    { href: "/search", label: dict.nav.search },
+  ];
+
   return (
     <footer className="mt-auto border-t border-surface-border bg-background">
       <Container className="flex flex-col gap-8 py-8">
         <Logo color="purple" height={24} />
 
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-          <nav aria-label="Shop">
-            <h3 className="text-sm font-semibold text-brand-950">Shop</h3>
+          <nav aria-label={dict.footer.shop}>
+            <h3 className="text-sm font-semibold text-brand-950">{dict.footer.shop}</h3>
             <ul className="mt-3 flex flex-col gap-2 text-sm text-brand-800">
-              {DISCOVERY_LINKS.map((link) => (
+              {discoveryLinks.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="hover:text-brand-950">
                     {link.label}
@@ -53,8 +68,8 @@ export function Footer({ footerPages, footerColumns, contactEmail, contactPhone,
           </nav>
 
           {footerPages.length > 0 && (
-            <nav aria-label="Policies">
-              <h3 className="text-sm font-semibold text-brand-950">Policies</h3>
+            <nav aria-label={dict.footer.policies}>
+              <h3 className="text-sm font-semibold text-brand-950">{dict.footer.policies}</h3>
               <ul className="mt-3 flex flex-col gap-2 text-sm text-brand-800">
                 {footerPages.map((page) => (
                   <li key={page.href}>
@@ -84,7 +99,7 @@ export function Footer({ footerPages, footerColumns, contactEmail, contactPhone,
 
           {(contactEmail || contactPhone || hoursText) && (
             <div>
-              <h3 className="text-sm font-semibold text-brand-950">Contact</h3>
+              <h3 className="text-sm font-semibold text-brand-950">{dict.footer.contact}</h3>
               <ul className="mt-3 flex flex-col gap-2 text-sm text-brand-800">
                 {contactEmail && <li>{contactEmail}</li>}
                 {contactPhone && <li>{contactPhone}</li>}

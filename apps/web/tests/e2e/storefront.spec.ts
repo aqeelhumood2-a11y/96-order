@@ -122,12 +122,12 @@ test.describe("product detail", () => {
     await page.getByRole("link", { name: "500g" }).click();
     await expect(page).toHaveURL(/size=500g/);
     await expect(page.getByText(`${fixtures.withVariants.sku}-500`)).toBeVisible();
-    await expect(page.getByText("$28.00")).toBeVisible();
+    await expect(page.getByText("2.800 BHD")).toBeVisible();
 
     await page.getByRole("link", { name: "250g" }).click();
     await expect(page).toHaveURL(/size=250g/);
     await expect(page.getByText(`${fixtures.withVariants.sku}-250`)).toBeVisible();
-    await expect(page.getByText("$15.00")).toBeVisible();
+    await expect(page.getByText("1.500 BHD")).toBeVisible();
   });
 });
 

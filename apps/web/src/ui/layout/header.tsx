@@ -3,10 +3,13 @@ import { Container } from "./container";
 import { Logo } from "./logo";
 import { SearchForm } from "./search-form";
 import { MobileNav, type NavLink } from "./mobile-nav";
+import { LanguageSwitcher } from "@/lib/i18n/language-switcher";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
 export interface HeaderProps {
   storeName: string;
   navLinks: NavLink[];
+  locale?: Locale;
 }
 
 /**
@@ -20,7 +23,7 @@ export interface HeaderProps {
  * built to draw the eye to; everything else (nav, search) stays exactly as
  * it was.
  */
-export function Header({ storeName, navLinks }: HeaderProps) {
+export function Header({ storeName, navLinks, locale = DEFAULT_LOCALE }: HeaderProps) {
   return (
     <header className="border-b border-surface-border bg-background">
       <Container className="flex h-16 items-center gap-6">
@@ -40,9 +43,11 @@ export function Header({ storeName, navLinks }: HeaderProps) {
           </ul>
         </nav>
 
-        <SearchForm formId="header-search" className="ml-auto hidden max-w-xs md:flex" />
+        <SearchForm formId="header-search" locale={locale} className="ml-auto hidden max-w-xs md:flex" />
 
-        <MobileNav links={navLinks} />
+        <LanguageSwitcher locale={locale} className="hidden text-sm md:block" />
+
+        <MobileNav links={navLinks} locale={locale} />
       </Container>
     </header>
   );

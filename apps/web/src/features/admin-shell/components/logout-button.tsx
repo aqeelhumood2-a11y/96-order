@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/ui/primitives/button";
 
-export function LogoutButton() {
+export function LogoutButton({ children }: { children?: string }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -21,7 +21,7 @@ export function LogoutButton() {
 
   return (
     <Button type="button" variant="outline" size="sm" onClick={handleLogout} disabled={isSubmitting}>
-      {isSubmitting ? "Signing out…" : "Sign out"}
+      {isSubmitting ? "Signing out…" : (children ?? "Sign out")}
     </Button>
   );
 }

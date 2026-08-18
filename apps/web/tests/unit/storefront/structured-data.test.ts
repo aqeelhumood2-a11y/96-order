@@ -55,8 +55,8 @@ describe("buildProductJsonLd", () => {
       brand: { "@type": "Brand", name: "Acme Roasters" },
       offers: {
         "@type": "Offer",
-        priceCurrency: "USD",
-        price: "18.99",
+        priceCurrency: "BHD",
+        price: "1.899",
         availability: "https://schema.org/InStock",
         url: "https://example.com/products/ethiopia-yirgacheffe",
       },

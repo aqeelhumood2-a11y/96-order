@@ -24,8 +24,8 @@ describe("renderOrderConfirmationEmail", () => {
     expect(email.subject).toContain("ORD-260130-7K3PXQ");
     expect(email.text).toContain("Fatima");
     expect(email.text).toContain("Ethiopia Yirgacheffe x2");
-    expect(email.text).toContain("BHD 3.798");
-    expect(email.text).toContain("BHD 5.798");
+    expect(email.text).toContain("3.798 BHD");
+    expect(email.text).toContain("5.798 BHD");
     expect(email.text).toContain("out for delivery");
   });
 
@@ -47,7 +47,7 @@ describe("renderPaymentConfirmationEmail", () => {
   it("includes the amount and order number", () => {
     const email = renderPaymentConfirmationEmail({ orderNumber: "ORD-1", amount: money(1899) });
     expect(email.subject).toContain("ORD-1");
-    expect(email.text).toContain("BHD 1.899");
+    expect(email.text).toContain("1.899 BHD");
   });
 });
 

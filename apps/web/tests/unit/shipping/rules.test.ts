@@ -70,7 +70,7 @@ describe("computeFreeShippingUpsell", () => {
 
 describe("formatFreeShippingUpsellMessage", () => {
   it("returns a formatted message when not yet achieved", () => {
-    expect(formatFreeShippingUpsellMessage(money(28_000))).toBe("Add BHD 2.001 more to get free delivery");
+    expect(formatFreeShippingUpsellMessage(money(28_000))).toBe("Add 2.001 BHD more to get free delivery");
   });
 
   it("returns null once free shipping is achieved", () => {

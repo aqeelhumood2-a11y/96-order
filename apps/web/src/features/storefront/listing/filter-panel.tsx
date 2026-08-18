@@ -1,3 +1,4 @@
+import { ACTIVE_CURRENCY } from "@/core/money/money";
 import type { PublicBrand, PublicCategory } from "@/core/storefront/dto";
 import type { ParsedListProductsQuery } from "@/core/storefront/schemas";
 import { Button, Input, Label } from "@/ui/primitives";
@@ -11,8 +12,6 @@ export interface FilterPanelProps {
   brands?: PublicBrand[];
 }
 
-const MINOR_UNITS_PER_MAJOR = 100;
-
 /**
  * A plain GET form — works without JavaScript, and produces a shareable,
  * bookmarkable URL for any combination of filters (the same
@@ -20,11 +19,11 @@ const MINOR_UNITS_PER_MAJOR = 100;
  * filter resets pagination to page one by simply not including a `cursor`
  * field.
  *
- * `minPriceUsd`/`maxPriceUsd` are user-facing dollar amounts, not the
- * `minPrice`/`maxPrice` query keys `listProductsQuerySchema` expects
- * (minor units/cents, matching how prices are stored) — the page route
- * converts between the two before parsing, keeping this form's inputs in
- * the unit a shopper actually thinks in.
+ * `minPriceBhd`/`maxPriceBhd` are user-facing BHD amounts, not the
+ * `minPrice`/`maxPrice` query keys `listProductsQuerySchema` expects (minor
+ * units/fils, matching how prices are stored) — the page route converts
+ * between the two before parsing, keeping this form's inputs in the unit a
+ * shopper actually thinks in.
  */
 export function FilterPanel({ basePath, query, categories, brands }: FilterPanelProps) {
   return (
@@ -74,27 +73,27 @@ export function FilterPanel({ basePath, query, categories, brands }: FilterPanel
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="filter-min-price">Min price (USD)</Label>
+          <Label htmlFor="filter-min-price">Min price (BHD)</Label>
           <Input
             id="filter-min-price"
-            name="minPriceUsd"
+            name="minPriceBhd"
             type="number"
             min={0}
-            step="0.01"
+            step="0.001"
             inputMode="decimal"
-            defaultValue={query.minPrice !== undefined ? query.minPrice / MINOR_UNITS_PER_MAJOR : undefined}
+            defaultValue={query.minPrice !== undefined ? query.minPrice / ACTIVE_CURRENCY.minorUnitsPerMajor : undefined}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="filter-max-price">Max price (USD)</Label>
+          <Label htmlFor="filter-max-price">Max price (BHD)</Label>
           <Input
             id="filter-max-price"
-            name="maxPriceUsd"
+            name="maxPriceBhd"
             type="number"
             min={0}
-            step="0.01"
+            step="0.001"
             inputMode="decimal"
-            defaultValue={query.maxPrice !== undefined ? query.maxPrice / MINOR_UNITS_PER_MAJOR : undefined}
+            defaultValue={query.maxPrice !== undefined ? query.maxPrice / ACTIVE_CURRENCY.minorUnitsPerMajor : undefined}
           />
         </div>
       </div>

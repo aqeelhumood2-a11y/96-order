@@ -43,11 +43,16 @@ test.describe("catalog admin (super admin)", () => {
     // --- Product ---
     await page.goto("/admin/products/new");
     await page.getByLabel("Name", { exact: true }).fill(productName);
+    await page.getByLabel("Price (BHD)", { exact: true }).fill("1.5");
+    await page.getByLabel("Category").selectOption({ label: categoryName });
+
+    // Product type, brand, and a specific SKU live under Advanced options —
+    // the simple form auto-generates a SKU and defaults the product type,
+    // but this test wants to pin exact values to verify them later.
+    await page.getByText("Advanced options").click();
     await page.getByLabel("Product type (e.g. coffee_beans, grinder)").fill("coffee_beans");
-    await page.getByLabel("Primary category").selectOption({ label: categoryName });
     await page.getByLabel("Brand").selectOption({ label: brandName });
-    await page.getByLabel("SKU").fill(sku);
-    await page.getByLabel("Base price").fill("1500");
+    await page.getByLabel("SKU", { exact: false }).fill(sku);
     await page.getByRole("button", { name: "Create product" }).click();
 
     // Not waitForURL("**/admin/products/*") — that pattern already matches
