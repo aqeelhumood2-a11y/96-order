@@ -51,7 +51,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ pr
   return (
     <div className="flex flex-col gap-8">
       <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{data.product.name}</h1>
-      <ProductImages productId={data.product.id} images={data.product.images} imageUrls={data.imageUrls} />
+      <ProductImages productId={data.product.id} images={data.product.images} imageUrls={data.imageUrls} locale={locale} />
       {data.inventory.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold text-brand-950">{getDictionary(locale).admin.productForm.stock}</h2>

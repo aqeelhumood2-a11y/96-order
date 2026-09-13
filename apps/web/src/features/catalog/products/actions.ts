@@ -8,7 +8,7 @@ import { archiveProduct } from "@/services/catalog/archive-product";
 import { createProduct } from "@/services/catalog/create-product";
 import { deleteProductImage } from "@/services/catalog/delete-product-image";
 import { updateProduct } from "@/services/catalog/update-product";
-import { uploadProductImage } from "@/services/catalog/upload-product-image";
+import { addProductImageByUrl, uploadProductImage } from "@/services/catalog/upload-product-image";
 import { requireSession } from "@/services/auth/session";
 import { revalidateStorefrontTag, STOREFRONT_CACHE_TAGS } from "@/services/storefront/cache";
 
@@ -80,6 +80,21 @@ export async function uploadProductImageAction(formData: FormData): Promise<Acti
       actor,
       { input: { productId, contentType: file.type, sizeBytes: file.size, altText, isPrimary }, bytes },
     );
+    return { id: image.id };
+  });
+
+  if (result.ok) {
+    revalidatePath(`/admin/products/${productId}`);
+    revalidateStorefrontTag(STOREFRONT_CACHE_TAGS.products);
+  }
+  return result;
+}
+
+/** The "paste an image URL" alternative to `uploadProductImageAction` — see `addProductImageByUrl`'s doc comment. */
+export async function addProductImageByUrlAction(productId: string, imageUrl: string, altText: string, isPrimary: boolean): Promise<ActionResult<{ id: string }>> {
+  const result = await runAction(async () => {
+    const actor = await requireSession();
+    const image = await addProductImageByUrl(actor, { productId, imageUrl, altText, isPrimary });
     return { id: image.id };
   });
 

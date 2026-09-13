@@ -190,3 +190,19 @@ export const uploadProductImageSchema = z.object({
   isPrimary: z.boolean().default(false),
 });
 export type UploadProductImageInput = z.input<typeof uploadProductImageSchema>;
+
+/**
+ * The alternative to `uploadProductImageSchema` for a product image that
+ * lives on an external host (e.g. a Google Drive share link converted to a
+ * direct-view URL) rather than being uploaded to this app's own Firebase
+ * Storage bucket — see `services/catalog/upload-product-image.ts#addProductImageByUrl`'s
+ * doc comment for why this exists and how it's kept safe despite skipping
+ * every byte/content-type check the file-upload path has.
+ */
+export const addProductImageByUrlSchema = z.object({
+  productId: z.string().trim().min(1),
+  imageUrl: z.string().trim().url("Enter a valid image URL.").max(2000),
+  altText: z.string().trim().max(300).default(""),
+  isPrimary: z.boolean().default(false),
+});
+export type AddProductImageByUrlInput = z.input<typeof addProductImageByUrlSchema>;

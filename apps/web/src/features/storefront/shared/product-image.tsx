@@ -13,6 +13,26 @@ export interface ProductImageProps {
 }
 
 /**
+ * `next/image` refuses to optimize any host not explicitly listed in
+ * `next.config.ts`'s `images.remotePatterns` — deliberately, since that
+ * allowlist is what keeps this app from proxying arbitrary third-party
+ * URLs. A product image can now point at one (an admin-pasted external
+ * URL, e.g. a Google Drive link — see `core/catalog/rules.ts#isExternalImageUrl`),
+ * so anything not served from this app's own Firebase Storage bucket
+ * renders through a plain `<img>` instead, which has no such allowlist.
+ * It loses Next's automatic resizing/format conversion for that one image,
+ * never functionality.
+ */
+function isOptimizableHost(url: string): boolean {
+  try {
+    const { hostname } = new URL(url, "http://localhost");
+    return hostname === "firebasestorage.googleapis.com" || hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Fills its parent — the parent must provide `position: relative` and a
  * fixed aspect ratio so the image never causes layout shift while loading
  * or if it fails.
@@ -29,6 +49,11 @@ export function ProductImage({ src, alt, sizes = "(min-width: 1024px) 25vw, 50vw
         </svg>
       </div>
     );
+  }
+
+  if (!isOptimizableHost(src)) {
+    // eslint-disable-next-line @next/next/no-img-element -- externally-hosted image, outside next/image's remotePatterns allowlist by design
+    return <img src={src} alt={alt} className={cn("h-full w-full object-cover", className)} loading={priority ? undefined : "lazy"} onError={() => setErrored(true)} />;
   }
 
   return (

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ConflictError, NotFoundError, ValidationError } from "@/core/errors";
-import { uploadProductImage } from "@/services/catalog/upload-product-image";
+import { addProductImageByUrl, uploadProductImage } from "@/services/catalog/upload-product-image";
 import { createMockCatalogDeps, makeSession } from "./test-helpers";
 
 const PRODUCT = { id: "prod-1", version: 1, images: [] };
@@ -70,5 +70,55 @@ describe("uploadProductImage", () => {
 
     await expect(uploadProductImage(actor, baseParams(), deps)).rejects.toThrow(ConflictError);
     expect(deps.productImages.delete).toHaveBeenCalledWith("products/p1/img1.jpg");
+  });
+});
+
+describe("addProductImageByUrl", () => {
+  it("404s when the product doesn't exist", async () => {
+    const deps = createMockCatalogDeps();
+    const actor = makeSession({ effectivePermissions: new Set(["products:edit"]) });
+    await expect(
+      addProductImageByUrl(actor, { productId: "prod-1", imageUrl: "https://drive.google.com/uc?id=abc", altText: "", isPrimary: false }, deps),
+    ).rejects.toThrow(NotFoundError);
+  });
+
+  it("rejects a value that isn't a valid URL", async () => {
+    const deps = createMockCatalogDeps();
+    deps.products.findById = vi.fn().mockResolvedValue(PRODUCT);
+    const actor = makeSession({ effectivePermissions: new Set(["products:edit"]) });
+
+    await expect(
+      addProductImageByUrl(actor, { productId: "prod-1", imageUrl: "not-a-url", altText: "", isPrimary: false }, deps),
+    ).rejects.toThrow();
+  });
+
+  it("adds the image without ever calling the Storage upload port", async () => {
+    const deps = createMockCatalogDeps();
+    deps.products.findById = vi.fn().mockResolvedValue(PRODUCT);
+    const actor = makeSession({ effectivePermissions: new Set(["products:edit"]) });
+
+    const image = await addProductImageByUrl(
+      actor,
+      { productId: "prod-1", imageUrl: "https://drive.google.com/uc?export=view&id=abc123", altText: "A bag of coffee", isPrimary: false },
+      deps,
+    );
+
+    expect(image.storagePath).toBe("https://drive.google.com/uc?export=view&id=abc123");
+    expect(deps.productImages.upload).not.toHaveBeenCalled();
+    expect(deps.products.update).toHaveBeenCalledWith("prod-1", { images: [expect.objectContaining({ id: image.id })] }, 1);
+    expect(deps.auditLogs.record).toHaveBeenCalledWith(expect.objectContaining({ type: "product_image_uploaded" }));
+  });
+
+  it("the first image added becomes primary automatically", async () => {
+    const deps = createMockCatalogDeps();
+    deps.products.findById = vi.fn().mockResolvedValue(PRODUCT);
+    const actor = makeSession({ effectivePermissions: new Set(["products:edit"]) });
+
+    const image = await addProductImageByUrl(
+      actor,
+      { productId: "prod-1", imageUrl: "https://drive.google.com/uc?id=abc", altText: "", isPrimary: false },
+      deps,
+    );
+    expect(image.isPrimary).toBe(true);
   });
 });

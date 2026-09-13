@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Session } from "@/core/auth/entities";
 import type { ProductImage } from "@/core/catalog/entities";
-import { PRODUCT_IMAGE_MAX_SIZE_BYTES, uploadProductImageSchema } from "@/core/catalog/schemas";
+import { addProductImageByUrlSchema, PRODUCT_IMAGE_MAX_SIZE_BYTES, uploadProductImageSchema } from "@/core/catalog/schemas";
 import { NotFoundError, ValidationError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
 import { defaultCatalogDeps, type CatalogDeps } from "./dependencies";
@@ -82,6 +82,72 @@ export async function uploadProductImage(
     actorUid: actor.uid,
     actorEmail: actor.email,
     metadata: { productId: parsed.productId, imageId },
+  });
+
+  return newImage;
+}
+
+export interface AddProductImageByUrlParams {
+  productId: string;
+  imageUrl: string;
+  altText: string;
+  isPrimary: boolean;
+}
+
+/**
+ * The alternative to `uploadProductImage` for a product image hosted
+ * externally (e.g. a Google Drive share link converted to a direct-view
+ * URL) instead of uploaded to this app's own Firebase Storage bucket —
+ * added so a store isn't blocked on product photos when Storage is
+ * misconfigured (see `infrastructure/firebase/product-image-storage.ts`'s
+ * `bucket()` doc comment) or when an admin would simply rather paste a
+ * link than upload a file.
+ *
+ * Stores the URL directly in `ProductImage.storagePath` — see
+ * `core/catalog/rules.ts#isExternalImageUrl`'s doc comment for why one
+ * field safely holds either kind of value and why every existing reader
+ * needs no changes to support it. `contentType`/`sizeBytes` are never
+ * verified against the remote host (there is no upload here to derive them
+ * from truthfully), so they're recorded as unknown rather than guessed.
+ */
+export async function addProductImageByUrl(
+  actor: Session,
+  params: AddProductImageByUrlParams,
+  deps: CatalogDeps = defaultCatalogDeps,
+): Promise<ProductImage> {
+  requirePermission(actor, "products:edit");
+  const parsed = addProductImageByUrlSchema.parse(params);
+
+  const product = await deps.products.findById(parsed.productId);
+  if (!product) {
+    throw new NotFoundError("Product not found.");
+  }
+
+  const imageId = randomUUID();
+  const now = new Date();
+  const newImage: ProductImage = {
+    id: imageId,
+    storagePath: parsed.imageUrl,
+    contentType: "unknown",
+    sizeBytes: 0,
+    altText: parsed.altText,
+    sortOrder: product.images.length,
+    isPrimary: parsed.isPrimary || product.images.length === 0,
+    uploadedAt: now,
+    uploadedBy: actor.uid,
+  };
+
+  const nextImages = newImage.isPrimary
+    ? [...product.images.map((image) => ({ ...image, isPrimary: false })), newImage]
+    : [...product.images, newImage];
+
+  await deps.products.update(parsed.productId, { images: nextImages }, product.version);
+
+  await deps.auditLogs.record({
+    type: "product_image_uploaded",
+    actorUid: actor.uid,
+    actorEmail: actor.email,
+    metadata: { productId: parsed.productId, imageId, external: true },
   });
 
   return newImage;

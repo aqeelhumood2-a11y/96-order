@@ -1,5 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { isExternalImageUrl } from "@/core/catalog/rules";
 import type { ProductImageStoragePort, UploadedProductImage } from "@/core/interfaces/product-image-storage-port";
 import { logger } from "@/lib/logger";
 import { getAdminApp, getAdminStorage } from "./admin";
@@ -89,12 +90,21 @@ export class FirebaseProductImageStorage implements ProductImageStoragePort {
   }
 
   async delete(storagePath: string): Promise<void> {
+    // An externally-hosted image (see `isExternalImageUrl`'s doc comment)
+    // was never written to this bucket — nothing to delete here, and
+    // there's no reason to touch (or require) the bucket at all for it.
+    if (isExternalImageUrl(storagePath)) return;
+
     await this.bucket()
       .file(storagePath)
       .delete({ ignoreNotFound: true });
   }
 
   async getDownloadUrl(storagePath: string): Promise<string> {
+    // Already a full URL (an externally-hosted image) — it's already the
+    // display URL, nothing to resolve against this bucket.
+    if (isExternalImageUrl(storagePath)) return storagePath;
+
     const file = this.bucket().file(storagePath);
     const [metadata] = await file.getMetadata();
     const token = (metadata.metadata as Record<string, string> | undefined)?.firebaseStorageDownloadTokens;

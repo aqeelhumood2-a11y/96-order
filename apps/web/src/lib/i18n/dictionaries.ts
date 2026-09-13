@@ -537,6 +537,26 @@ export interface Dictionary {
       soldSummary: string;
       recentOrders: string;
     };
+    productImages: {
+      heading: string;
+      noImages: string;
+      noAltText: string;
+      primary: string;
+      delete: string;
+      deleting: string;
+      uploadLabel: string;
+      altText: string;
+      setAsPrimary: string;
+      upload: string;
+      uploading: string;
+      chooseFileFirst: string;
+      orDivider: string;
+      imageUrlLabel: string;
+      imageUrlPlaceholder: string;
+      addFromUrl: string;
+      addingFromUrl: string;
+      enterUrlFirst: string;
+    };
   };
 }
 
@@ -1104,6 +1124,26 @@ export const en: Dictionary = {
       soldSummary: "{qty} sold · {revenue}",
       recentOrders: "Recent orders",
     },
+    productImages: {
+      heading: "Images",
+      noImages: "No images uploaded yet.",
+      noAltText: "(no alt text)",
+      primary: "Primary",
+      delete: "Delete",
+      deleting: "Deleting…",
+      uploadLabel: "Upload image (JPEG, PNG, or WebP, up to 5MB)",
+      altText: "Alt text",
+      setAsPrimary: "Set as primary",
+      upload: "Upload",
+      uploading: "Uploading…",
+      chooseFileFirst: "Choose an image file first.",
+      orDivider: "or",
+      imageUrlLabel: "Or paste an image URL (e.g. a Google Drive direct-view link)",
+      imageUrlPlaceholder: "https://…",
+      addFromUrl: "Add from URL",
+      addingFromUrl: "Adding…",
+      enterUrlFirst: "Enter an image URL first.",
+    },
   },
 };
 
@@ -1670,6 +1710,26 @@ export const ar: Dictionary = {
       noSalesRecent: "لا توجد مبيعات بآخر 30 يوم بعد.",
       soldSummary: "بيع {qty} · {revenue}",
       recentOrders: "أحدث الطلبات",
+    },
+    productImages: {
+      heading: "الصور",
+      noImages: "لا توجد صور بعد.",
+      noAltText: "(بدون نص بديل)",
+      primary: "الصورة الرئيسية",
+      delete: "حذف",
+      deleting: "جارٍ الحذف…",
+      uploadLabel: "رفع صورة (JPEG أو PNG أو WebP، حتى 5 ميجابايت)",
+      altText: "نص بديل",
+      setAsPrimary: "اجعلها الصورة الرئيسية",
+      upload: "رفع",
+      uploading: "جارٍ الرفع…",
+      chooseFileFirst: "اختر ملف صورة أولاً.",
+      orDivider: "أو",
+      imageUrlLabel: "أو الصق رابط صورة (مثلاً رابط عرض مباشر من Google Drive)",
+      imageUrlPlaceholder: "https://…",
+      addFromUrl: "إضافة من رابط",
+      addingFromUrl: "جارٍ الإضافة…",
+      enterUrlFirst: "أدخل رابط الصورة أولاً.",
     },
   },
 };

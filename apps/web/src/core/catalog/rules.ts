@@ -1,6 +1,20 @@
 import type { InventoryRecord, ProductVariant, VariantAttributeSelections } from "./entities";
 
 /**
+ * A `ProductImage.storagePath` normally names an object in this app's own
+ * Firebase Storage bucket (see the field's doc comment), but a product
+ * image can also be added by pasting an externally-hosted URL directly
+ * (e.g. a Google Drive share link converted to a direct-view URL) instead
+ * of uploading a file — see `services/catalog/upload-product-image.ts#addProductImageByUrl`.
+ * Both kinds are stored in the same field so every existing reader that
+ * already resolves `storagePath` into a display URL keeps working
+ * unchanged; this is the one predicate that tells the two apart.
+ */
+export function isExternalImageUrl(storagePath: string): boolean {
+  return storagePath.startsWith("http://") || storagePath.startsWith("https://");
+}
+
+/**
  * `available` is deliberately never persisted alongside `onHand`/`reserved`
  * — storing a third field that's purely a function of the other two would
  * let it drift out of sync (e.g. an adjustment that updates `onHand` but

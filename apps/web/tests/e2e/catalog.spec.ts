@@ -63,6 +63,21 @@ test.describe("catalog admin (super admin)", () => {
     await expect(page.getByRole("heading", { name: productName })).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/products\/(?!new)[^/]+$/);
 
+    // --- Add a product image by pasting an external URL (e.g. a Google
+    // Drive direct-view link) instead of uploading a file — this never
+    // touches Firebase Storage at all (see `isExternalImageUrl`'s doc
+    // comment), so it works even when Storage is completely unconfigured.
+    // A 1x1 PNG served from a fake external host stands in for the real thing.
+    const tinyPng = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64",
+    );
+    await page.route("https://fake-image-host.test/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: tinyPng }));
+    await page.getByLabel(/Or paste an image URL/).fill("https://fake-image-host.test/photo.png");
+    await page.getByRole("button", { name: "Add from URL" }).click();
+    await expect(page.getByText("Primary", { exact: true })).toBeVisible();
+    await expect(page.locator('img[src="https://fake-image-host.test/photo.png"]')).toBeVisible();
+
     // --- Inventory: the new product's inventory record was auto-seeded on
     // creation (trackInventory defaults to true), so it should already
     // appear on the overview page with zero stock.

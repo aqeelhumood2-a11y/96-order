@@ -4,6 +4,7 @@ import {
   computeAvailableQuantity,
   hasDuplicateVariantCombination,
   isCompareAtPriceValid,
+  isExternalImageUrl,
   normalizeCatalogCode,
   variantSelectionsKey,
   wouldCreateCircularCategoryReference,
@@ -90,6 +91,17 @@ describe("hasDuplicateVariantCombination", () => {
 describe("normalizeCatalogCode", () => {
   it("trims and upper-cases", () => {
     expect(normalizeCatalogCode("  sku-abc-123 ")).toBe("SKU-ABC-123");
+  });
+});
+
+describe("isExternalImageUrl", () => {
+  it("recognizes http and https URLs as external", () => {
+    expect(isExternalImageUrl("https://drive.google.com/uc?export=view&id=abc123")).toBe(true);
+    expect(isExternalImageUrl("http://example.com/photo.jpg")).toBe(true);
+  });
+
+  it("treats a server-generated Storage object path as not external", () => {
+    expect(isExternalImageUrl("products/prod-1/img-1.webp")).toBe(false);
   });
 });
 
