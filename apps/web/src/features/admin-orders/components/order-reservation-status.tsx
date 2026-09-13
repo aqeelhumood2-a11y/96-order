@@ -1,4 +1,6 @@
 import type { InventoryReservation } from "@/core/catalog/entities";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Badge } from "@/ui/primitives/badge";
 
 const STATUS_VARIANT = {
@@ -8,9 +10,11 @@ const STATUS_VARIANT = {
 } as const;
 
 /** README's "Inventory reservation status" requirement — every reservation row this order created, whatever its current state. */
-export function OrderReservationStatus({ reservations }: { reservations: InventoryReservation[] }) {
+export function OrderReservationStatus({ reservations, locale = DEFAULT_LOCALE }: { reservations: InventoryReservation[]; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.orderDetail.reservationStatus;
+
   if (reservations.length === 0) {
-    return <p className="text-sm text-foreground/69">No inventory was reserved for this order (untracked items only).</p>;
+    return <p className="text-sm text-foreground/69">{dict.none}</p>;
   }
 
   return (
@@ -18,10 +22,10 @@ export function OrderReservationStatus({ reservations }: { reservations: Invento
       <table className="w-full min-w-[420px] text-left text-sm">
         <thead className="text-xs uppercase tracking-wide text-foreground/65">
           <tr>
-            <th className="py-1.5 font-medium">Product</th>
-            <th className="py-1.5 text-right font-medium">Qty</th>
-            <th className="py-1.5 font-medium">Status</th>
-            <th className="py-1.5 font-medium">Expires</th>
+            <th className="py-1.5 font-medium">{dict.product}</th>
+            <th className="py-1.5 text-right font-medium">{dict.qty}</th>
+            <th className="py-1.5 font-medium">{dict.status}</th>
+            <th className="py-1.5 font-medium">{dict.expires}</th>
           </tr>
         </thead>
         <tbody>
@@ -33,7 +37,7 @@ export function OrderReservationStatus({ reservations }: { reservations: Invento
               </td>
               <td className="py-2 text-right">{reservation.quantity}</td>
               <td className="py-2">
-                <Badge variant={STATUS_VARIANT[reservation.status]}>{reservation.status}</Badge>
+                <Badge variant={STATUS_VARIANT[reservation.status]}>{dict[reservation.status]}</Badge>
               </td>
               <td className="py-2 text-foreground/69">
                 {reservation.status === "reserved" ? new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(reservation.expiresAt) : "—"}

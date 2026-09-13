@@ -1,16 +1,8 @@
 import type { OrderStatus } from "@/core/orders/entities";
 import type { PaymentStatus } from "@/core/payments/entities";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Badge, type BadgeProps } from "@/ui/primitives/badge";
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending_payment: "Pending payment",
-  confirmed: "Confirmed",
-  preparing: "Preparing",
-  ready: "Ready",
-  out_for_delivery: "Out for delivery",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
 
 const STATUS_VARIANTS: Record<OrderStatus, BadgeProps["variant"]> = {
   pending_payment: "warning",
@@ -22,20 +14,10 @@ const STATUS_VARIANTS: Record<OrderStatus, BadgeProps["variant"]> = {
   cancelled: "danger",
 };
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
-  return <Badge variant={STATUS_VARIANTS[status]}>{STATUS_LABELS[status]}</Badge>;
+export function OrderStatusBadge({ status, locale = DEFAULT_LOCALE }: { status: OrderStatus; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.orderStatus;
+  return <Badge variant={STATUS_VARIANTS[status]}>{dict[status]}</Badge>;
 }
-
-const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
-  pending: "Pending",
-  authorized: "Authorized",
-  paid: "Paid",
-  failed: "Failed",
-  cancelled: "Cancelled",
-  refunded: "Refunded",
-  cash_pending: "Cash on delivery/pickup",
-  cash_confirmed: "Cash confirmed",
-};
 
 const PAYMENT_STATUS_VARIANTS: Record<PaymentStatus, BadgeProps["variant"]> = {
   pending: "warning",
@@ -48,6 +30,7 @@ const PAYMENT_STATUS_VARIANTS: Record<PaymentStatus, BadgeProps["variant"]> = {
   cash_confirmed: "success",
 };
 
-export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
-  return <Badge variant={PAYMENT_STATUS_VARIANTS[status]}>{PAYMENT_STATUS_LABELS[status]}</Badge>;
+export function PaymentStatusBadge({ status, locale = DEFAULT_LOCALE }: { status: PaymentStatus; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.paymentStatus;
+  return <Badge variant={PAYMENT_STATUS_VARIANTS[status]}>{dict[status]}</Badge>;
 }

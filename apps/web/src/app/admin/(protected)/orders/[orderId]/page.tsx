@@ -7,6 +7,8 @@ import { CustomerInfoPanel, FulfillmentInfoPanel, LineItemsPanel, PaymentInfoPan
 import { OrderStatusTimeline } from "@/features/admin-orders/components/order-status-timeline";
 import { OrderReservationStatus } from "@/features/admin-orders/components/order-reservation-status";
 import { OrderActionsPanel } from "@/features/admin-orders/components/order-actions-panel";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { getOrder } from "@/services/orders/get-order";
 import { requireSession } from "@/services/auth/session";
 
@@ -15,8 +17,9 @@ interface OrderDetailPageProps {
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
   const { orderId } = await params;
+  const dict = getDictionary(locale).admin.orderDetail;
 
   let detail;
   try {
@@ -37,10 +40,10 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/admin/orders" className="text-sm text-brand-700 hover:underline">
-            ← Orders
+            ← {dict.backToOrders}
           </Link>
           <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{order.orderNumber}</h1>
-          <OrderStatusBadge status={order.status} />
+          <OrderStatusBadge status={order.status} locale={locale} />
         </div>
       </div>
 
@@ -48,23 +51,24 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
         order={order}
         canManageOrders={hasPermission(session, "orders:manage")}
         canManagePayments={hasPermission(session, "payments:manage")}
+        locale={locale}
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CustomerInfoPanel order={order} />
-        <PaymentInfoPanel order={order} />
-        <FulfillmentInfoPanel order={order} />
+        <CustomerInfoPanel order={order} locale={locale} />
+        <PaymentInfoPanel order={order} locale={locale} />
+        <FulfillmentInfoPanel order={order} locale={locale} />
         <div className="flex flex-col gap-2 rounded-md border border-brand-100 p-4">
-          <h2 className="text-sm font-semibold text-brand-950">Inventory reservation status</h2>
-          <OrderReservationStatus reservations={reservations} />
+          <h2 className="text-sm font-semibold text-brand-950">{dict.reservationStatus.title}</h2>
+          <OrderReservationStatus reservations={reservations} locale={locale} />
         </div>
       </div>
 
-      <LineItemsPanel order={order} />
+      <LineItemsPanel order={order} locale={locale} />
 
       <div className="flex flex-col gap-2 rounded-md border border-brand-100 p-4">
-        <h2 className="text-sm font-semibold text-brand-950">Status timeline &amp; audit history</h2>
-        <OrderStatusTimeline events={events} />
+        <h2 className="text-sm font-semibold text-brand-950">{dict.timeline.title}</h2>
+        <OrderStatusTimeline events={events} locale={locale} />
       </div>
     </div>
   );

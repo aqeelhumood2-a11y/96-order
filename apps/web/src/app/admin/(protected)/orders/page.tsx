@@ -3,6 +3,8 @@ import { CursorPagination } from "@/features/admin-shell/components/cursor-pagin
 import { buildOrdersFilterQueryString, firstValue, parseOrdersSearchParams } from "@/features/admin-orders/parse-search-params";
 import { OrdersFilters } from "@/features/admin-orders/components/orders-filters";
 import { OrdersTable } from "@/features/admin-orders/components/orders-table";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { parseCursorState } from "@/lib/cursor-pagination";
 import { listOrders } from "@/services/orders/list-orders";
 import { requireSession } from "@/services/auth/session";
@@ -12,7 +14,7 @@ interface OrdersPageProps {
 }
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
   const raw = await searchParams;
   const query = parseOrdersSearchParams(raw);
 
@@ -29,12 +31,13 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
   const filterQueryString = buildOrdersFilterQueryString(query);
   const cursorState = parseCursorState(query.cursor, firstValue(raw.cursors));
+  const dict = getDictionary(locale).admin.ordersPage;
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Orders</h1>
-      <OrdersFilters query={query} />
-      <OrdersTable orders={page.items} />
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.heading}</h1>
+      <OrdersFilters query={query} locale={locale} />
+      <OrdersTable orders={page.items} locale={locale} />
       <CursorPagination basePath="/admin/orders" baseQueryString={filterQueryString} cursorState={cursorState} nextCursor={page.nextCursor} />
     </div>
   );

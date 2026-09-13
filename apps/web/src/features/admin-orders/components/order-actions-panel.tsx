@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Order, OrderStatus } from "@/core/orders/entities";
 import { allowedNextStatuses } from "@/core/orders/rules";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import {
   cancelOrderAction,
@@ -16,24 +18,16 @@ import {
   releaseOrderReservationAction,
 } from "../actions";
 
-const STATUS_ACTION_LABEL: Record<OrderStatus, string> = {
-  pending_payment: "Move to pending payment",
-  confirmed: "Confirm order",
-  preparing: "Mark preparing",
-  ready: "Mark ready",
-  out_for_delivery: "Mark out for delivery",
-  completed: "Complete order",
-  cancelled: "Cancel order",
-};
-
 export interface OrderActionsPanelProps {
   order: Pick<Order, "id" | "version" | "status" | "fulfillment" | "paymentMethod" | "paymentStatus">;
   canManageOrders: boolean;
   canManagePayments: boolean;
+  locale?: Locale;
 }
 
-export function OrderActionsPanel({ order, canManageOrders, canManagePayments }: OrderActionsPanelProps) {
+export function OrderActionsPanel({ order, canManageOrders, canManagePayments, locale = DEFAULT_LOCALE }: OrderActionsPanelProps) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.orderDetail.actions;
   const [error, setError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
@@ -60,7 +54,7 @@ export function OrderActionsPanel({ order, canManageOrders, canManagePayments }:
     if (toStatus === "cancelled") {
       return () =>
         run("cancelled", () => {
-          const note = window.prompt("Reason for cancelling this order (optional):") ?? undefined;
+          const note = window.prompt(dict.cancelReasonPrompt) ?? undefined;
           return cancelOrderAction(order.id, order.version, note || undefined);
         });
     }
@@ -71,22 +65,22 @@ export function OrderActionsPanel({ order, canManageOrders, canManagePayments }:
     return undefined;
   }
 
-  const completedLabel = order.fulfillment.method === "delivery" ? "Mark delivered" : "Complete order";
+  const completedLabel = order.fulfillment.method === "delivery" ? dict.markDelivered : dict.statusAction.completed;
 
   return (
     <div className="flex flex-col gap-3 rounded-md border border-brand-100 p-4">
-      <h2 className="text-sm font-semibold text-brand-950">Actions</h2>
+      <h2 className="text-sm font-semibold text-brand-950">{dict.heading}</h2>
 
       <div className="flex flex-wrap gap-2">
         {canManagePayments && order.paymentMethod === "cash" && order.paymentStatus === "cash_pending" && (
           <Button size="sm" disabled={isSubmitting} onClick={() => run("confirm-cash", () => confirmCashPaymentAction(order.id))}>
-            {pendingAction === "confirm-cash" ? "Confirming…" : "Confirm cash payment"}
+            {pendingAction === "confirm-cash" ? dict.confirming : dict.confirmCashPayment}
           </Button>
         )}
 
         {canManagePayments && order.paymentMethod === "tap" && (order.paymentStatus === "pending" || order.paymentStatus === "authorized") && (
           <Button size="sm" disabled={isSubmitting} onClick={() => run("confirm-payment", () => confirmOrderPaymentAction(order.id, order.version))}>
-            {pendingAction === "confirm-payment" ? "Confirming…" : "Confirm payment"}
+            {pendingAction === "confirm-payment" ? dict.confirming : dict.confirmPayment}
           </Button>
         )}
 
@@ -95,28 +89,28 @@ export function OrderActionsPanel({ order, canManageOrders, canManagePayments }:
           .map((status) => {
             const handler = actionForStatus(status);
             if (!handler) return null;
-            const label = status === "completed" ? completedLabel : STATUS_ACTION_LABEL[status];
+            const label = status === "completed" ? completedLabel : dict.statusAction[status];
             return (
               <Button key={status} size="sm" variant="outline" disabled={isSubmitting} onClick={handler}>
-                {pendingAction === status ? "Working…" : label}
+                {pendingAction === status ? dict.working : label}
               </Button>
             );
           })}
 
         {canManageOrders && (
           <Button size="sm" variant="outline" disabled={isSubmitting} onClick={() => run("release", () => releaseOrderReservationAction(order.id))}>
-            {pendingAction === "release" ? "Releasing…" : "Release reservation"}
+            {pendingAction === "release" ? dict.releasing : dict.releaseReservation}
           </Button>
         )}
 
         {canManageOrders && nextStatuses.includes("cancelled") && (
           <Button size="sm" variant="destructive" disabled={isSubmitting} onClick={actionForStatus("cancelled")}>
-            {pendingAction === "cancelled" ? "Cancelling…" : "Cancel order"}
+            {pendingAction === "cancelled" ? dict.cancelling : dict.cancelOrder}
           </Button>
         )}
       </div>
 
-      {!canManageOrders && !canManagePayments && <p className="text-xs text-foreground/65">You don&apos;t have permission to act on this order.</p>}
+      {!canManageOrders && !canManagePayments && <p className="text-xs text-foreground/65">{dict.noPermission}</p>}
       {error && (
         <p role="alert" className="text-sm text-danger-600">
           {error}

@@ -1,15 +1,19 @@
 import Link from "next/link";
 import type { Order } from "@/core/orders/entities";
 import { formatMoney } from "@/core/money/money";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { OrderStatusBadge, PaymentStatusBadge } from "./order-status-badge";
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-export function OrdersTable({ orders }: { orders: Order[] }) {
+export function OrdersTable({ orders, locale = DEFAULT_LOCALE }: { orders: Order[]; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.ordersPage;
+
   if (orders.length === 0) {
-    return <p className="text-sm text-foreground/69">No orders match these filters.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noOrders}</p>;
   }
 
   return (
@@ -17,13 +21,13 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
       <table className="w-full min-w-[840px] text-left text-sm">
         <thead className="border-b border-brand-100 bg-brand-50/50 text-xs uppercase tracking-wide text-foreground/69">
           <tr>
-            <th className="px-4 py-3 font-medium">Order</th>
-            <th className="px-4 py-3 font-medium">Customer</th>
-            <th className="px-4 py-3 font-medium">Fulfillment</th>
-            <th className="px-4 py-3 font-medium">Status</th>
-            <th className="px-4 py-3 font-medium">Payment</th>
-            <th className="px-4 py-3 font-medium">Total</th>
-            <th className="px-4 py-3 font-medium">Placed</th>
+            <th className="px-4 py-3 font-medium">{dict.table.order}</th>
+            <th className="px-4 py-3 font-medium">{dict.table.customer}</th>
+            <th className="px-4 py-3 font-medium">{dict.table.fulfillment}</th>
+            <th className="px-4 py-3 font-medium">{dict.table.status}</th>
+            <th className="px-4 py-3 font-medium">{dict.table.payment}</th>
+            <th className="px-4 py-3 font-medium">{dict.table.total}</th>
+            <th className="px-4 py-3 font-medium">{dict.table.placed}</th>
           </tr>
         </thead>
         <tbody>
@@ -40,12 +44,12 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
                   <span className="text-xs text-foreground/65">{order.customer.mobile}</span>
                 </div>
               </td>
-              <td className="px-4 py-3 capitalize text-foreground/80">{order.fulfillment.method}</td>
+              <td className="px-4 py-3 text-foreground/80">{order.fulfillment.method === "delivery" ? dict.delivery : dict.pickup}</td>
               <td className="px-4 py-3">
-                <OrderStatusBadge status={order.status} />
+                <OrderStatusBadge status={order.status} locale={locale} />
               </td>
               <td className="px-4 py-3">
-                <PaymentStatusBadge status={order.paymentStatus} />
+                <PaymentStatusBadge status={order.paymentStatus} locale={locale} />
               </td>
               <td className="px-4 py-3 font-medium text-foreground">{formatMoney(order.grandTotal)}</td>
               <td className="px-4 py-3 text-foreground/70">{formatDate(order.createdAt)}</td>
