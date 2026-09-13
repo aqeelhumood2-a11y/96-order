@@ -41,7 +41,7 @@ export function PaymentInfoPanel({ order }: { order: Order }) {
         <Row label="Method" value={order.paymentMethod === "tap" ? "Card (Tap)" : "Cash"} />
         <Row label="Status" value={order.paymentStatus.replace(/_/g, " ")} />
         <Row label="Subtotal" value={formatMoney(order.subtotal)} />
-        <Row label="Shipping" value={formatMoney(order.shippingFee)} />
+        <Row label="Delivery" value={formatMoney(order.shippingFee)} />
         {order.discountTotal.amount > 0 && <Row label="Discount" value={`-${formatMoney(order.discountTotal)}`} />}
         <Row label="Grand total" value={<span className="font-semibold">{formatMoney(order.grandTotal)}</span>} />
       </dl>

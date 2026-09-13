@@ -36,7 +36,7 @@ export function PromotionsList({ promotions }: { promotions: Promotion[] }) {
               <Badge variant={promotion.active ? "success" : "neutral"}>{promotion.active ? "active" : "inactive"}</Badge>
             </div>
             <p className="text-xs text-foreground/65">
-              {promotion.type === "percentage" ? `${promotion.value}% off` : promotion.type === "fixed" ? `${promotion.value} fils off` : "Free shipping"} · priority {promotion.priority} ·{" "}
+              {promotion.type === "percentage" ? `${promotion.value}% off` : promotion.type === "fixed" ? `${promotion.value} fils off` : "Free delivery"} · priority {promotion.priority} ·{" "}
               {promotion.stackable ? "stackable" : "exclusive"}
             </p>
             <div className="flex gap-2">

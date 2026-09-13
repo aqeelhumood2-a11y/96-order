@@ -38,7 +38,7 @@ export function CouponsList({ coupons }: { coupons: Coupon[] }) {
             </div>
             <p className="text-sm text-foreground/70">{coupon.description || "—"}</p>
             <p className="text-xs text-foreground/65">
-              {coupon.type === "percentage" ? `${coupon.value}% off` : coupon.type === "fixed" ? `${formatMoney({ amount: coupon.value, currency: "BHD" })} off` : "Free shipping"} ·
+              {coupon.type === "percentage" ? `${coupon.value}% off` : coupon.type === "fixed" ? `${formatMoney({ amount: coupon.value, currency: "BHD" })} off` : "Free delivery"} ·
               used {coupon.usageCount}
               {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ""}
             </p>

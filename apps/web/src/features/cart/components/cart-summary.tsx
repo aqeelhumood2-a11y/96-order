@@ -18,11 +18,11 @@ export function CartSummary({ priced, editableCoupon = false }: { priced: Discou
         {priced.appliedDiscounts.map((discount) => (
           <div key={`${discount.source}-${discount.id}`} className="flex justify-between text-accent-700">
             <dt>{discount.label}</dt>
-            <dd className="font-medium">{discount.freeShipping ? "Free shipping" : `-${formatMoney(discount.amount)}`}</dd>
+            <dd className="font-medium">{discount.freeShipping ? "Free delivery" : `-${formatMoney(discount.amount)}`}</dd>
           </div>
         ))}
         <div className="flex justify-between">
-          <dt className="text-foreground/70">Shipping</dt>
+          <dt className="text-foreground/70">Delivery</dt>
           <dd className="font-medium text-brand-950">
             {isZero(priced.shippingFee) && !isZero(priced.originalShippingFee) ? (
               <>
