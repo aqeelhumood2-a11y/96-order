@@ -144,10 +144,11 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
           <span className="text-sm font-semibold text-brand-950">Admin</span>
         </Link>
 
+        <LanguageSwitcher locale={locale} className="rounded-md border border-surface-border px-2 py-1.5 text-sm" />
+
         <NavLinks groups={groups} pathname={pathname} />
 
         <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
-          <LanguageSwitcher locale={locale} className="px-1 text-xs" />
           <span className="truncate px-1 text-xs text-foreground/65">{session.email}</span>
           <LogoutButton>{dict.admin.signOut}</LogoutButton>
         </div>
@@ -160,43 +161,46 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
           <span className="text-sm font-semibold text-brand-950">Admin</span>
         </Link>
 
-        <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
-          <DialogTrigger asChild>
-            <button
-              type="button"
-              aria-label="Open admin menu"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-brand-900 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
-              </svg>
-            </button>
-          </DialogTrigger>
-          <DialogContent className="top-0 left-0 flex max-w-none translate-x-0 translate-y-0 flex-col rounded-none p-6 sm:max-w-xs">
-            <div className="flex items-center justify-between">
-              <DialogTitle>Admin menu</DialogTitle>
-              <DialogClose asChild>
-                <button
-                  type="button"
-                  aria-label="Close menu"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground/69 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </DialogClose>
-            </div>
-            <div className="mt-4 flex flex-1 flex-col overflow-hidden">
-              <NavLinks groups={groups} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
-            </div>
-            <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
-              <LanguageSwitcher locale={locale} className="px-1 text-xs" />
-              <span className="truncate px-1 text-xs text-foreground/65">{session.email}</span>
-              <LogoutButton>{dict.admin.signOut}</LogoutButton>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher locale={locale} className="rounded-md border border-surface-border px-2 py-1.5 text-sm" />
+
+          <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                aria-label="Open admin menu"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md text-brand-900 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+                </svg>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="top-0 left-0 flex max-w-none translate-x-0 translate-y-0 flex-col rounded-none p-6 sm:max-w-xs">
+              <div className="flex items-center justify-between">
+                <DialogTitle>Admin menu</DialogTitle>
+                <DialogClose asChild>
+                  <button
+                    type="button"
+                    aria-label="Close menu"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground/69 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </DialogClose>
+              </div>
+              <div className="mt-4 flex flex-1 flex-col overflow-hidden">
+                <NavLinks groups={groups} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+              </div>
+              <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
+                <span className="truncate px-1 text-xs text-foreground/65">{session.email}</span>
+                <LogoutButton>{dict.admin.signOut}</LogoutButton>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </>
   );

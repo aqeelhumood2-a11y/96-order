@@ -32,6 +32,8 @@ export interface Dictionary {
     cart: string;
     /** `{count}` is replaced with the item count. */
     cartWithCount: string;
+    account: string;
+    signIn: string;
   };
   footer: {
     shop: string;
@@ -554,6 +556,8 @@ export const en: Dictionary = {
     mobile: "Mobile",
     cart: "Cart",
     cartWithCount: "Cart, {count} item(s)",
+    account: "My Account",
+    signIn: "Sign in",
   },
   footer: {
     shop: "Shop",
@@ -1119,6 +1123,8 @@ export const ar: Dictionary = {
     mobile: "قائمة الجوال",
     cart: "السلة",
     cartWithCount: "السلة، {count} عنصر",
+    account: "حسابي",
+    signIn: "تسجيل الدخول",
   },
   footer: {
     shop: "المتجر",

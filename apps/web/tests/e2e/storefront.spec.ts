@@ -34,6 +34,14 @@ test.describe("homepage", () => {
     await expect(header.getByRole("link", { name: "Shop", exact: true })).toBeVisible();
     await expect(page.getByLabel("Search products").first()).toBeVisible();
   });
+
+  test("a signed-out visitor can reach account sign-in from the header", async ({ page }) => {
+    await page.goto("/");
+    const header = page.getByRole("banner");
+    await header.getByRole("link", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/account\/login/);
+    await expect(page.getByRole("link", { name: "Create an account" })).toBeVisible();
+  });
 });
 
 test.describe("product listing", () => {

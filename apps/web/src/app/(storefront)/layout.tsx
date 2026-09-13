@@ -39,7 +39,7 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
     <WishlistProvider signedIn={session !== null}>
       {settings.maintenanceMode && <MaintenanceBanner message={settings.maintenanceMessage} />}
       <PageShell
-        header={{ storeName: settings.storeName, navLinks, locale }}
+        header={{ storeName: settings.storeName, navLinks, locale, signedIn: session !== null }}
         footer={{
           footerPages: footerPages.map((page) => ({ href: `/pages/${page.slug}`, label: page.title })),
           footerColumns: settings.footerColumns,

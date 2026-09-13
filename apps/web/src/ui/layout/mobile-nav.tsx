@@ -13,7 +13,7 @@ export interface NavLink {
   label: string;
 }
 
-export function MobileNav({ links, locale = DEFAULT_LOCALE }: { links: NavLink[]; locale?: Locale }) {
+export function MobileNav({ links, locale = DEFAULT_LOCALE, signedIn = false }: { links: NavLink[]; locale?: Locale; signedIn?: boolean }) {
   const [open, setOpen] = useState(false);
   const dict = getDictionary(locale);
 
@@ -46,6 +46,16 @@ export function MobileNav({ links, locale = DEFAULT_LOCALE }: { links: NavLink[]
           </DialogClose>
         </div>
         <SearchForm formId="mobile-nav-search" locale={locale} className="mt-4" />
+        <Link
+          href="/account"
+          onClick={() => setOpen(false)}
+          className="mt-4 flex items-center gap-2 rounded-md border border-surface-border px-3 py-2.5 text-base font-medium text-brand-900 hover:bg-brand-50"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0" />
+          </svg>
+          {signedIn ? dict.nav.account : dict.nav.signIn}
+        </Link>
         <nav aria-label={dict.nav.mobile} className="mt-6">
           <ul className="flex flex-col gap-1">
             {links.map((link) => (
