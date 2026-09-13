@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { ACTIVE_CURRENCY } from "@/core/money/money";
 import type { Brand, Category, Product } from "@/core/catalog/entities";
 import { PRODUCT_STATUSES, PRODUCT_VISIBILITIES } from "@/core/catalog/entities";
-import { PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES } from "@/core/catalog/schemas";
-import { createProductAction, updateProductAction, uploadProductImageAction } from "@/features/catalog/products/actions";
+import { addProductImageByUrlAction, createProductAction, updateProductAction } from "@/features/catalog/products/actions";
 import { adjustInventoryAction } from "@/features/catalog/inventory/actions";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
@@ -122,7 +121,7 @@ export function ProductForm({
   const [warrantyPeriod, setWarrantyPeriod] = useState(product?.attributes?.equipment?.warrantyPeriod ?? "");
 
   // Create-only conveniences — an existing product already has a dedicated image gallery (ProductImages, on the edit page) and its own inventory record (adjustable from /admin/inventory), so these only make sense before a product exists yet.
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -267,13 +266,9 @@ export function ProductForm({
         });
         if (!inventoryResult.ok) warnings.push(`Stock quantity wasn't saved (${inventoryResult.message}) — set it from the product page.`);
       }
-      if (imageFile) {
-        const formData = new FormData();
-        formData.set("productId", result.data.id);
-        formData.set("file", imageFile);
-        formData.set("isPrimary", "true");
-        const imageResult = await uploadProductImageAction(formData);
-        if (!imageResult.ok) warnings.push(`Image wasn't uploaded (${imageResult.message}) — add it from the product page.`);
+      if (imageUrl.trim()) {
+        const imageResult = await addProductImageByUrlAction(result.data.id, imageUrl.trim(), "", true);
+        if (!imageResult.ok) warnings.push(`Image wasn't added (${imageResult.message}) — add it from the product page.`);
       }
 
       setSuccessMessage(warnings.length > 0 ? `Product created. ${warnings.join(" ")}` : "Product created.");
@@ -295,13 +290,13 @@ export function ProductForm({
         {!isEditing && (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="product-image">{dict.productImage}</Label>
-            <input
+            <Input
               id="product-image"
-              type="file"
-              accept={PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES.join(",")}
-              onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+              type="url"
+              value={imageUrl}
+              onChange={(event) => setImageUrl(event.target.value)}
               disabled={isSubmitting}
-              className="text-sm text-foreground/80 file:mr-3 file:rounded-md file:border-0 file:bg-brand-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-950"
+              placeholder={dict.productImagePlaceholder}
             />
           </div>
         )}

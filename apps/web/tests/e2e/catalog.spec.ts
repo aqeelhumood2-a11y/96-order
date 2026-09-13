@@ -73,7 +73,7 @@ test.describe("catalog admin (super admin)", () => {
       "base64",
     );
     await page.route("https://fake-image-host.test/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: tinyPng }));
-    await page.getByLabel(/Or paste an image URL/).fill("https://fake-image-host.test/photo.png");
+    await page.getByLabel(/Image URL or Google Drive file ID/).fill("https://fake-image-host.test/photo.png");
     await page.getByRole("button", { name: "Add from URL" }).click();
     await expect(page.getByText("Primary", { exact: true })).toBeVisible();
     await expect(page.locator('img[src="https://fake-image-host.test/photo.png"]')).toBeVisible();

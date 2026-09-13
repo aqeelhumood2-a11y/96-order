@@ -94,6 +94,7 @@ export interface Dictionary {
       essentials: string;
       name: string;
       productImage: string;
+      productImagePlaceholder: string;
       priceBhd: string;
       category: string;
       selectCategory: string;
@@ -544,15 +545,11 @@ export interface Dictionary {
       primary: string;
       delete: string;
       deleting: string;
-      uploadLabel: string;
       altText: string;
       setAsPrimary: string;
-      upload: string;
-      uploading: string;
-      chooseFileFirst: string;
-      orDivider: string;
       imageUrlLabel: string;
       imageUrlPlaceholder: string;
+      imageUrlHint: string;
       addFromUrl: string;
       addingFromUrl: string;
       enterUrlFirst: string;
@@ -637,7 +634,8 @@ export const en: Dictionary = {
     productForm: {
       essentials: "Essentials",
       name: "Name",
-      productImage: "Product image (optional)",
+      productImage: "Product image URL or Google Drive file ID (optional)",
+      productImagePlaceholder: "https://… or a Drive file ID",
       priceBhd: "Price (BHD)",
       category: "Category",
       selectCategory: "Select a category",
@@ -1131,15 +1129,11 @@ export const en: Dictionary = {
       primary: "Primary",
       delete: "Delete",
       deleting: "Deleting…",
-      uploadLabel: "Upload image (JPEG, PNG, or WebP, up to 5MB)",
-      altText: "Alt text",
+      altText: "Alt text (optional — a short description of the photo)",
       setAsPrimary: "Set as primary",
-      upload: "Upload",
-      uploading: "Uploading…",
-      chooseFileFirst: "Choose an image file first.",
-      orDivider: "or",
-      imageUrlLabel: "Or paste an image URL or Google Drive file ID",
+      imageUrlLabel: "Image URL or Google Drive file ID",
       imageUrlPlaceholder: "https://… or a Drive file ID",
+      imageUrlHint: "The Google Drive file must be shared as \"Anyone with the link\".",
       addFromUrl: "Add from URL",
       addingFromUrl: "Adding…",
       enterUrlFirst: "Enter an image URL first.",
@@ -1224,7 +1218,8 @@ export const ar: Dictionary = {
     productForm: {
       essentials: "الأساسيات",
       name: "الاسم",
-      productImage: "صورة المنتج (اختياري)",
+      productImage: "رابط صورة المنتج أو معرّف ملف Google Drive (اختياري)",
+      productImagePlaceholder: "https://… أو معرّف ملف من Drive",
       priceBhd: "السعر (د.ب)",
       category: "الفئة",
       selectCategory: "اختر فئة",
@@ -1718,15 +1713,11 @@ export const ar: Dictionary = {
       primary: "الصورة الرئيسية",
       delete: "حذف",
       deleting: "جارٍ الحذف…",
-      uploadLabel: "رفع صورة (JPEG أو PNG أو WebP، حتى 5 ميجابايت)",
-      altText: "نص بديل",
+      altText: "نص بديل (اختياري — وصف مختصر للصورة)",
       setAsPrimary: "اجعلها الصورة الرئيسية",
-      upload: "رفع",
-      uploading: "جارٍ الرفع…",
-      chooseFileFirst: "اختر ملف صورة أولاً.",
-      orDivider: "أو",
-      imageUrlLabel: "أو الصق رابط صورة أو معرّف ملف Google Drive",
+      imageUrlLabel: "رابط الصورة أو معرّف ملف Google Drive",
       imageUrlPlaceholder: "https://… أو معرّف ملف من Drive",
+      imageUrlHint: "لازم ملف Google Drive يكون مشارك بخيار \"أي شخص لديه الرابط\".",
       addFromUrl: "إضافة من رابط",
       addingFromUrl: "جارٍ الإضافة…",
       enterUrlFirst: "أدخل رابط الصورة أولاً.",
