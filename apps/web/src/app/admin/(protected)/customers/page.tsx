@@ -3,6 +3,8 @@ import { CursorPagination } from "@/features/admin-shell/components/cursor-pagin
 import { buildCustomersFilterQueryString, firstValue, parseCustomersSearchParams } from "@/features/admin-customers/parse-search-params";
 import { CustomersFilters } from "@/features/admin-customers/components/customers-filters";
 import { CustomersTable } from "@/features/admin-customers/components/customers-table";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { parseCursorState } from "@/lib/cursor-pagination";
 import { listCustomers } from "@/services/customers/list-customers";
 import { requireSession } from "@/services/auth/session";
@@ -12,7 +14,7 @@ interface CustomersPageProps {
 }
 
 export default async function CustomersPage({ searchParams }: CustomersPageProps) {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
   const raw = await searchParams;
   const query = parseCustomersSearchParams(raw);
 
@@ -29,12 +31,13 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
 
   const filterQueryString = buildCustomersFilterQueryString(query);
   const cursorState = parseCursorState(query.cursor, firstValue(raw.cursors));
+  const dict = getDictionary(locale).admin.customersPage;
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Customers</h1>
-      <CustomersFilters query={query} />
-      <CustomersTable customers={page.items} />
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.heading}</h1>
+      <CustomersFilters query={query} locale={locale} />
+      <CustomersTable customers={page.items} locale={locale} />
       <CursorPagination basePath="/admin/customers" baseQueryString={filterQueryString} cursorState={cursorState} nextCursor={page.nextCursor} />
     </div>
   );

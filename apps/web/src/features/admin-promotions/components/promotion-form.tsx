@@ -6,6 +6,8 @@ import type { Promotion } from "@/core/promotions/entities";
 import type { PromotionInput } from "@/core/promotions/schemas";
 import { DISCOUNT_TYPES } from "@/core/pricing/discount-engine";
 import { createPromotionAction, updatePromotionAction } from "@/features/admin-promotions/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button, Input, Label, Select } from "@/ui/primitives";
 
 function splitIds(value: string): string[] {
@@ -19,8 +21,10 @@ function toDateInputValue(date: Date | null): string {
   return date ? date.toISOString().slice(0, 10) : "";
 }
 
-export function PromotionForm({ existing, onDone }: { existing?: Promotion; onDone?: () => void }) {
+export function PromotionForm({ existing, onDone, locale = DEFAULT_LOCALE }: { existing?: Promotion; onDone?: () => void; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.promotionForm;
+  const discountTypeDict = getDictionary(locale).admin.discountType;
   const [name, setName] = useState(existing?.name ?? "");
   const [type, setType] = useState<PromotionInput["type"]>(existing?.type ?? "percentage");
   const [value, setValue] = useState(existing?.value ?? 10);
@@ -66,15 +70,15 @@ export function PromotionForm({ existing, onDone }: { existing?: Promotion; onDo
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3 rounded-md border border-brand-100 p-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <Label>Name</Label>
+          <Label>{dict.name}</Label>
           <Input value={name} onChange={(event) => setName(event.target.value)} disabled={isSubmitting} required />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label>Type</Label>
+          <Label>{dict.type}</Label>
           <Select value={type} onChange={(event) => setType(event.target.value as PromotionInput["type"])} disabled={isSubmitting}>
             {DISCOUNT_TYPES.map((value) => (
               <option key={value} value={value}>
-                {value}
+                {discountTypeDict[value]}
               </option>
             ))}
           </Select>
@@ -83,49 +87,54 @@ export function PromotionForm({ existing, onDone }: { existing?: Promotion; onDo
 
       {type !== "free_shipping" && (
         <div className="flex flex-col gap-1.5">
-          <Label>{type === "percentage" ? "Percentage (1-100)" : "Fixed amount (fils)"}</Label>
+          <Label>{type === "percentage" ? dict.percentageValue : dict.fixedValue}</Label>
           <Input type="number" value={value} onChange={(event) => setValue(Number(event.target.value))} disabled={isSubmitting} min={0} />
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <Label>Category ids (comma-separated, empty = store-wide)</Label>
-          <Input value={categoryIds} onChange={(event) => setCategoryIds(event.target.value)} disabled={isSubmitting} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Brand ids (comma-separated)</Label>
-          <Input value={brandIds} onChange={(event) => setBrandIds(event.target.value)} disabled={isSubmitting} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Starts at</Label>
-          <Input type="date" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} disabled={isSubmitting} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Ends at</Label>
-          <Input type="date" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} disabled={isSubmitting} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Priority (lower wins when non-stackable)</Label>
-          <Input type="number" value={priority} onChange={(event) => setPriority(Number(event.target.value))} disabled={isSubmitting} min={0} />
-        </div>
-      </div>
+      <label className="flex items-center gap-2 text-sm text-foreground/80">
+        <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} disabled={isSubmitting} />
+        {dict.active}
+      </label>
 
-      <div className="flex flex-wrap gap-4">
-        <label className="flex items-center gap-2 text-sm text-foreground/80">
-          <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} disabled={isSubmitting} />
-          Active
-        </label>
-        <label className="flex items-center gap-2 text-sm text-foreground/80">
-          <input type="checkbox" checked={stackable} onChange={(event) => setStackable(event.target.checked)} disabled={isSubmitting} />
-          Stackable with other promotions
-        </label>
-      </div>
+      <details className="group rounded-md border border-surface-border p-3">
+        <summary className="cursor-pointer text-sm font-medium text-brand-800 select-none">{dict.advancedOptions}</summary>
+
+        <div className="mt-3 flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.categoryIds}</Label>
+              <Input value={categoryIds} onChange={(event) => setCategoryIds(event.target.value)} disabled={isSubmitting} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.brandIds}</Label>
+              <Input value={brandIds} onChange={(event) => setBrandIds(event.target.value)} disabled={isSubmitting} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.startsAt}</Label>
+              <Input type="date" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} disabled={isSubmitting} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.endsAt}</Label>
+              <Input type="date" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} disabled={isSubmitting} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.priority}</Label>
+              <Input type="number" value={priority} onChange={(event) => setPriority(Number(event.target.value))} disabled={isSubmitting} min={0} />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-foreground/80">
+            <input type="checkbox" checked={stackable} onChange={(event) => setStackable(event.target.checked)} disabled={isSubmitting} />
+            {dict.stackable}
+          </label>
+        </div>
+      </details>
 
       {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
 
       <Button type="submit" size="sm" disabled={isSubmitting} className="w-fit">
-        {isSubmitting ? "Saving…" : existing ? "Save changes" : "Create promotion"}
+        {isSubmitting ? dict.saving : existing ? dict.saveChanges : dict.createPromotion}
       </Button>
     </form>
   );

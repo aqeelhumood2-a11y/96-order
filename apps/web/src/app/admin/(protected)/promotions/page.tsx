@@ -1,10 +1,12 @@
 import { ForbiddenError } from "@/core/errors";
 import { PromotionsList } from "@/features/admin-promotions/components/promotions-list";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { listPromotions } from "@/services/promotions/manage-promotions";
 import { requireSession } from "@/services/auth/session";
 
 export default async function AdminPromotionsPage() {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
 
   let page;
   try {
@@ -19,8 +21,8 @@ export default async function AdminPromotionsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Promotions</h1>
-      <PromotionsList promotions={page.items} />
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{getDictionary(locale).admin.promotionsPage.heading}</h1>
+      <PromotionsList promotions={page.items} locale={locale} />
     </div>
   );
 }

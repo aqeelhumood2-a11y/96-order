@@ -175,6 +175,99 @@ export interface Dictionary {
       reservationStatus: { title: string; product: string; qty: string; status: string; expires: string; reserved: string; committed: string; released: string; none: string };
       timeline: { title: string; createdAs: string; none: string };
     };
+    customersPage: {
+      heading: string;
+      noCustomers: string;
+      search: string;
+      searchPlaceholder: string;
+      applyFilters: string;
+      table: { name: string; contact: string; orders: string; totalSpent: string; lastOrder: string };
+    };
+    customerDetail: {
+      backToCustomers: string;
+      totalOrders: string;
+      totalSpent: string;
+      firstOrder: string;
+      lastOrder: string;
+      contactInfo: { title: string; email: string; mobile: string; company: string; accountType: string; guest: string; registered: string };
+      orderHistory: string;
+    };
+    discountType: Record<"percentage" | "fixed" | "free_shipping", string>;
+    couponForm: {
+      code: string;
+      type: string;
+      description: string;
+      percentageValue: string;
+      fixedValue: string;
+      categoryIds: string;
+      brandIds: string;
+      excludedProductIds: string;
+      excludedCategoryIds: string;
+      minSubtotal: string;
+      maxDiscountCap: string;
+      usageLimit: string;
+      perCustomerLimit: string;
+      startsAt: string;
+      endsAt: string;
+      active: string;
+      firstOrderOnly: string;
+      stackable: string;
+      advancedOptions: string;
+      createCoupon: string;
+      saveChanges: string;
+      saving: string;
+    };
+    couponsPage: {
+      heading: string;
+      /** `{value}` replaced */
+      percentOff: string;
+      /** `{amount}` replaced */
+      amountOff: string;
+      freeDelivery: string;
+      /** `{count}` replaced */
+      used: string;
+      active: string;
+      inactive: string;
+      edit: string;
+      deactivate: string;
+      activate: string;
+      newCoupon: string;
+    };
+    promotionForm: {
+      name: string;
+      type: string;
+      percentageValue: string;
+      fixedValue: string;
+      categoryIds: string;
+      brandIds: string;
+      startsAt: string;
+      endsAt: string;
+      priority: string;
+      active: string;
+      stackable: string;
+      advancedOptions: string;
+      createPromotion: string;
+      saveChanges: string;
+      saving: string;
+    };
+    promotionsPage: {
+      heading: string;
+      /** `{value}` replaced */
+      percentOff: string;
+      /** `{value}` replaced */
+      amountOff: string;
+      freeDelivery: string;
+      /** `{priority}` replaced */
+      priority: string;
+      stackable: string;
+      exclusive: string;
+      active: string;
+      inactive: string;
+      edit: string;
+      deactivate: string;
+      activate: string;
+      newPromotion: string;
+    };
   };
 }
 
@@ -382,6 +475,101 @@ export const en: Dictionary = {
       },
       timeline: { title: "Status timeline & audit history", createdAs: "Created as", none: "No status history yet." },
     },
+    customersPage: {
+      heading: "Customers",
+      noCustomers: "No customers match these filters.",
+      search: "Search",
+      searchPlaceholder: "Name, phone, or email",
+      applyFilters: "Apply filters",
+      table: { name: "Name", contact: "Contact", orders: "Orders", totalSpent: "Total spent", lastOrder: "Last order" },
+    },
+    customerDetail: {
+      backToCustomers: "Customers",
+      totalOrders: "Total orders",
+      totalSpent: "Total spent",
+      firstOrder: "First order",
+      lastOrder: "Last order",
+      contactInfo: {
+        title: "Contact information",
+        email: "Email",
+        mobile: "Mobile",
+        company: "Company",
+        accountType: "Account type",
+        guest: "Guest checkout",
+        registered: "Registered account",
+      },
+      orderHistory: "Order history",
+    },
+    discountType: { percentage: "Percentage", fixed: "Fixed amount", free_shipping: "Free delivery" },
+    couponForm: {
+      code: "Code",
+      type: "Type",
+      description: "Description",
+      percentageValue: "Percentage (1-100)",
+      fixedValue: "Fixed amount (fils)",
+      categoryIds: "Category ids (comma-separated)",
+      brandIds: "Brand ids (comma-separated)",
+      excludedProductIds: "Excluded product ids",
+      excludedCategoryIds: "Excluded category ids",
+      minSubtotal: "Minimum subtotal (fils, 0 = none)",
+      maxDiscountCap: "Max discount cap (fils, 0 = none)",
+      usageLimit: "Usage limit (0 = unlimited)",
+      perCustomerLimit: "Per-customer limit (0 = unlimited)",
+      startsAt: "Starts at",
+      endsAt: "Ends at",
+      active: "Active",
+      firstOrderOnly: "First order only",
+      stackable: "Stackable with promotions",
+      advancedOptions: "Advanced options",
+      createCoupon: "Create coupon",
+      saveChanges: "Save changes",
+      saving: "Saving…",
+    },
+    couponsPage: {
+      heading: "Coupons",
+      percentOff: "{value}% off",
+      amountOff: "{amount} off",
+      freeDelivery: "Free delivery",
+      used: "used {count}",
+      active: "active",
+      inactive: "inactive",
+      edit: "Edit",
+      deactivate: "Deactivate",
+      activate: "Activate",
+      newCoupon: "New coupon",
+    },
+    promotionForm: {
+      name: "Name",
+      type: "Type",
+      percentageValue: "Percentage (1-100)",
+      fixedValue: "Fixed amount (fils)",
+      categoryIds: "Category ids (comma-separated, empty = store-wide)",
+      brandIds: "Brand ids (comma-separated)",
+      startsAt: "Starts at",
+      endsAt: "Ends at",
+      priority: "Priority (lower wins when non-stackable)",
+      active: "Active",
+      stackable: "Stackable with other promotions",
+      advancedOptions: "Advanced options",
+      createPromotion: "Create promotion",
+      saveChanges: "Save changes",
+      saving: "Saving…",
+    },
+    promotionsPage: {
+      heading: "Promotions",
+      percentOff: "{value}% off",
+      amountOff: "{value} fils off",
+      freeDelivery: "Free delivery",
+      priority: "priority {priority}",
+      stackable: "stackable",
+      exclusive: "exclusive",
+      active: "active",
+      inactive: "inactive",
+      edit: "Edit",
+      deactivate: "Deactivate",
+      activate: "Activate",
+      newPromotion: "New promotion",
+    },
   },
 };
 
@@ -588,6 +776,101 @@ export const ar: Dictionary = {
         none: "لم يتم حجز أي مخزون لهذا الطلب (عناصر غير متتبعة فقط).",
       },
       timeline: { title: "سجل الحالات وتاريخ التدقيق", createdAs: "أُنشئ كـ", none: "لا يوجد سجل حالات بعد." },
+    },
+    customersPage: {
+      heading: "العملاء",
+      noCustomers: "لا يوجد عملاء مطابقين لهذه الفلاتر.",
+      search: "بحث",
+      searchPlaceholder: "الاسم، الجوال، أو الإيميل",
+      applyFilters: "تطبيق الفلاتر",
+      table: { name: "الاسم", contact: "التواصل", orders: "الطلبات", totalSpent: "إجمالي الإنفاق", lastOrder: "آخر طلب" },
+    },
+    customerDetail: {
+      backToCustomers: "العملاء",
+      totalOrders: "إجمالي الطلبات",
+      totalSpent: "إجمالي الإنفاق",
+      firstOrder: "أول طلب",
+      lastOrder: "آخر طلب",
+      contactInfo: {
+        title: "معلومات التواصل",
+        email: "الإيميل",
+        mobile: "الجوال",
+        company: "الشركة",
+        accountType: "نوع الحساب",
+        guest: "طلب كزائر",
+        registered: "حساب مسجل",
+      },
+      orderHistory: "سجل الطلبات",
+    },
+    discountType: { percentage: "نسبة مئوية", fixed: "مبلغ ثابت", free_shipping: "توصيل مجاني" },
+    couponForm: {
+      code: "الرمز",
+      type: "النوع",
+      description: "الوصف",
+      percentageValue: "النسبة المئوية (1-100)",
+      fixedValue: "مبلغ ثابت (فلس)",
+      categoryIds: "معرّفات الفئات (مفصولة بفاصلة)",
+      brandIds: "معرّفات العلامات التجارية (مفصولة بفاصلة)",
+      excludedProductIds: "معرّفات المنتجات المستثناة",
+      excludedCategoryIds: "معرّفات الفئات المستثناة",
+      minSubtotal: "الحد الأدنى للمجموع (فلس، 0 = بلا حد)",
+      maxDiscountCap: "الحد الأقصى للخصم (فلس، 0 = بلا حد)",
+      usageLimit: "حد الاستخدام (0 = غير محدود)",
+      perCustomerLimit: "الحد لكل عميل (0 = غير محدود)",
+      startsAt: "يبدأ في",
+      endsAt: "ينتهي في",
+      active: "نشط",
+      firstOrderOnly: "أول طلب فقط",
+      stackable: "يمكن دمجه مع العروض",
+      advancedOptions: "خيارات متقدمة",
+      createCoupon: "إنشاء الكوبون",
+      saveChanges: "حفظ التغييرات",
+      saving: "جارٍ الحفظ…",
+    },
+    couponsPage: {
+      heading: "كوبونات الخصم",
+      percentOff: "خصم {value}%",
+      amountOff: "خصم {amount}",
+      freeDelivery: "توصيل مجاني",
+      used: "استُخدم {count}",
+      active: "نشط",
+      inactive: "غير نشط",
+      edit: "تعديل",
+      deactivate: "إيقاف",
+      activate: "تفعيل",
+      newCoupon: "كوبون جديد",
+    },
+    promotionForm: {
+      name: "الاسم",
+      type: "النوع",
+      percentageValue: "النسبة المئوية (1-100)",
+      fixedValue: "مبلغ ثابت (فلس)",
+      categoryIds: "معرّفات الفئات (مفصولة بفاصلة، فارغ = كل المتجر)",
+      brandIds: "معرّفات العلامات التجارية (مفصولة بفاصلة)",
+      startsAt: "يبدأ في",
+      endsAt: "ينتهي في",
+      priority: "الأولوية (الأقل يفوز عند عدم الدمج)",
+      active: "نشط",
+      stackable: "يمكن دمجه مع عروض أخرى",
+      advancedOptions: "خيارات متقدمة",
+      createPromotion: "إنشاء العرض",
+      saveChanges: "حفظ التغييرات",
+      saving: "جارٍ الحفظ…",
+    },
+    promotionsPage: {
+      heading: "العروض",
+      percentOff: "خصم {value}%",
+      amountOff: "خصم {value} فلس",
+      freeDelivery: "توصيل مجاني",
+      priority: "الأولوية {priority}",
+      stackable: "قابل للدمج",
+      exclusive: "حصري",
+      active: "نشط",
+      inactive: "غير نشط",
+      edit: "تعديل",
+      deactivate: "إيقاف",
+      activate: "تفعيل",
+      newPromotion: "عرض جديد",
     },
   },
 };

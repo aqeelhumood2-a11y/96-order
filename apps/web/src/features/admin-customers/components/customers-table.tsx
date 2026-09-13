@@ -1,14 +1,18 @@
 import Link from "next/link";
 import type { Customer } from "@/core/customer/entities";
 import { formatMoney } from "@/core/money/money";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(date);
 }
 
-export function CustomersTable({ customers }: { customers: Customer[] }) {
+export function CustomersTable({ customers, locale = DEFAULT_LOCALE }: { customers: Customer[]; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.customersPage;
+
   if (customers.length === 0) {
-    return <p className="text-sm text-foreground/69">No customers match these filters.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noCustomers}</p>;
   }
 
   return (
@@ -16,11 +20,11 @@ export function CustomersTable({ customers }: { customers: Customer[] }) {
       <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="border-b border-brand-100 bg-brand-50/50 text-xs uppercase tracking-wide text-foreground/69">
           <tr>
-            <th className="px-4 py-3 font-medium">Name</th>
-            <th className="px-4 py-3 font-medium">Contact</th>
-            <th className="px-4 py-3 text-right font-medium">Orders</th>
-            <th className="px-4 py-3 text-right font-medium">Total spent</th>
-            <th className="px-4 py-3 font-medium">Last order</th>
+            <th className="px-4 py-3 font-medium">{dict.table.name}</th>
+            <th className="px-4 py-3 font-medium">{dict.table.contact}</th>
+            <th className="px-4 py-3 text-right font-medium">{dict.table.orders}</th>
+            <th className="px-4 py-3 text-right font-medium">{dict.table.totalSpent}</th>
+            <th className="px-4 py-3 font-medium">{dict.table.lastOrder}</th>
           </tr>
         </thead>
         <tbody>
