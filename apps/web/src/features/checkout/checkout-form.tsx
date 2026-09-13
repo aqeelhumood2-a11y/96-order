@@ -18,6 +18,17 @@ export interface CheckoutFormProps {
   paymentProviders: PaymentProviderSettings;
   /** Lets a parent (the order-summary sidebar) mirror which fulfillment method is selected — see `CheckoutSummaryPanel`. */
   onFulfillmentMethodChange?: (method: FulfillmentMethod) => void;
+  /**
+   * The signed-in customer's own account email, when there is one. Locked
+   * (not just pre-filled) rather than left editable — the order's
+   * `customerId` is derived from whatever email this form submits
+   * (`customerKeyFromEmail`, see `create-order.ts`), and "My Orders"
+   * (`list-my-orders.ts`) looks orders up by that same key from the
+   * session's email. A signed-in shopper who could still retype a
+   * different email here would place an order that silently never shows
+   * up in their own order history.
+   */
+  signedInEmail?: string;
 }
 
 export type FulfillmentMethod = "delivery" | "pickup";
@@ -32,7 +43,7 @@ function cashEnabledFor(fulfillmentMethod: FulfillmentMethod, paymentProviders: 
   return fulfillmentMethod === "delivery" ? paymentProviders.cashOnDeliveryEnabled : paymentProviders.cashOnPickupEnabled;
 }
 
-export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocationAddress, paymentProviders, onFulfillmentMethodChange }: CheckoutFormProps) {
+export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocationAddress, paymentProviders, onFulfillmentMethodChange, signedInEmail }: CheckoutFormProps) {
   const router = useRouter();
   const formId = useId();
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
@@ -129,7 +140,8 @@ export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocatio
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required autoComplete="email" />
+            <Input id="email" name="email" type="email" required autoComplete="email" defaultValue={signedInEmail} readOnly={!!signedInEmail} className={signedInEmail ? "bg-surface-sunken" : undefined} />
+            {signedInEmail && <p className="text-xs text-foreground/60">Signed in as {signedInEmail} — this order will appear in your order history.</p>}
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="companyName">Company (optional)</Label>

@@ -1,5 +1,6 @@
 import type { Session } from "@/core/auth/entities";
 import type { InventoryRecord, Product, ProductVariant } from "@/core/catalog/entities";
+import { hasPermission } from "@/core/auth/permissions";
 import { requirePermission } from "@/services/auth/session";
 import { defaultCatalogDeps, type CatalogDeps } from "./dependencies";
 
@@ -41,4 +42,27 @@ export async function listInventoryOverview(
   }
 
   return rows;
+}
+
+/**
+ * A single product's own inventory record(s), shaped identically to
+ * `listInventoryOverview`'s rows so the product edit page can reuse
+ * `<InventoryTable>` directly to show live stock right there instead of
+ * only in the separate `/admin/inventory` overview. Returns `[]` (not an
+ * error) when the viewer lacks `inventory:view` — the product edit page
+ * renders nothing extra rather than a forbidden page, since the rest of
+ * that page is already gated on `products:edit`, a different permission.
+ */
+export async function getProductInventory(actor: Session, product: Product, deps: CatalogDeps = defaultCatalogDeps): Promise<InventoryOverviewRow[]> {
+  if (!hasPermission(actor, "inventory:view")) return [];
+
+  if (product.hasVariants) {
+    const records = await deps.inventory.listByProduct(product.id);
+    const recordByVariantId = new Map(records.map((record) => [record.variantId, record]));
+    return product.variants.map((variant) => ({ product, variant, record: recordByVariantId.get(variant.id) ?? null }));
+  }
+
+  if (!product.trackInventory) return [];
+  const record = await deps.inventory.findByProductAndVariant(product.id, null);
+  return [{ product, variant: null, record }];
 }

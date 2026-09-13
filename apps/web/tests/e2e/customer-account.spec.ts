@@ -134,4 +134,41 @@ test.describe("customer account", () => {
 
     await expect(page.getByText("Layla Hassan · +973 3600 7777").or(page.getByText("Layla Hassan"))).toBeVisible();
   });
+
+  test("a signed-in customer's checkout email is locked to their account, and the order shows up in their order history", async ({ page }) => {
+    const email = `customer-e2e-${randomUUID().slice(0, 8)}@example.com`;
+
+    await page.goto("/account/register");
+    await page.getByLabel("Full name").fill("Noor Salman");
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill("supersecret123");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page).toHaveURL(/\/account$/);
+
+    await page.goto(`/products/${fixtures.published.slug}`);
+    await page.getByRole("button", { name: "Add to cart" }).click();
+    await expect(page.getByText("Added to cart.")).toBeVisible();
+
+    await page.goto("/checkout");
+    // Signed in, so the email field is pre-filled with the account's own
+    // email and locked — it must never be possible to submit an order
+    // under a different, mistyped email that would silently never show up
+    // in this customer's own order history (see `checkout-form.tsx`'s
+    // `signedInEmail` prop doc comment).
+    await expect(page.getByLabel("Email")).toHaveValue(email);
+    await expect(page.getByLabel("Email")).toHaveAttribute("readonly", "");
+
+    await page.getByLabel("Full name").fill("Noor Salman");
+    await page.getByLabel("Mobile number").fill("36008888");
+    await page.getByLabel("Pickup", { exact: true }).check();
+    await page.getByLabel("Cash on pickup").check();
+    await page.getByRole("button", { name: "Place order" }).click();
+
+    await expect(page).toHaveURL(/\/checkout\/success\?order=/);
+    const orderNumberMatch = /order=([^&]+)/.exec(page.url());
+    const orderNumber = decodeURIComponent(orderNumberMatch?.[1] ?? "");
+
+    await page.goto("/account/orders");
+    await expect(page.getByText(orderNumber)).toBeVisible();
+  });
 });

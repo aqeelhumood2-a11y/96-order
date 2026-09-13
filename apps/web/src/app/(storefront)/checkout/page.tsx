@@ -49,6 +49,7 @@ export default async function CheckoutPage() {
         pickupLocationName={PICKUP_LOCATION.locationName}
         pickupLocationAddress={PICKUP_LOCATION.locationAddress}
         paymentProviders={paymentProviders}
+        signedInEmail={session?.email}
       />
     </Container>
   );
