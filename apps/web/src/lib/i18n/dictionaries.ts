@@ -308,6 +308,48 @@ export interface Dictionary {
       creating: string;
       createRole: string;
     };
+    siteSettingsPage: { heading: string };
+    siteSettingsForm: {
+      storeIdentity: string;
+      storeName: string;
+      contactEmail: string;
+      contactPhone: string;
+      paymentProviders: string;
+      paymentProvidersHint: string;
+      tapEnabled: string;
+      cashOnDelivery: string;
+      cashOnPickup: string;
+      maintenanceMode: string;
+      maintenanceEnabled: string;
+      maintenanceMessage: string;
+      advancedOptions: string;
+      copyrightText: string;
+      logoUrl: string;
+      faviconUrl: string;
+      hours: string;
+      policiesAndShipping: string;
+      shippingPolicyText: string;
+      freeShippingThresholdText: string;
+      navigationAndFooter: string;
+      headerLinks: string;
+      socialLinks: string;
+      paymentLogos: string;
+      footerColumnsJson: string;
+      showCategoryMenu: string;
+      showBrandMenu: string;
+      homepageSections: string;
+      titleOverride: string;
+      subtitleOverride: string;
+      sectionHero: string;
+      sectionFeatured: string;
+      sectionNewArrivals: string;
+      sectionCoffee: string;
+      sectionEquipment: string;
+      sectionBrands: string;
+      footerColumnsInvalidJson: string;
+      saving: string;
+      saveSettings: string;
+    };
   };
 }
 
@@ -649,6 +691,48 @@ export const en: Dictionary = {
       creating: "Creating…",
       createRole: "Create role",
     },
+    siteSettingsPage: { heading: "Site settings" },
+    siteSettingsForm: {
+      storeIdentity: "Store identity",
+      storeName: "Store name",
+      contactEmail: "Contact email",
+      contactPhone: "Contact phone",
+      paymentProviders: "Payment providers",
+      paymentProvidersHint: "Turn a provider off to hide it at checkout immediately — existing orders are unaffected.",
+      tapEnabled: "Card payments (Tap)",
+      cashOnDelivery: "Cash on delivery",
+      cashOnPickup: "Cash on pickup",
+      maintenanceMode: "Maintenance mode",
+      maintenanceEnabled: "Enabled (shows a banner on every storefront page)",
+      maintenanceMessage: "Maintenance message",
+      advancedOptions: "Advanced options",
+      copyrightText: "Copyright text",
+      logoUrl: "Logo URL",
+      faviconUrl: "Favicon URL",
+      hours: "Hours",
+      policiesAndShipping: "Policies & shipping",
+      shippingPolicyText: "Shipping policy text",
+      freeShippingThresholdText: "Free-shipping threshold text (display copy only)",
+      navigationAndFooter: "Navigation & footer",
+      headerLinks: "Header links (one per line, `Label|/href`)",
+      socialLinks: "Social links (one per line, `Platform|https://…`)",
+      paymentLogos: "Payment logos (one label per line)",
+      footerColumnsJson: "Footer columns (JSON: [{title, links:[{label,href}]}])",
+      showCategoryMenu: "Show category menu",
+      showBrandMenu: "Show brand menu",
+      homepageSections: "Homepage sections",
+      titleOverride: "Title override",
+      subtitleOverride: "Subtitle override",
+      sectionHero: "Hero banner",
+      sectionFeatured: "Featured products",
+      sectionNewArrivals: "New arrivals",
+      sectionCoffee: "Coffee",
+      sectionEquipment: "Equipment",
+      sectionBrands: "Best-selling brands",
+      footerColumnsInvalidJson: "Footer columns must be valid JSON.",
+      saving: "Saving…",
+      saveSettings: "Save settings",
+    },
   },
 };
 
@@ -989,6 +1073,48 @@ export const ar: Dictionary = {
       namespace: "القسم",
       creating: "جارٍ الإنشاء…",
       createRole: "إنشاء الدور",
+    },
+    siteSettingsPage: { heading: "إعدادات الموقع" },
+    siteSettingsForm: {
+      storeIdentity: "هوية المتجر",
+      storeName: "اسم المتجر",
+      contactEmail: "إيميل التواصل",
+      contactPhone: "رقم التواصل",
+      paymentProviders: "طرق الدفع",
+      paymentProvidersHint: "إيقاف أي طريقة يخفيها فوراً من صفحة الدفع — الطلبات الحالية ما تتأثر.",
+      tapEnabled: "الدفع بالبطاقة (Tap)",
+      cashOnDelivery: "نقدي عند التوصيل",
+      cashOnPickup: "نقدي عند الاستلام",
+      maintenanceMode: "وضع الصيانة",
+      maintenanceEnabled: "مفعّل (يظهر شريط تنبيه في كل صفحات الموقع)",
+      maintenanceMessage: "رسالة الصيانة",
+      advancedOptions: "خيارات متقدمة",
+      copyrightText: "نص حقوق النشر",
+      logoUrl: "رابط الشعار",
+      faviconUrl: "رابط أيقونة المتصفح",
+      hours: "ساعات العمل",
+      policiesAndShipping: "السياسات والتوصيل",
+      shippingPolicyText: "نص سياسة التوصيل",
+      freeShippingThresholdText: "نص حد التوصيل المجاني (نص عرض فقط)",
+      navigationAndFooter: "التنقل والتذييل",
+      headerLinks: "روابط الهيدر (سطر لكل رابط، `الاسم|/الرابط`)",
+      socialLinks: "روابط التواصل الاجتماعي (سطر لكل رابط، `المنصة|https://…`)",
+      paymentLogos: "شعارات الدفع (اسم لكل سطر)",
+      footerColumnsJson: "أعمدة التذييل (JSON: [{title, links:[{label,href}]}])",
+      showCategoryMenu: "إظهار قائمة الفئات",
+      showBrandMenu: "إظهار قائمة العلامات التجارية",
+      homepageSections: "أقسام الصفحة الرئيسية",
+      titleOverride: "تخصيص العنوان",
+      subtitleOverride: "تخصيص العنوان الفرعي",
+      sectionHero: "بانر البداية",
+      sectionFeatured: "منتجات مميزة",
+      sectionNewArrivals: "وصل حديثاً",
+      sectionCoffee: "القهوة",
+      sectionEquipment: "المعدات",
+      sectionBrands: "أفضل العلامات التجارية مبيعاً",
+      footerColumnsInvalidJson: "أعمدة التذييل يجب أن تكون بصيغة JSON صحيحة.",
+      saving: "جارٍ الحفظ…",
+      saveSettings: "حفظ الإعدادات",
     },
   },
 };

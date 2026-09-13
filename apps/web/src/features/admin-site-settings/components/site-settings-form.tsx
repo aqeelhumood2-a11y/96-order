@@ -5,16 +5,9 @@ import { useRouter } from "next/navigation";
 import type { HomepageSectionConfig, PaymentProviderSettings, SiteSettings } from "@/core/site-settings/entities";
 import type { SiteSettingsInput } from "@/core/site-settings/schemas";
 import { updateSiteSettingsAction } from "@/features/admin-site-settings/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button, Input, Label, Textarea } from "@/ui/primitives";
-
-const SECTION_LABELS: Record<HomepageSectionConfig["key"], string> = {
-  hero: "Hero banner",
-  featured: "Featured products",
-  new_arrivals: "New arrivals",
-  coffee: "Coffee",
-  equipment: "Equipment",
-  brands: "Best-selling brands",
-};
 
 /** Parses a `label|href` per-line textarea into `NavLinkItem[]`/`FooterLink[]` — the pragmatic "structured, not a visual builder" editor described in `core/site-settings/entities.ts`'s doc comment. */
 function parseLinkLines(value: string): { label: string; href: string }[] {
@@ -40,8 +33,17 @@ function parseListLines(value: string): string[] {
     .filter(Boolean);
 }
 
-export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
+export function SiteSettingsForm({ settings, locale = DEFAULT_LOCALE }: { settings: SiteSettings; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.siteSettingsForm;
+  const SECTION_LABELS: Record<HomepageSectionConfig["key"], string> = {
+    hero: dict.sectionHero,
+    featured: dict.sectionFeatured,
+    new_arrivals: dict.sectionNewArrivals,
+    coffee: dict.sectionCoffee,
+    equipment: dict.sectionEquipment,
+    brands: dict.sectionBrands,
+  };
   const [storeName, setStoreName] = useState(settings.storeName);
   const [logoUrl, setLogoUrl] = useState(settings.logoUrl ?? "");
   const [faviconUrl, setFaviconUrl] = useState(settings.faviconUrl ?? "");
@@ -76,7 +78,7 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
     try {
       footerColumns = JSON.parse(footerColumnsJson || "[]");
     } catch {
-      setError("Footer columns must be valid JSON.");
+      setError(dict.footerColumnsInvalidJson);
       return;
     }
 
@@ -117,116 +119,26 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
   return (
     <form onSubmit={handleSubmit} noValidate className="flex max-w-3xl flex-col gap-8">
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-lg font-semibold text-brand-950">Store identity</legend>
+        <legend className="text-lg font-semibold text-brand-950">{dict.storeIdentity}</legend>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label>Store name</Label>
+            <Label>{dict.storeName}</Label>
             <Input value={storeName} onChange={(event) => setStoreName(event.target.value)} disabled={isSubmitting} required />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label>Copyright text</Label>
-            <Input value={copyrightText} onChange={(event) => setCopyrightText(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Logo URL</Label>
-            <Input value={logoUrl} onChange={(event) => setLogoUrl(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Favicon URL</Label>
-            <Input value={faviconUrl} onChange={(event) => setFaviconUrl(event.target.value)} disabled={isSubmitting} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Contact email</Label>
+            <Label>{dict.contactEmail}</Label>
             <Input value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} disabled={isSubmitting} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label>Contact phone</Label>
+            <Label>{dict.contactPhone}</Label>
             <Input value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} disabled={isSubmitting} />
           </div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Hours</Label>
-          <Textarea value={hoursText} onChange={(event) => setHoursText(event.target.value)} disabled={isSubmitting} rows={2} />
-        </div>
       </fieldset>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-lg font-semibold text-brand-950">Policies &amp; shipping</legend>
-        <div className="flex flex-col gap-1.5">
-          <Label>Shipping policy text</Label>
-          <Textarea value={shippingPolicyText} onChange={(event) => setShippingPolicyText(event.target.value)} disabled={isSubmitting} rows={3} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Free-shipping threshold text (display copy only — see the field&apos;s note in code)</Label>
-          <Input value={freeShippingThresholdText} onChange={(event) => setFreeShippingThresholdText(event.target.value)} disabled={isSubmitting} />
-        </div>
-      </fieldset>
-
-      <fieldset className="flex flex-col gap-3">
-        <legend className="text-lg font-semibold text-brand-950">Navigation &amp; footer</legend>
-        <div className="flex flex-col gap-1.5">
-          <Label>Header links (one per line, `Label|/href`)</Label>
-          <Textarea value={hamburgerItemsText} onChange={(event) => setHamburgerItemsText(event.target.value)} disabled={isSubmitting} rows={3} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Social links (one per line, `Platform|https://…`)</Label>
-          <Textarea value={socialLinksText} onChange={(event) => setSocialLinksText(event.target.value)} disabled={isSubmitting} rows={3} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Payment logos (one label per line)</Label>
-          <Textarea value={paymentLogosText} onChange={(event) => setPaymentLogosText(event.target.value)} disabled={isSubmitting} rows={2} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Footer columns (JSON: {"[{title, links:[{label,href}]}]"})</Label>
-          <Textarea value={footerColumnsJson} onChange={(event) => setFooterColumnsJson(event.target.value)} disabled={isSubmitting} rows={6} className="font-mono text-xs" />
-        </div>
-        <div className="flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-sm text-foreground/80">
-            <input type="checkbox" checked={showCategoryMenu} onChange={(event) => setShowCategoryMenu(event.target.checked)} disabled={isSubmitting} />
-            Show category menu
-          </label>
-          <label className="flex items-center gap-2 text-sm text-foreground/80">
-            <input type="checkbox" checked={showBrandMenu} onChange={(event) => setShowBrandMenu(event.target.checked)} disabled={isSubmitting} />
-            Show brand menu
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset className="flex flex-col gap-3">
-        <legend className="text-lg font-semibold text-brand-950">Homepage sections</legend>
-        {sections.map((section) => (
-          <div key={section.key} className="grid grid-cols-[auto_1fr_auto_1fr] items-center gap-3 rounded-md border border-brand-100 p-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-brand-950">
-              <input type="checkbox" checked={section.visible} onChange={(event) => updateSection(section.key, { visible: event.target.checked })} disabled={isSubmitting} />
-              {SECTION_LABELS[section.key]}
-            </label>
-            <Input
-              value={section.title ?? ""}
-              placeholder="Title override"
-              onChange={(event) => updateSection(section.key, { title: event.target.value || null })}
-              disabled={isSubmitting}
-            />
-            <Input
-              type="number"
-              value={section.sortOrder}
-              onChange={(event) => updateSection(section.key, { sortOrder: Number(event.target.value) })}
-              disabled={isSubmitting}
-              min={0}
-              className="w-20"
-            />
-            <Input
-              value={section.subtitle ?? ""}
-              placeholder="Subtitle override"
-              onChange={(event) => updateSection(section.key, { subtitle: event.target.value || null })}
-              disabled={isSubmitting}
-            />
-          </div>
-        ))}
-      </fieldset>
-
-      <fieldset className="flex flex-col gap-3">
-        <legend className="text-lg font-semibold text-brand-950">Payment providers</legend>
-        <p className="text-xs text-foreground/65">Turn a provider off to hide it at checkout immediately — existing orders are unaffected.</p>
+        <legend className="text-lg font-semibold text-brand-950">{dict.paymentProviders}</legend>
+        <p className="text-xs text-foreground/65">{dict.paymentProvidersHint}</p>
         <div className="flex flex-wrap gap-4">
           <label className="flex items-center gap-2 text-sm text-foreground/80">
             <input
@@ -235,7 +147,7 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
               onChange={(event) => setPaymentProviders((current) => ({ ...current, tapEnabled: event.target.checked }))}
               disabled={isSubmitting}
             />
-            Card payments (Tap)
+            {dict.tapEnabled}
           </label>
           <label className="flex items-center gap-2 text-sm text-foreground/80">
             <input
@@ -244,7 +156,7 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
               onChange={(event) => setPaymentProviders((current) => ({ ...current, cashOnDeliveryEnabled: event.target.checked }))}
               disabled={isSubmitting}
             />
-            Cash on delivery
+            {dict.cashOnDelivery}
           </label>
           <label className="flex items-center gap-2 text-sm text-foreground/80">
             <input
@@ -253,24 +165,126 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
               onChange={(event) => setPaymentProviders((current) => ({ ...current, cashOnPickupEnabled: event.target.checked }))}
               disabled={isSubmitting}
             />
-            Cash on pickup
+            {dict.cashOnPickup}
           </label>
         </div>
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-lg font-semibold text-brand-950">Maintenance mode</legend>
+        <legend className="text-lg font-semibold text-brand-950">{dict.maintenanceMode}</legend>
         <label className="flex items-center gap-2 text-sm text-foreground/80">
           <input type="checkbox" checked={maintenanceMode} onChange={(event) => setMaintenanceMode(event.target.checked)} disabled={isSubmitting} />
-          Enabled (shows a banner on every storefront page)
+          {dict.maintenanceEnabled}
         </label>
-        <Input value={maintenanceMessage} onChange={(event) => setMaintenanceMessage(event.target.value)} disabled={isSubmitting} placeholder="Maintenance message" />
+        <Input value={maintenanceMessage} onChange={(event) => setMaintenanceMessage(event.target.value)} disabled={isSubmitting} placeholder={dict.maintenanceMessage} />
       </fieldset>
+
+      <details className="group rounded-lg border border-surface-border bg-background p-6">
+        <summary className="cursor-pointer text-sm font-medium text-brand-800 select-none">{dict.advancedOptions}</summary>
+
+        <div className="mt-6 flex flex-col gap-8">
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-sm font-semibold text-brand-950">{dict.storeIdentity}</legend>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>{dict.copyrightText}</Label>
+                <Input value={copyrightText} onChange={(event) => setCopyrightText(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>{dict.logoUrl}</Label>
+                <Input value={logoUrl} onChange={(event) => setLogoUrl(event.target.value)} disabled={isSubmitting} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>{dict.faviconUrl}</Label>
+                <Input value={faviconUrl} onChange={(event) => setFaviconUrl(event.target.value)} disabled={isSubmitting} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.hours}</Label>
+              <Textarea value={hoursText} onChange={(event) => setHoursText(event.target.value)} disabled={isSubmitting} rows={2} />
+            </div>
+          </fieldset>
+
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-sm font-semibold text-brand-950">{dict.policiesAndShipping}</legend>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.shippingPolicyText}</Label>
+              <Textarea value={shippingPolicyText} onChange={(event) => setShippingPolicyText(event.target.value)} disabled={isSubmitting} rows={3} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.freeShippingThresholdText}</Label>
+              <Input value={freeShippingThresholdText} onChange={(event) => setFreeShippingThresholdText(event.target.value)} disabled={isSubmitting} />
+            </div>
+          </fieldset>
+
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-sm font-semibold text-brand-950">{dict.navigationAndFooter}</legend>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.headerLinks}</Label>
+              <Textarea value={hamburgerItemsText} onChange={(event) => setHamburgerItemsText(event.target.value)} disabled={isSubmitting} rows={3} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.socialLinks}</Label>
+              <Textarea value={socialLinksText} onChange={(event) => setSocialLinksText(event.target.value)} disabled={isSubmitting} rows={3} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.paymentLogos}</Label>
+              <Textarea value={paymentLogosText} onChange={(event) => setPaymentLogosText(event.target.value)} disabled={isSubmitting} rows={2} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>{dict.footerColumnsJson}</Label>
+              <Textarea value={footerColumnsJson} onChange={(event) => setFooterColumnsJson(event.target.value)} disabled={isSubmitting} rows={6} className="font-mono text-xs" />
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm text-foreground/80">
+                <input type="checkbox" checked={showCategoryMenu} onChange={(event) => setShowCategoryMenu(event.target.checked)} disabled={isSubmitting} />
+                {dict.showCategoryMenu}
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground/80">
+                <input type="checkbox" checked={showBrandMenu} onChange={(event) => setShowBrandMenu(event.target.checked)} disabled={isSubmitting} />
+                {dict.showBrandMenu}
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-sm font-semibold text-brand-950">{dict.homepageSections}</legend>
+            {sections.map((section) => (
+              <div key={section.key} className="grid grid-cols-[auto_1fr_auto_1fr] items-center gap-3 rounded-md border border-brand-100 p-3">
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-950">
+                  <input type="checkbox" checked={section.visible} onChange={(event) => updateSection(section.key, { visible: event.target.checked })} disabled={isSubmitting} />
+                  {SECTION_LABELS[section.key]}
+                </label>
+                <Input
+                  value={section.title ?? ""}
+                  placeholder={dict.titleOverride}
+                  onChange={(event) => updateSection(section.key, { title: event.target.value || null })}
+                  disabled={isSubmitting}
+                />
+                <Input
+                  type="number"
+                  value={section.sortOrder}
+                  onChange={(event) => updateSection(section.key, { sortOrder: Number(event.target.value) })}
+                  disabled={isSubmitting}
+                  min={0}
+                  className="w-20"
+                />
+                <Input
+                  value={section.subtitle ?? ""}
+                  placeholder={dict.subtitleOverride}
+                  onChange={(event) => updateSection(section.key, { subtitle: event.target.value || null })}
+                  disabled={isSubmitting}
+                />
+              </div>
+            ))}
+          </fieldset>
+        </div>
+      </details>
 
       {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
 
       <Button type="submit" disabled={isSubmitting} className="w-fit">
-        {isSubmitting ? "Saving…" : "Save settings"}
+        {isSubmitting ? dict.saving : dict.saveSettings}
       </Button>
     </form>
   );
