@@ -15,6 +15,26 @@ export function isExternalImageUrl(storagePath: string): boolean {
 }
 
 /**
+ * What an admin actually has to paste is whatever their phone's share
+ * sheet hands them — for Google Drive that's a "view this file" page
+ * (`.../file/d/<id>/view?usp=drivesdk` or `.../open?id=<id>`), not a
+ * direct image byte stream, so used as-is it renders as a broken image.
+ * Rewriting it here to Drive's direct-view form means the admin never has
+ * to manually extract the file id or reconstruct a URL by hand — whatever
+ * they paste from Drive's own share button just works. Any URL that
+ * doesn't match a known Drive share-link shape (including one already in
+ * direct-view form) passes through unchanged.
+ */
+export function normalizeImageUrl(url: string): string {
+  const patterns = [/drive\.google\.com\/file\/d\/([^/?#]+)/, /drive\.google\.com\/open\?[^#]*\bid=([^&#]+)/];
+  for (const pattern of patterns) {
+    const fileId = url.match(pattern)?.[1];
+    if (fileId) return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  }
+  return url;
+}
+
+/**
  * `available` is deliberately never persisted alongside `onHand`/`reserved`
  * — storing a third field that's purely a function of the other two would
  * let it drift out of sync (e.g. an adjustment that updates `onHand` but

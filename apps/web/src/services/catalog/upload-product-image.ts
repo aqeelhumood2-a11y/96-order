@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Session } from "@/core/auth/entities";
 import type { ProductImage } from "@/core/catalog/entities";
+import { normalizeImageUrl } from "@/core/catalog/rules";
 import { addProductImageByUrlSchema, PRODUCT_IMAGE_MAX_SIZE_BYTES, uploadProductImageSchema } from "@/core/catalog/schemas";
 import { NotFoundError, ValidationError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
@@ -109,6 +110,10 @@ export interface AddProductImageByUrlParams {
  * needs no changes to support it. `contentType`/`sizeBytes` are never
  * verified against the remote host (there is no upload here to derive them
  * from truthfully), so they're recorded as unknown rather than guessed.
+ * `parsed.imageUrl` is run through `normalizeImageUrl` first — see its doc
+ * comment for why a raw Google Drive share link (what an admin actually
+ * has on their phone, not the direct-view form the URL needs to be in) is
+ * rewritten automatically rather than requiring a manual conversion step.
  */
 export async function addProductImageByUrl(
   actor: Session,
@@ -117,6 +122,7 @@ export async function addProductImageByUrl(
 ): Promise<ProductImage> {
   requirePermission(actor, "products:edit");
   const parsed = addProductImageByUrlSchema.parse(params);
+  const imageUrl = normalizeImageUrl(parsed.imageUrl);
 
   const product = await deps.products.findById(parsed.productId);
   if (!product) {
@@ -127,7 +133,7 @@ export async function addProductImageByUrl(
   const now = new Date();
   const newImage: ProductImage = {
     id: imageId,
-    storagePath: parsed.imageUrl,
+    storagePath: imageUrl,
     contentType: "unknown",
     sizeBytes: 0,
     altText: parsed.altText,

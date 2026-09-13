@@ -109,6 +109,20 @@ describe("addProductImageByUrl", () => {
     expect(deps.auditLogs.record).toHaveBeenCalledWith(expect.objectContaining({ type: "product_image_uploaded" }));
   });
 
+  it("normalizes a raw Google Drive share link to its direct-view form before saving", async () => {
+    const deps = createMockCatalogDeps();
+    deps.products.findById = vi.fn().mockResolvedValue(PRODUCT);
+    const actor = makeSession({ effectivePermissions: new Set(["products:edit"]) });
+
+    const image = await addProductImageByUrl(
+      actor,
+      { productId: "prod-1", imageUrl: "https://drive.google.com/file/d/1AbC-XyZ_9rq1g2/view?usp=drivesdk", altText: "", isPrimary: false },
+      deps,
+    );
+
+    expect(image.storagePath).toBe("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2");
+  });
+
   it("the first image added becomes primary automatically", async () => {
     const deps = createMockCatalogDeps();
     deps.products.findById = vi.fn().mockResolvedValue(PRODUCT);

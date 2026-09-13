@@ -6,6 +6,7 @@ import {
   isCompareAtPriceValid,
   isExternalImageUrl,
   normalizeCatalogCode,
+  normalizeImageUrl,
   variantSelectionsKey,
   wouldCreateCircularCategoryReference,
 } from "@/core/catalog/rules";
@@ -102,6 +103,34 @@ describe("isExternalImageUrl", () => {
 
   it("treats a server-generated Storage object path as not external", () => {
     expect(isExternalImageUrl("products/prod-1/img-1.webp")).toBe(false);
+  });
+});
+
+describe("normalizeImageUrl", () => {
+  it("rewrites a Google Drive 'view this file' share link (mobile app share sheet form) to direct-view", () => {
+    expect(normalizeImageUrl("https://drive.google.com/file/d/1AbC-XyZ_9rq1g2/view?usp=drivesdk")).toBe(
+      "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2",
+    );
+  });
+
+  it("rewrites a Google Drive 'view this file' share link (desktop share dialog form) to direct-view", () => {
+    expect(normalizeImageUrl("https://drive.google.com/file/d/1AbC-XyZ_9rq1g2/view?usp=sharing")).toBe(
+      "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2",
+    );
+  });
+
+  it("rewrites Drive's older 'open?id=' link shape too", () => {
+    expect(normalizeImageUrl("https://drive.google.com/open?id=1AbC-XyZ_9rq1g2")).toBe("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2");
+  });
+
+  it("leaves an already direct-view Drive URL unchanged", () => {
+    const url = "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2";
+    expect(normalizeImageUrl(url)).toBe(url);
+  });
+
+  it("leaves a non-Drive URL unchanged", () => {
+    const url = "https://example.com/photos/coffee.jpg";
+    expect(normalizeImageUrl(url)).toBe(url);
   });
 });
 
