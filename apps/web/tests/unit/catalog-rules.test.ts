@@ -4,6 +4,7 @@ import {
   computeAvailableQuantity,
   hasDuplicateVariantCombination,
   isCompareAtPriceValid,
+  isDriveFileId,
   isExternalImageUrl,
   normalizeCatalogCode,
   normalizeImageUrl,
@@ -106,26 +107,50 @@ describe("isExternalImageUrl", () => {
   });
 });
 
+describe("isDriveFileId", () => {
+  it("recognizes a bare alphanumeric/-/_ token as a file id", () => {
+    expect(isDriveFileId("1AbC-XyZ_9rq1g2")).toBe(true);
+  });
+
+  it("rejects a full URL", () => {
+    expect(isDriveFileId("https://drive.google.com/uc?id=1AbC-XyZ_9rq1g2")).toBe(false);
+  });
+
+  it("rejects a token shorter than 10 characters", () => {
+    expect(isDriveFileId("short")).toBe(false);
+  });
+});
+
 describe("normalizeImageUrl", () => {
-  it("rewrites a Google Drive 'view this file' share link (mobile app share sheet form) to direct-view", () => {
+  it("rewrites a Google Drive 'view this file' share link (mobile app share sheet form) to the thumbnail endpoint", () => {
     expect(normalizeImageUrl("https://drive.google.com/file/d/1AbC-XyZ_9rq1g2/view?usp=drivesdk")).toBe(
-      "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2",
+      "https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000",
     );
   });
 
-  it("rewrites a Google Drive 'view this file' share link (desktop share dialog form) to direct-view", () => {
+  it("rewrites a Google Drive 'view this file' share link (desktop share dialog form) to the thumbnail endpoint", () => {
     expect(normalizeImageUrl("https://drive.google.com/file/d/1AbC-XyZ_9rq1g2/view?usp=sharing")).toBe(
-      "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2",
+      "https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000",
     );
   });
 
   it("rewrites Drive's older 'open?id=' link shape too", () => {
-    expect(normalizeImageUrl("https://drive.google.com/open?id=1AbC-XyZ_9rq1g2")).toBe("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2");
+    expect(normalizeImageUrl("https://drive.google.com/open?id=1AbC-XyZ_9rq1g2")).toBe("https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000");
   });
 
-  it("leaves an already direct-view Drive URL unchanged", () => {
-    const url = "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2";
+  it("upgrades an older direct-view ('uc?export=view') link saved before the thumbnail endpoint was used", () => {
+    expect(normalizeImageUrl("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2")).toBe(
+      "https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000",
+    );
+  });
+
+  it("re-normalizes an already-thumbnail-form Drive URL to the current size param", () => {
+    const url = "https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000";
     expect(normalizeImageUrl(url)).toBe(url);
+  });
+
+  it("converts a bare Google Drive file id (pasted directly, not as part of a URL) to the thumbnail endpoint", () => {
+    expect(normalizeImageUrl("1AbC-XyZ_9rq1g2")).toBe("https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000");
   });
 
   it("leaves a non-Drive URL unchanged", () => {

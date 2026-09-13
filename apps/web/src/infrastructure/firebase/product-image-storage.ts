@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { isExternalImageUrl } from "@/core/catalog/rules";
+import { isExternalImageUrl, normalizeImageUrl } from "@/core/catalog/rules";
 import type { ProductImageStoragePort, UploadedProductImage } from "@/core/interfaces/product-image-storage-port";
 import { logger } from "@/lib/logger";
 import { getAdminApp, getAdminStorage } from "./admin";
@@ -101,9 +101,13 @@ export class FirebaseProductImageStorage implements ProductImageStoragePort {
   }
 
   async getDownloadUrl(storagePath: string): Promise<string> {
-    // Already a full URL (an externally-hosted image) — it's already the
-    // display URL, nothing to resolve against this bucket.
-    if (isExternalImageUrl(storagePath)) return storagePath;
+    // Already a full URL (an externally-hosted image) — nothing to resolve
+    // against this bucket. Re-running it through `normalizeImageUrl` here
+    // (not just at add-time) means a record saved before that function
+    // existed, or saved with an older/less reliable Drive URL shape, gets
+    // transparently upgraded to the current format on every read — no
+    // migration, no re-adding the image by hand.
+    if (isExternalImageUrl(storagePath)) return normalizeImageUrl(storagePath);
 
     const file = this.bucket().file(storagePath);
     const [metadata] = await file.getMetadata();

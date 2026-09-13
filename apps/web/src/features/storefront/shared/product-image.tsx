@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { isImageCached, markImageLoaded } from "./image-load-cache";
 
 export interface ProductImageProps {
   src: string | null | undefined;
@@ -39,6 +40,16 @@ function isOptimizableHost(url: string): boolean {
  */
 export function ProductImage({ src, alt, sizes = "(min-width: 1024px) 25vw, 50vw", className, priority }: ProductImageProps) {
   const [errored, setErrored] = useState(false);
+  // Computed once at mount from `image-load-cache.ts` (filled in either by
+  // an earlier view or by `ProductGallery`'s upfront preload) — an
+  // already-cached image skips the spinner entirely instead of flashing it
+  // for an image that's actually already sitting in the browser's cache.
+  // Callers that swap `src` on an already-mounted instance (e.g.
+  // `ProductGallery`'s main image, switching between thumbnails) must key
+  // this component by `src` so a genuinely different image gets a fresh
+  // mount — and therefore a fresh cache check — instead of carrying over
+  // the previous image's loaded state.
+  const [loaded, setLoaded] = useState(() => !!src && isImageCached(src));
 
   if (!src || errored) {
     return (
@@ -51,21 +62,51 @@ export function ProductImage({ src, alt, sizes = "(min-width: 1024px) 25vw, 50vw
     );
   }
 
+  function handleLoad() {
+    markImageLoaded(src as string);
+    setLoaded(true);
+  }
+
+  const spinner = !loaded && (
+    <div className="absolute inset-0 flex items-center justify-center bg-brand-50" aria-hidden="true">
+      <svg className="h-6 w-6 animate-spin text-brand-300" viewBox="0 0 24 24" fill="none">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z" />
+      </svg>
+    </div>
+  );
+
   if (!isOptimizableHost(src)) {
-    // eslint-disable-next-line @next/next/no-img-element -- externally-hosted image, outside next/image's remotePatterns allowlist by design
-    return <img src={src} alt={alt} className={cn("h-full w-full object-cover", className)} loading={priority ? undefined : "lazy"} onError={() => setErrored(true)} />;
+    return (
+      <>
+        {spinner}
+        {/* eslint-disable-next-line @next/next/no-img-element -- externally-hosted image, outside next/image's remotePatterns allowlist by design */}
+        <img
+          src={src}
+          alt={alt}
+          className={cn("h-full w-full object-cover", loaded ? "opacity-100" : "opacity-0", className)}
+          loading={priority ? undefined : "lazy"}
+          onLoad={handleLoad}
+          onError={() => setErrored(true)}
+        />
+      </>
+    );
   }
 
   return (
-    <Image
-      src={src}
-      alt={alt}
-      fill
-      sizes={sizes}
-      priority={priority}
-      loading={priority ? undefined : "lazy"}
-      className={cn("object-cover", className)}
-      onError={() => setErrored(true)}
-    />
+    <>
+      {spinner}
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes={sizes}
+        priority={priority}
+        loading={priority ? undefined : "lazy"}
+        className={cn("object-cover", loaded ? "opacity-100" : "opacity-0", className)}
+        onLoad={handleLoad}
+        onError={() => setErrored(true)}
+      />
+    </>
   );
 }

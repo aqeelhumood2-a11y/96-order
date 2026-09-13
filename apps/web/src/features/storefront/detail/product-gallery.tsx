@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { PublicImage } from "@/core/storefront/dto";
 import { ProductImage } from "@/features/storefront/shared/product-image";
+import { preloadImage } from "@/features/storefront/shared/image-load-cache";
 import { cn } from "@/lib/cn";
 
 export function ProductGallery({ images, productName }: { images: PublicImage[]; productName: string }) {
@@ -10,10 +11,28 @@ export function ProductGallery({ images, productName }: { images: PublicImage[];
   const [activeIndex, setActiveIndex] = useState(0);
   const active = sorted[activeIndex] ?? null;
 
+  // Warms the cache for every image in this gallery as soon as it mounts —
+  // not just the active one — so switching to any thumbnail later shows
+  // instantly instead of waiting on the network, per `image-load-cache.ts`.
+  useEffect(() => {
+    for (const image of sorted) {
+      void preloadImage(image.url);
+    }
+    // Only the set of image URLs actually matters here, not `sorted`'s
+    // identity (re-created every render) or `activeIndex`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sorted.map((image) => image.url).join(",")]);
+
   return (
     <div className="flex flex-col gap-3">
       <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-brand-50">
-        <ProductImage src={active?.url} alt={active?.altText ?? productName} priority sizes="(min-width: 1024px) 40vw, 100vw" />
+        <ProductImage
+          key={active?.url ?? "empty"}
+          src={active?.url}
+          alt={active?.altText ?? productName}
+          priority
+          sizes="(min-width: 1024px) 40vw, 100vw"
+        />
       </div>
       {sorted.length > 1 && (
         <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Product images">

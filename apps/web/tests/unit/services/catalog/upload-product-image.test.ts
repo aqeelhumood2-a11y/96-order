@@ -99,17 +99,17 @@ describe("addProductImageByUrl", () => {
 
     const image = await addProductImageByUrl(
       actor,
-      { productId: "prod-1", imageUrl: "https://drive.google.com/uc?export=view&id=abc123", altText: "A bag of coffee", isPrimary: false },
+      { productId: "prod-1", imageUrl: "https://example.com/photos/coffee.jpg", altText: "A bag of coffee", isPrimary: false },
       deps,
     );
 
-    expect(image.storagePath).toBe("https://drive.google.com/uc?export=view&id=abc123");
+    expect(image.storagePath).toBe("https://example.com/photos/coffee.jpg");
     expect(deps.productImages.upload).not.toHaveBeenCalled();
     expect(deps.products.update).toHaveBeenCalledWith("prod-1", { images: [expect.objectContaining({ id: image.id })] }, 1);
     expect(deps.auditLogs.record).toHaveBeenCalledWith(expect.objectContaining({ type: "product_image_uploaded" }));
   });
 
-  it("normalizes a raw Google Drive share link to its direct-view form before saving", async () => {
+  it("normalizes a raw Google Drive share link to the thumbnail endpoint before saving", async () => {
     const deps = createMockCatalogDeps();
     deps.products.findById = vi.fn().mockResolvedValue(PRODUCT);
     const actor = makeSession({ effectivePermissions: new Set(["products:edit"]) });
@@ -120,7 +120,17 @@ describe("addProductImageByUrl", () => {
       deps,
     );
 
-    expect(image.storagePath).toBe("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2");
+    expect(image.storagePath).toBe("https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000");
+  });
+
+  it("accepts a bare Google Drive file id (no URL at all) and converts it to the thumbnail endpoint", async () => {
+    const deps = createMockCatalogDeps();
+    deps.products.findById = vi.fn().mockResolvedValue(PRODUCT);
+    const actor = makeSession({ effectivePermissions: new Set(["products:edit"]) });
+
+    const image = await addProductImageByUrl(actor, { productId: "prod-1", imageUrl: "1AbC-XyZ_9rq1g2", altText: "", isPrimary: false }, deps);
+
+    expect(image.storagePath).toBe("https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000");
   });
 
   it("the first image added becomes primary automatically", async () => {
@@ -130,7 +140,7 @@ describe("addProductImageByUrl", () => {
 
     const image = await addProductImageByUrl(
       actor,
-      { productId: "prod-1", imageUrl: "https://drive.google.com/uc?id=abc", altText: "", isPrimary: false },
+      { productId: "prod-1", imageUrl: "https://drive.google.com/uc?id=abc1234567", altText: "", isPrimary: false },
       deps,
     );
     expect(image.isPrimary).toBe(true);

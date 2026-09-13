@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { INVENTORY_ADJUSTMENT_REASONS, PRODUCT_STATUSES, PRODUCT_VISIBILITIES } from "./entities";
+import { isDriveFileId } from "./rules";
 
 /**
  * All money fields are validated as non-negative finite numbers in the
@@ -201,7 +202,16 @@ export type UploadProductImageInput = z.input<typeof uploadProductImageSchema>;
  */
 export const addProductImageByUrlSchema = z.object({
   productId: z.string().trim().min(1),
-  imageUrl: z.string().trim().url("Enter a valid image URL.").max(2000),
+  // Either a full image URL or a bare Google Drive file id — see
+  // `core/catalog/rules.ts#isDriveFileId`/`normalizeImageUrl` for why both
+  // shapes are accepted in the same field instead of a separate one.
+  imageUrl: z
+    .string()
+    .trim()
+    .max(2000)
+    .refine((value) => /^https?:\/\//.test(value) || isDriveFileId(value), {
+      message: "Enter a valid image URL or Google Drive file ID.",
+    }),
   altText: z.string().trim().max(300).default(""),
   isPrimary: z.boolean().default(false),
 });

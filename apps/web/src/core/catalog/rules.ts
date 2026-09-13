@@ -15,22 +15,61 @@ export function isExternalImageUrl(storagePath: string): boolean {
 }
 
 /**
+ * A Google Drive file id (copied straight out of the Drive app, the way an
+ * admin would on a phone) is a bare alphanumeric/`-`/`_` token — never a
+ * full URL. Sharing this one pattern between `normalizeImageUrl` and
+ * `addProductImageByUrlSchema` (see `schemas.ts`) is what lets that field
+ * accept either a full URL or a bare id without duplicating the shape
+ * check.
+ */
+const DRIVE_FILE_ID_PATTERN = /^[a-zA-Z0-9_-]{10,100}$/;
+
+export function isDriveFileId(value: string): boolean {
+  return DRIVE_FILE_ID_PATTERN.test(value);
+}
+
+function driveThumbnailUrl(fileId: string): string {
+  // Drive's thumbnail endpoint, not `uc?export=view` — the latter is
+  // increasingly rate-limited/blocked for third-party hotlinking regardless
+  // of the file's sharing permissions, which is exactly the "the image
+  // saves but never displays" failure this app hit in production. The
+  // thumbnail endpoint is the pattern that reliably works for a publicly
+  // shared file; `sz=w2000` asks for a size large enough for a full product
+  // photo rather than a small preview thumbnail.
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
+}
+
+const DRIVE_SHARE_LINK_PATTERNS = [
+  /drive\.google\.com\/file\/d\/([^/?#]+)/, // .../file/d/<id>/view?usp=...
+  /drive\.google\.com\/open\?[^#]*\bid=([^&#]+)/, // .../open?id=<id> (legacy)
+  /drive\.google\.com\/uc\?[^#]*\bid=([^&#]+)/, // .../uc?id=<id> or .../uc?export=view&id=<id>
+  /drive\.google\.com\/thumbnail\?[^#]*\bid=([^&#]+)/, // already-thumbnail form, re-normalized so an older record upgrades to the current `sz` too
+];
+
+/**
  * What an admin actually has to paste is whatever their phone's share
  * sheet hands them — for Google Drive that's a "view this file" page
- * (`.../file/d/<id>/view?usp=drivesdk` or `.../open?id=<id>`), not a
- * direct image byte stream, so used as-is it renders as a broken image.
- * Rewriting it here to Drive's direct-view form means the admin never has
- * to manually extract the file id or reconstruct a URL by hand — whatever
- * they paste from Drive's own share button just works. Any URL that
- * doesn't match a known Drive share-link shape (including one already in
- * direct-view form) passes through unchanged.
+ * (`.../file/d/<id>/view?usp=drivesdk` or `.../open?id=<id>`), or just the
+ * bare file id copied directly, not a direct image byte stream, so used
+ * as-is it renders as a broken image. Rewriting it here means the admin
+ * never has to manually extract the file id or reconstruct a URL by hand —
+ * whatever they paste from Drive's own share button (or just the id) just
+ * works. Any URL that doesn't match a known Drive shape passes through
+ * unchanged, so a genuinely different external host is untouched.
+ *
+ * This runs both when an image is added (`services/catalog/upload-product-image.ts#addProductImageByUrl`)
+ * and every time an already-saved external image is resolved for display
+ * (`infrastructure/firebase/product-image-storage.ts#getDownloadUrl`) — the
+ * second call site is what transparently upgrades a record saved before
+ * this function existed, or saved with the older `uc?export=view` form, to
+ * the current reliable format without needing to delete and re-add it.
  */
 export function normalizeImageUrl(url: string): string {
-  const patterns = [/drive\.google\.com\/file\/d\/([^/?#]+)/, /drive\.google\.com\/open\?[^#]*\bid=([^&#]+)/];
-  for (const pattern of patterns) {
+  for (const pattern of DRIVE_SHARE_LINK_PATTERNS) {
     const fileId = url.match(pattern)?.[1];
-    if (fileId) return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    if (fileId) return driveThumbnailUrl(fileId);
   }
+  if (isDriveFileId(url)) return driveThumbnailUrl(url);
   return url;
 }
 
