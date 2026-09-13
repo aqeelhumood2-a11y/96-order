@@ -1,10 +1,13 @@
 import type { CashPaymentsSummary } from "@/core/reports/entities";
 import { formatMoney } from "@/core/money/money";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
-export function CashPaymentsSummaryCard({ summary }: { summary: CashPaymentsSummary }) {
+export function CashPaymentsSummaryCard({ summary, locale = DEFAULT_LOCALE }: { summary: CashPaymentsSummary; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.reportsPage.cashSummary;
   const rows = [
-    { label: "Pending collection", count: summary.pendingCount, total: summary.pendingTotal },
-    { label: "Confirmed", count: summary.confirmedCount, total: summary.confirmedTotal },
+    { label: dict.pendingCollection, count: summary.pendingCount, total: summary.pendingTotal },
+    { label: dict.confirmed, count: summary.confirmedCount, total: summary.confirmedTotal },
   ];
 
   return (
@@ -12,9 +15,9 @@ export function CashPaymentsSummaryCard({ summary }: { summary: CashPaymentsSumm
       <table className="w-full min-w-[400px] text-left text-sm">
         <thead className="border-b border-surface-border bg-surface-sunken text-xs uppercase tracking-wide text-foreground/69">
           <tr>
-            <th className="px-4 py-3 font-medium">Cash status</th>
-            <th className="px-4 py-3 text-right font-medium">Orders</th>
-            <th className="px-4 py-3 text-right font-medium">Total</th>
+            <th className="px-4 py-3 font-medium">{dict.cashStatus}</th>
+            <th className="px-4 py-3 text-right font-medium">{dict.orders}</th>
+            <th className="px-4 py-3 text-right font-medium">{dict.total}</th>
           </tr>
         </thead>
         <tbody>
@@ -28,7 +31,7 @@ export function CashPaymentsSummaryCard({ summary }: { summary: CashPaymentsSumm
         </tbody>
       </table>
       <p className="border-t border-surface-border px-4 py-3 text-xs text-foreground/65">
-        {summary.deliveryCount} on delivery, {summary.pickupCount} on pickup.
+        {dict.deliveryPickupSummary.replace("{delivery}", String(summary.deliveryCount)).replace("{pickup}", String(summary.pickupCount))}
       </p>
     </div>
   );

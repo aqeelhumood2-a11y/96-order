@@ -4,10 +4,13 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProductQuestion } from "@/core/questions/entities";
 import { answerQuestionAction, rejectQuestionAction } from "@/features/questions/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Badge } from "@/ui/primitives/badge";
 import { Button, Textarea } from "@/ui/primitives";
 
-function AnswerRow({ question, onDone }: { question: ProductQuestion; onDone: () => void }) {
+function AnswerRow({ question, onDone, locale = DEFAULT_LOCALE }: { question: ProductQuestion; onDone: () => void; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.questionsPage;
   const answerId = useId();
   const [answer, setAnswer] = useState("");
   const [busy, setBusy] = useState(false);
@@ -35,26 +38,28 @@ function AnswerRow({ question, onDone }: { question: ProductQuestion; onDone: ()
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={answerId} className="sr-only">
-        Answer
+        {dict.answerLabel}
       </label>
       <Textarea id={answerId} value={answer} onChange={(event) => setAnswer(event.target.value)} disabled={busy} rows={2} maxLength={2000} />
       <div className="flex gap-2">
         <Button size="sm" disabled={busy || answer.trim().length === 0} onClick={handleAnswer}>
-          Answer
+          {dict.answer}
         </Button>
         <Button size="sm" variant="outline" disabled={busy} onClick={handleReject}>
-          Reject
+          {dict.reject}
         </Button>
       </div>
     </div>
   );
 }
 
-export function AdminQuestionsTable({ questions }: { questions: ProductQuestion[] }) {
+export function AdminQuestionsTable({ questions, locale = DEFAULT_LOCALE }: { questions: ProductQuestion[]; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.questionsPage;
+  const questionStatusDict = getDictionary(locale).admin.questionStatus;
 
   if (questions.length === 0) {
-    return <p className="text-sm text-foreground/69">No questions yet.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noQuestions}</p>;
   }
 
   return (
@@ -63,15 +68,15 @@ export function AdminQuestionsTable({ questions }: { questions: ProductQuestion[
         <li key={question.id} className="flex flex-col gap-2 rounded-md border border-brand-100 p-4">
           <div className="flex items-center justify-between gap-2">
             <p className="font-medium text-brand-950">{question.question}</p>
-            <Badge variant={question.status === "approved" ? "success" : question.status === "rejected" ? "danger" : "warning"}>{question.status}</Badge>
+            <Badge variant={question.status === "approved" ? "success" : question.status === "rejected" ? "danger" : "warning"}>{questionStatusDict[question.status]}</Badge>
           </div>
           <p className="text-xs text-foreground/65">
-            {question.customerName} · product {question.productId} · {question.createdAt.toLocaleDateString()}
+            {question.customerName} · {dict.product} {question.productId} · {question.createdAt.toLocaleDateString()}
           </p>
           {question.status === "approved" ? (
-            <p className="text-sm text-foreground/80">A: {question.answer}</p>
+            <p className="text-sm text-foreground/80">{dict.answerPrefix} {question.answer}</p>
           ) : question.status === "pending" ? (
-            <AnswerRow question={question} onDone={() => router.refresh()} />
+            <AnswerRow question={question} onDone={() => router.refresh()} locale={locale} />
           ) : null}
         </li>
       ))}

@@ -1,9 +1,13 @@
 import type { BestSellingProductRow } from "@/core/reports/entities";
 import { formatMoney } from "@/core/money/money";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
-export function BestSellersTable({ products }: { products: BestSellingProductRow[] }) {
+export function BestSellersTable({ products, locale = DEFAULT_LOCALE }: { products: BestSellingProductRow[]; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.reportsPage;
+
   if (products.length === 0) {
-    return <p className="text-sm text-foreground/69">No sales in this range.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noSalesInRange}</p>;
   }
 
   return (
@@ -11,10 +15,10 @@ export function BestSellersTable({ products }: { products: BestSellingProductRow
       <table className="w-full min-w-[480px] text-left text-sm">
         <thead className="border-b border-brand-100 bg-brand-50/50 text-xs uppercase tracking-wide text-foreground/69">
           <tr>
-            <th className="px-4 py-3 font-medium">Product</th>
-            <th className="px-4 py-3 font-medium">SKU</th>
-            <th className="px-4 py-3 text-right font-medium">Qty sold</th>
-            <th className="px-4 py-3 text-right font-medium">Revenue</th>
+            <th className="px-4 py-3 font-medium">{dict.bestSellersTable.product}</th>
+            <th className="px-4 py-3 font-medium">{dict.bestSellersTable.sku}</th>
+            <th className="px-4 py-3 text-right font-medium">{dict.bestSellersTable.qtySold}</th>
+            <th className="px-4 py-3 text-right font-medium">{dict.bestSellersTable.revenue}</th>
           </tr>
         </thead>
         <tbody>

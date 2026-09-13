@@ -5,6 +5,7 @@ import { hasPermission } from "@/core/auth/permissions";
 import { InventoryTable } from "@/features/catalog/inventory/components/inventory-table";
 import { ProductForm } from "@/features/catalog/products/components/product-form";
 import { ProductImages } from "@/features/catalog/products/components/product-images";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/locale";
 import { getProductInventory, type InventoryOverviewRow } from "@/services/catalog/inventory-overview";
 import { listAllCategories } from "@/services/catalog/list-categories";
@@ -53,8 +54,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ pr
       <ProductImages productId={data.product.id} images={data.product.images} imageUrls={data.imageUrls} />
       {data.inventory.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold text-brand-950">Stock</h2>
-          <InventoryTable rows={data.inventory} canAdjust={hasPermission(session, "inventory:adjust")} />
+          <h2 className="text-lg font-semibold text-brand-950">{getDictionary(locale).admin.productForm.stock}</h2>
+          <InventoryTable rows={data.inventory} canAdjust={hasPermission(session, "inventory:adjust")} locale={locale} />
         </section>
       )}
       <ProductForm product={data.product} categories={data.categories} brands={data.brands} locale={locale} />

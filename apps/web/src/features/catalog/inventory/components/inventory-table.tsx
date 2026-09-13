@@ -1,10 +1,14 @@
 import { computeAvailableQuantity } from "@/core/catalog/rules";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import type { InventoryOverviewRow } from "@/services/catalog/inventory-overview";
 import { AdjustInventoryForm } from "./adjust-inventory-form";
 
-export function InventoryTable({ rows, canAdjust }: { rows: InventoryOverviewRow[]; canAdjust: boolean }) {
+export function InventoryTable({ rows, canAdjust, locale = DEFAULT_LOCALE }: { rows: InventoryOverviewRow[]; canAdjust: boolean; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.inventoryPage;
+
   if (rows.length === 0) {
-    return <p className="text-sm text-foreground/69">No tracked inventory yet.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noInventory}</p>;
   }
 
   return (
@@ -27,13 +31,13 @@ export function InventoryTable({ rows, canAdjust }: { rows: InventoryOverviewRow
                 <p className="text-xs text-foreground/65">SKU {variant?.sku ?? product.sku}</p>
               </div>
               <div className="flex items-center gap-4 text-sm">
-                <span>On hand: {onHand}</span>
-                <span>Reserved: {reserved}</span>
-                <span className={isLowStock ? "font-semibold text-danger-600" : ""}>Available: {available}</span>
-                {isLowStock && <span className="rounded bg-danger-50 px-2 py-0.5 text-xs font-medium text-danger-700">Low stock</span>}
+                <span>{dict.onHand}: {onHand}</span>
+                <span>{dict.reserved}: {reserved}</span>
+                <span className={isLowStock ? "font-semibold text-danger-600" : ""}>{dict.available}: {available}</span>
+                {isLowStock && <span className="rounded bg-danger-50 px-2 py-0.5 text-xs font-medium text-danger-700">{dict.lowStock}</span>}
               </div>
             </div>
-            {canAdjust && <AdjustInventoryForm productId={product.id} variantId={variant?.id ?? null} />}
+            {canAdjust && <AdjustInventoryForm productId={product.id} variantId={variant?.id ?? null} locale={locale} />}
           </div>
         );
       })}

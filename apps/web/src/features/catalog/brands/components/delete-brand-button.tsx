@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteBrandAction } from "@/features/catalog/brands/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 
-export function DeleteBrandButton({ brandId }: { brandId: string }) {
+export function DeleteBrandButton({ brandId, locale = DEFAULT_LOCALE }: { brandId: string; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.brandsPage;
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -28,7 +31,7 @@ export function DeleteBrandButton({ brandId }: { brandId: string }) {
   return (
     <div className="flex flex-col items-end gap-1">
       <Button variant="outline" size="sm" onClick={handleDelete} disabled={isDeleting}>
-        {isDeleting ? "Deleting…" : "Delete"}
+        {isDeleting ? dict.deleting : dict.delete}
       </Button>
       {error && (
         <p role="alert" className="max-w-48 text-right text-xs text-danger-600">

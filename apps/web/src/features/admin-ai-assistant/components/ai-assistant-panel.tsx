@@ -2,11 +2,11 @@
 
 import { useId, useState } from "react";
 import { askAdminAssistantAction } from "@/features/admin-ai-assistant/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Badge } from "@/ui/primitives/badge";
 import { Button } from "@/ui/primitives/button";
 import { Textarea } from "@/ui/primitives/textarea";
-
-const EXAMPLE_QUESTIONS = ["How much cash is still waiting to be collected?", "How are online payments trending?", "What's our order status breakdown?"];
 
 interface AnsweredQuestion {
   question: string;
@@ -14,7 +14,8 @@ interface AnsweredQuestion {
   generatedByAI: boolean;
 }
 
-export function AiAssistantPanel() {
+export function AiAssistantPanel({ locale = DEFAULT_LOCALE }: { locale?: Locale } = {}) {
+  const dict = getDictionary(locale).admin.aiAssistantPage;
   const textareaId = useId();
   const [question, setQuestion] = useState("");
   const [history, setHistory] = useState<AnsweredQuestion[]>([]);
@@ -49,7 +50,7 @@ export function AiAssistantPanel() {
         className="flex flex-col gap-2"
       >
         <label htmlFor={textareaId} className="text-sm font-medium text-brand-950">
-          Ask about your store
+          {dict.askLabel}
         </label>
         <Textarea
           id={textareaId}
@@ -57,11 +58,11 @@ export function AiAssistantPanel() {
           onChange={(event) => setQuestion(event.target.value)}
           disabled={pending}
           rows={2}
-          placeholder="e.g. Which orders are still waiting on cash collection?"
+          placeholder={dict.askPlaceholder}
         />
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2">
-            {EXAMPLE_QUESTIONS.map((example) => (
+            {dict.exampleQuestions.map((example) => (
               <button
                 key={example}
                 type="button"
@@ -74,7 +75,7 @@ export function AiAssistantPanel() {
             ))}
           </div>
           <Button type="submit" size="sm" disabled={pending || !question.trim()}>
-            {pending ? "Asking…" : "Ask"}
+            {pending ? dict.asking : dict.ask}
           </Button>
         </div>
       </form>
@@ -91,7 +92,7 @@ export function AiAssistantPanel() {
             <p className="text-sm font-medium text-brand-950">{item.question}</p>
             <p className="whitespace-pre-line text-sm text-foreground/80">{item.answer}</p>
             <div>
-              <Badge variant={item.generatedByAI ? "accent" : "neutral"}>{item.generatedByAI ? "AI-generated" : "Store data snapshot"}</Badge>
+              <Badge variant={item.generatedByAI ? "accent" : "neutral"}>{item.generatedByAI ? dict.aiGenerated : dict.storeDataSnapshot}</Badge>
             </div>
           </div>
         ))}

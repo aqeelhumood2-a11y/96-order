@@ -101,6 +101,7 @@ export interface Dictionary {
       createProduct: string;
       saveChanges: string;
       saving: string;
+      stock: string;
     };
     categoriesPage: {
       heading: string;
@@ -350,6 +351,190 @@ export interface Dictionary {
       saving: string;
       saveSettings: string;
     };
+    cmsPagesPage: {
+      heading: string;
+      newPage: string;
+      editPage: string;
+      noPages: string;
+      table: { title: string; slug: string; status: string; nav: string; footer: string };
+      yes: string;
+      deleting: string;
+      delete: string;
+    };
+    cmsPageForm: {
+      title: string;
+      slug: string;
+      content: string;
+      seoTitle: string;
+      seoDescription: string;
+      status: string;
+      statusDraft: string;
+      statusPublished: string;
+      sortOrder: string;
+      showInNav: string;
+      showInFooter: string;
+      saving: string;
+      saveChanges: string;
+      createPage: string;
+    };
+    reportsPage: {
+      heading: string;
+      from: string;
+      to: string;
+      salesBucketedBy: string;
+      day: string;
+      week: string;
+      month: string;
+      apply: string;
+      sales: string;
+      bestSellingProducts: string;
+      ordersByStatus: string;
+      cashPayments: string;
+      onlinePayments: string;
+      pendingCashCollection: string;
+      noDataInRange: string;
+      noSalesInRange: string;
+      noPendingCash: string;
+      salesTable: { period: string; orders: string; revenue: string };
+      bestSellersTable: { product: string; sku: string; qtySold: string; revenue: string };
+      ordersByStatusTable: { status: string; orders: string };
+      cashSummary: {
+        cashStatus: string;
+        orders: string;
+        total: string;
+        pendingCollection: string;
+        confirmed: string;
+        /** `{delivery}` and `{pickup}` replaced */
+        deliveryPickupSummary: string;
+      };
+      onlineSummary: { status: string; orders: string; total: string };
+      pendingCashTable: { order: string; customer: string; fulfillment: string; amount: string; placed: string };
+    };
+    reviewStatus: Record<"pending" | "approved" | "rejected" | "hidden", string>;
+    reviewsPage: {
+      heading: string;
+      all: string;
+      noReviews: string;
+      verifiedPurchase: string;
+      product: string;
+      approve: string;
+      reject: string;
+      hide: string;
+    };
+    questionStatus: Record<"pending" | "approved" | "rejected", string>;
+    questionsPage: {
+      heading: string;
+      all: string;
+      noQuestions: string;
+      product: string;
+      answerLabel: string;
+      answerPrefix: string;
+      answer: string;
+      reject: string;
+    };
+    brandsPage: {
+      heading: string;
+      /** `{name}` replaced */
+      editBrand: string;
+      createBrand: string;
+      cancelEdit: string;
+      noBrands: string;
+      inactive: string;
+      edit: string;
+      deleting: string;
+      delete: string;
+    };
+    brandForm: {
+      name: string;
+      slug: string;
+      description: string;
+      website: string;
+      active: string;
+      saving: string;
+      saveChanges: string;
+      createBrand: string;
+      brandUpdated: string;
+      /** `{name}` replaced */
+      brandCreated: string;
+    };
+    inventoryPage: {
+      heading: string;
+      noInventory: string;
+      onHand: string;
+      reserved: string;
+      available: string;
+      lowStock: string;
+    };
+    adjustInventoryForm: {
+      reason: string;
+      quantityChange: string;
+      note: string;
+      apply: string;
+      applying: string;
+      invalidQuantity: string;
+      /** `{onHand}` and `{onHandBefore}` replaced */
+      updated: string;
+    };
+    integrationsPage: {
+      heading: string;
+      subheading: string;
+      providersTitle: string;
+      tapPayments: string;
+      transactionalEmail: string;
+      aiAssistant: string;
+      systemTitle: string;
+      jobApiAccess: string;
+      configured: string;
+      notConfigured: string;
+      schedulerNote: string;
+      emailRetryTitle: string;
+      emailRetryDescription: string;
+      emailRetryButton: string;
+      notificationRetryTitle: string;
+      notificationRetryDescription: string;
+      notificationRetryButton: string;
+      retrying: string;
+      /** `{attempted}`, `{succeeded}`, `{stillFailing}` replaced */
+      retryResult: string;
+    };
+    backInStockPage: {
+      heading: string;
+      noSubscriptions: string;
+      table: { email: string; product: string; variant: string; status: string; subscribed: string; notified: string };
+      statusPending: string;
+      statusNotified: string;
+      statusCancelled: string;
+    };
+    aiAssistantPage: {
+      heading: string;
+      subheading: string;
+      askLabel: string;
+      askPlaceholder: string;
+      asking: string;
+      ask: string;
+      aiGenerated: string;
+      storeDataSnapshot: string;
+      exampleQuestions: [string, string, string];
+    };
+    dashboardPage: {
+      heading: string;
+      signedInAs: string;
+      noPermission: string;
+      totalOrders: string;
+      revenue: string;
+      /** `{available}` and `{reserved}` replaced */
+      inventoryAvailability: string;
+      lowStock: string;
+      outOfStock: string;
+      nothingLow: string;
+      nothingOut: string;
+      viewInventory: string;
+      topSellingProducts: string;
+      noSalesRecent: string;
+      /** `{qty}` and `{revenue}` replaced */
+      soldSummary: string;
+      recentOrders: string;
+    };
   };
 }
 
@@ -438,6 +623,7 @@ export const en: Dictionary = {
       createProduct: "Create product",
       saveChanges: "Save changes",
       saving: "Saving…",
+      stock: "Stock",
     },
     categoriesPage: {
       heading: "Categories",
@@ -733,6 +919,187 @@ export const en: Dictionary = {
       saving: "Saving…",
       saveSettings: "Save settings",
     },
+    cmsPagesPage: {
+      heading: "CMS pages",
+      newPage: "New page",
+      editPage: "Edit page",
+      noPages: "No pages yet.",
+      table: { title: "Title", slug: "Slug", status: "Status", nav: "Nav", footer: "Footer" },
+      yes: "Yes",
+      deleting: "Deleting…",
+      delete: "Delete",
+    },
+    cmsPageForm: {
+      title: "Title",
+      slug: "Slug (optional — derived from the title if left blank)",
+      content: "Content",
+      seoTitle: "SEO title",
+      seoDescription: "SEO description",
+      status: "Status",
+      statusDraft: "Draft",
+      statusPublished: "Published",
+      sortOrder: "Sort order",
+      showInNav: "Show in header navigation",
+      showInFooter: "Show in footer",
+      saving: "Saving…",
+      saveChanges: "Save changes",
+      createPage: "Create page",
+    },
+    reportsPage: {
+      heading: "Reports",
+      from: "From",
+      to: "To",
+      salesBucketedBy: "Sales bucketed by",
+      day: "Day",
+      week: "Week",
+      month: "Month",
+      apply: "Apply",
+      sales: "Sales",
+      bestSellingProducts: "Best selling products",
+      ordersByStatus: "Orders by status",
+      cashPayments: "Cash payments",
+      onlinePayments: "Online payments (Tap)",
+      pendingCashCollection: "Pending cash collection",
+      noDataInRange: "No data in this range.",
+      noSalesInRange: "No sales in this range.",
+      noPendingCash: "No cash payments are waiting to be collected.",
+      salesTable: { period: "Period", orders: "Orders", revenue: "Revenue" },
+      bestSellersTable: { product: "Product", sku: "SKU", qtySold: "Qty sold", revenue: "Revenue" },
+      ordersByStatusTable: { status: "Status", orders: "Orders" },
+      cashSummary: {
+        cashStatus: "Cash status",
+        orders: "Orders",
+        total: "Total",
+        pendingCollection: "Pending collection",
+        confirmed: "Confirmed",
+        deliveryPickupSummary: "{delivery} on delivery, {pickup} on pickup.",
+      },
+      onlineSummary: { status: "Online payment status", orders: "Orders", total: "Total" },
+      pendingCashTable: { order: "Order", customer: "Customer", fulfillment: "Fulfillment", amount: "Amount", placed: "Placed" },
+    },
+    reviewStatus: { pending: "Pending", approved: "Approved", rejected: "Rejected", hidden: "Hidden" },
+    reviewsPage: {
+      heading: "Reviews",
+      all: "All",
+      noReviews: "No reviews yet.",
+      verifiedPurchase: "Verified purchase",
+      product: "product",
+      approve: "Approve",
+      reject: "Reject",
+      hide: "Hide",
+    },
+    questionStatus: { pending: "Pending", approved: "Approved", rejected: "Rejected" },
+    questionsPage: {
+      heading: "Product questions",
+      all: "All",
+      noQuestions: "No questions yet.",
+      product: "product",
+      answerLabel: "Answer",
+      answerPrefix: "A:",
+      answer: "Answer",
+      reject: "Reject",
+    },
+    brandsPage: {
+      heading: "Brands",
+      editBrand: 'Edit "{name}"',
+      createBrand: "Create brand",
+      cancelEdit: "Cancel edit",
+      noBrands: "No brands yet.",
+      inactive: "(inactive)",
+      edit: "Edit",
+      deleting: "Deleting…",
+      delete: "Delete",
+    },
+    brandForm: {
+      name: "Name",
+      slug: "Slug (optional — derived from name if left blank)",
+      description: "Description",
+      website: "Website",
+      active: "Active",
+      saving: "Saving…",
+      saveChanges: "Save changes",
+      createBrand: "Create brand",
+      brandUpdated: "Brand updated.",
+      brandCreated: 'Brand "{name}" created.',
+    },
+    inventoryPage: {
+      heading: "Inventory",
+      noInventory: "No tracked inventory yet.",
+      onHand: "On hand",
+      reserved: "Reserved",
+      available: "Available",
+      lowStock: "Low stock",
+    },
+    adjustInventoryForm: {
+      reason: "Reason",
+      quantityChange: "Quantity change",
+      note: "Note (optional)",
+      apply: "Apply",
+      applying: "Applying…",
+      invalidQuantity: "Enter a non-zero whole number (negative to remove stock).",
+      updated: "Updated: on-hand is now {onHand} (was {onHandBefore}).",
+    },
+    integrationsPage: {
+      heading: "Integrations",
+      subheading: "Payment providers, AI assistant, and external system access.",
+      providersTitle: "Payment, email & AI providers",
+      tapPayments: "Tap Payments (card checkout)",
+      transactionalEmail: "Transactional email (SMTP)",
+      aiAssistant: "AI Admin Assistant",
+      systemTitle: "System & ERP integration",
+      jobApiAccess: "Job/integration API access",
+      configured: "Configured",
+      notConfigured: "Not configured",
+      schedulerNote: "When configured, an external scheduler can call these job endpoints, and an ERP/inventory system can poll the order sync endpoint — all authenticated with the job secret.",
+      emailRetryTitle: "Email retry queue",
+      emailRetryDescription: "Manually drain failed transactional emails now, instead of waiting for the next scheduled run.",
+      emailRetryButton: "Retry failed emails now",
+      notificationRetryTitle: "Back-in-stock notification retry queue",
+      notificationRetryDescription: "Manually drain failed back-in-stock notification emails now, instead of waiting for the next scheduled run.",
+      notificationRetryButton: "Retry failed notifications now",
+      retrying: "Retrying…",
+      retryResult: "Retried {attempted}: {succeeded} sent, {stillFailing} still failing.",
+    },
+    backInStockPage: {
+      heading: "Back-in-stock subscriptions",
+      noSubscriptions: "No back-in-stock subscriptions yet.",
+      table: { email: "Email", product: "Product", variant: "Variant", status: "Status", subscribed: "Subscribed", notified: "Notified" },
+      statusPending: "Pending",
+      statusNotified: "Notified",
+      statusCancelled: "Cancelled",
+    },
+    aiAssistantPage: {
+      heading: "AI Admin Assistant",
+      subheading: "Ask questions about orders, payments, and cash collection. Answers are read-only and based only on your store's own report data.",
+      askLabel: "Ask about your store",
+      askPlaceholder: "e.g. Which orders are still waiting on cash collection?",
+      asking: "Asking…",
+      ask: "Ask",
+      aiGenerated: "AI-generated",
+      storeDataSnapshot: "Store data snapshot",
+      exampleQuestions: [
+        "How much cash is still waiting to be collected?",
+        "How are online payments trending?",
+        "What's our order status breakdown?",
+      ],
+    },
+    dashboardPage: {
+      heading: "Dashboard",
+      signedInAs: "Signed in as {email}.",
+      noPermission: "You don't have permission to view the dashboard.",
+      totalOrders: "Total orders",
+      revenue: "Revenue",
+      inventoryAvailability: "{available} available ({reserved} reserved)",
+      lowStock: "Low stock",
+      outOfStock: "Out of stock",
+      nothingLow: "Nothing is running low.",
+      nothingOut: "Nothing is out of stock.",
+      viewInventory: "View inventory →",
+      topSellingProducts: "Top selling products (last 30 days)",
+      noSalesRecent: "No sales in the last 30 days yet.",
+      soldSummary: "{qty} sold · {revenue}",
+      recentOrders: "Recent orders",
+    },
   },
 };
 
@@ -821,6 +1188,7 @@ export const ar: Dictionary = {
       createProduct: "إنشاء المنتج",
       saveChanges: "حفظ التغييرات",
       saving: "جارٍ الحفظ…",
+      stock: "المخزون",
     },
     categoriesPage: {
       heading: "الفئات",
@@ -1115,6 +1483,187 @@ export const ar: Dictionary = {
       footerColumnsInvalidJson: "أعمدة التذييل يجب أن تكون بصيغة JSON صحيحة.",
       saving: "جارٍ الحفظ…",
       saveSettings: "حفظ الإعدادات",
+    },
+    cmsPagesPage: {
+      heading: "صفحات المحتوى",
+      newPage: "صفحة جديدة",
+      editPage: "تعديل الصفحة",
+      noPages: "لا توجد صفحات بعد.",
+      table: { title: "العنوان", slug: "الرابط", status: "الحالة", nav: "القائمة", footer: "التذييل" },
+      yes: "نعم",
+      deleting: "جارٍ الحذف…",
+      delete: "حذف",
+    },
+    cmsPageForm: {
+      title: "العنوان",
+      slug: "الرابط (اختياري — يُشتق من العنوان إذا تُرك فارغاً)",
+      content: "المحتوى",
+      seoTitle: "عنوان SEO",
+      seoDescription: "وصف SEO",
+      status: "الحالة",
+      statusDraft: "مسودة",
+      statusPublished: "منشورة",
+      sortOrder: "ترتيب العرض",
+      showInNav: "إظهار في قائمة الهيدر",
+      showInFooter: "إظهار في التذييل",
+      saving: "جارٍ الحفظ…",
+      saveChanges: "حفظ التغييرات",
+      createPage: "إنشاء الصفحة",
+    },
+    reportsPage: {
+      heading: "التقارير",
+      from: "من",
+      to: "إلى",
+      salesBucketedBy: "تجميع المبيعات حسب",
+      day: "يوم",
+      week: "أسبوع",
+      month: "شهر",
+      apply: "تطبيق",
+      sales: "المبيعات",
+      bestSellingProducts: "الأكثر مبيعاً",
+      ordersByStatus: "الطلبات حسب الحالة",
+      cashPayments: "المدفوعات النقدية",
+      onlinePayments: "المدفوعات الإلكترونية (Tap)",
+      pendingCashCollection: "نقدي بانتظار التحصيل",
+      noDataInRange: "لا توجد بيانات في هذه الفترة.",
+      noSalesInRange: "لا توجد مبيعات في هذه الفترة.",
+      noPendingCash: "لا توجد مدفوعات نقدية بانتظار التحصيل.",
+      salesTable: { period: "الفترة", orders: "الطلبات", revenue: "الإيرادات" },
+      bestSellersTable: { product: "المنتج", sku: "رمز المنتج", qtySold: "الكمية المباعة", revenue: "الإيرادات" },
+      ordersByStatusTable: { status: "الحالة", orders: "الطلبات" },
+      cashSummary: {
+        cashStatus: "حالة النقدي",
+        orders: "الطلبات",
+        total: "الإجمالي",
+        pendingCollection: "بانتظار التحصيل",
+        confirmed: "مؤكد",
+        deliveryPickupSummary: "{delivery} توصيل، {pickup} استلام.",
+      },
+      onlineSummary: { status: "حالة الدفع الإلكتروني", orders: "الطلبات", total: "الإجمالي" },
+      pendingCashTable: { order: "الطلب", customer: "العميل", fulfillment: "طريقة التسليم", amount: "المبلغ", placed: "تاريخ الطلب" },
+    },
+    reviewStatus: { pending: "بانتظار المراجعة", approved: "مقبول", rejected: "مرفوض", hidden: "مخفي" },
+    reviewsPage: {
+      heading: "التقييمات",
+      all: "الكل",
+      noReviews: "لا توجد تقييمات بعد.",
+      verifiedPurchase: "شراء موثّق",
+      product: "منتج",
+      approve: "قبول",
+      reject: "رفض",
+      hide: "إخفاء",
+    },
+    questionStatus: { pending: "بانتظار الرد", approved: "مقبول", rejected: "مرفوض" },
+    questionsPage: {
+      heading: "أسئلة المنتجات",
+      all: "الكل",
+      noQuestions: "لا توجد أسئلة بعد.",
+      product: "منتج",
+      answerLabel: "الإجابة",
+      answerPrefix: "ج:",
+      answer: "إجابة",
+      reject: "رفض",
+    },
+    brandsPage: {
+      heading: "العلامات التجارية",
+      editBrand: 'تعديل "{name}"',
+      createBrand: "إنشاء علامة تجارية",
+      cancelEdit: "إلغاء التعديل",
+      noBrands: "لا توجد علامات تجارية بعد.",
+      inactive: "(غير نشط)",
+      edit: "تعديل",
+      deleting: "جارٍ الحذف…",
+      delete: "حذف",
+    },
+    brandForm: {
+      name: "الاسم",
+      slug: "الرابط (اختياري — يُشتق من الاسم إذا تُرك فارغاً)",
+      description: "الوصف",
+      website: "الموقع الإلكتروني",
+      active: "نشط",
+      saving: "جارٍ الحفظ…",
+      saveChanges: "حفظ التغييرات",
+      createBrand: "إنشاء علامة تجارية",
+      brandUpdated: "تم تحديث العلامة التجارية.",
+      brandCreated: 'تم إنشاء العلامة التجارية "{name}".',
+    },
+    inventoryPage: {
+      heading: "المخزون",
+      noInventory: "لا يوجد مخزون متتبَّع بعد.",
+      onHand: "المتوفر بالمخزن",
+      reserved: "محجوز",
+      available: "متاح",
+      lowStock: "مخزون منخفض",
+    },
+    adjustInventoryForm: {
+      reason: "السبب",
+      quantityChange: "تغيير الكمية",
+      note: "ملاحظة (اختياري)",
+      apply: "تطبيق",
+      applying: "جارٍ التطبيق…",
+      invalidQuantity: "أدخل رقماً صحيحاً غير صفري (سالب لإنقاص المخزون).",
+      updated: "تم التحديث: المتوفر الآن {onHand} (كان {onHandBefore}).",
+    },
+    integrationsPage: {
+      heading: "التكاملات",
+      subheading: "طرق الدفع، المساعد الذكي، والوصول لأنظمة خارجية.",
+      providersTitle: "مزودو الدفع والإيميل والذكاء الاصطناعي",
+      tapPayments: "الدفع بالبطاقة (Tap)",
+      transactionalEmail: "إيميلات النظام (SMTP)",
+      aiAssistant: "المساعد الذكي للإدارة",
+      systemTitle: "تكامل النظام وERP",
+      jobApiAccess: "الوصول لواجهة برمجة المهام",
+      configured: "مُفعّل",
+      notConfigured: "غير مُفعّل",
+      schedulerNote: "عند التفعيل، يقدر نظام جدولة خارجي يستدعي نقاط النهاية هذه، ونظام ERP/مخزون يقدر يستعلم عن نقطة مزامنة الطلبات — كلها موثّقة بمفتاح المهام السري.",
+      emailRetryTitle: "قائمة إعادة محاولة الإيميلات",
+      emailRetryDescription: "أرسل الإيميلات الفاشلة يدوياً الآن بدل انتظار الجدولة التالية.",
+      emailRetryButton: "إعادة محاولة الإيميلات الفاشلة الآن",
+      notificationRetryTitle: "قائمة إعادة محاولة إشعارات توفر المخزون",
+      notificationRetryDescription: "أرسل إشعارات توفر المخزون الفاشلة يدوياً الآن بدل انتظار الجدولة التالية.",
+      notificationRetryButton: "إعادة محاولة الإشعارات الفاشلة الآن",
+      retrying: "جارٍ إعادة المحاولة…",
+      retryResult: "أُعيدت محاولة {attempted}: نجح {succeeded}، وما زال {stillFailing} فاشل.",
+    },
+    backInStockPage: {
+      heading: "اشتراكات توفر المخزون",
+      noSubscriptions: "لا توجد اشتراكات توفر مخزون بعد.",
+      table: { email: "الإيميل", product: "المنتج", variant: "النوع", status: "الحالة", subscribed: "تاريخ الاشتراك", notified: "تاريخ الإشعار" },
+      statusPending: "بانتظار التوفر",
+      statusNotified: "تم الإشعار",
+      statusCancelled: "ملغى",
+    },
+    aiAssistantPage: {
+      heading: "المساعد الذكي للإدارة",
+      subheading: "اسأل عن الطلبات والمدفوعات وتحصيل النقد. الإجابات للقراءة فقط ومبنية على بيانات تقارير متجرك فقط.",
+      askLabel: "اسأل عن متجرك",
+      askPlaceholder: "مثلاً: أي الطلبات لسا بانتظار تحصيل النقد؟",
+      asking: "جارٍ السؤال…",
+      ask: "اسأل",
+      aiGenerated: "من الذكاء الاصطناعي",
+      storeDataSnapshot: "لقطة من بيانات المتجر",
+      exampleQuestions: [
+        "كم باقي نقدي بانتظار التحصيل؟",
+        "كيف اتجاه المدفوعات الإلكترونية؟",
+        "شنو توزيع حالات الطلبات عندنا؟",
+      ],
+    },
+    dashboardPage: {
+      heading: "لوحة التحكم",
+      signedInAs: "مسجل دخول بحساب {email}.",
+      noPermission: "ليس لديك صلاحية لعرض لوحة التحكم.",
+      totalOrders: "إجمالي الطلبات",
+      revenue: "الإيرادات",
+      inventoryAvailability: "{available} متاح ({reserved} محجوز)",
+      lowStock: "مخزون منخفض",
+      outOfStock: "نفد المخزون",
+      nothingLow: "لا يوجد شي بمخزون منخفض.",
+      nothingOut: "لا يوجد شي نافد.",
+      viewInventory: "عرض المخزون ←",
+      topSellingProducts: "الأكثر مبيعاً (آخر 30 يوم)",
+      noSalesRecent: "لا توجد مبيعات بآخر 30 يوم بعد.",
+      soldSummary: "بيع {qty} · {revenue}",
+      recentOrders: "أحدث الطلبات",
     },
   },
 };

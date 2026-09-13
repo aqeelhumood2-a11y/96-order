@@ -1,7 +1,21 @@
 import Link from "next/link";
 import type { InventoryRecord } from "@/core/catalog/entities";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
-function AlertList({ title, records, emptyMessage }: { title: string; records: InventoryRecord[]; emptyMessage: string }) {
+function AlertList({
+  title,
+  records,
+  emptyMessage,
+  viewInventoryLabel,
+  availabilityTemplate,
+}: {
+  title: string;
+  records: InventoryRecord[];
+  emptyMessage: string;
+  viewInventoryLabel: string;
+  availabilityTemplate: string;
+}) {
   return (
     <div className="flex flex-col gap-2 rounded-md border border-brand-100 p-4">
       <h2 className="text-sm font-semibold text-brand-950">{title}</h2>
@@ -16,25 +30,26 @@ function AlertList({ title, records, emptyMessage }: { title: string; records: I
                 {record.variantId ? `:${record.variantId}` : ""}
               </span>
               <span className="text-foreground/69">
-                {record.onHand - record.reserved} available ({record.reserved} reserved)
+                {availabilityTemplate.replace("{available}", String(record.onHand - record.reserved)).replace("{reserved}", String(record.reserved))}
               </span>
             </li>
           ))}
         </ul>
       )}
       <Link href="/admin/inventory" className="text-xs text-brand-700 hover:underline">
-        View inventory →
+        {viewInventoryLabel}
       </Link>
     </div>
   );
 }
 
 /** README's Inventory Alerts requirement — low stock, out of stock, and each row's own reserved count. */
-export function InventoryAlerts({ lowStock, outOfStock }: { lowStock: InventoryRecord[]; outOfStock: InventoryRecord[] }) {
+export function InventoryAlerts({ lowStock, outOfStock, locale = DEFAULT_LOCALE }: { lowStock: InventoryRecord[]; outOfStock: InventoryRecord[]; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.dashboardPage;
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <AlertList title="Low stock" records={lowStock} emptyMessage="Nothing is running low." />
-      <AlertList title="Out of stock" records={outOfStock} emptyMessage="Nothing is out of stock." />
+      <AlertList title={dict.lowStock} records={lowStock} emptyMessage={dict.nothingLow} viewInventoryLabel={dict.viewInventory} availabilityTemplate={dict.inventoryAvailability} />
+      <AlertList title={dict.outOfStock} records={outOfStock} emptyMessage={dict.nothingOut} viewInventoryLabel={dict.viewInventory} availabilityTemplate={dict.inventoryAvailability} />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import type { Brand } from "@/core/catalog/entities";
 import { createBrandAction, updateBrandAction } from "@/features/catalog/brands/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -18,8 +20,9 @@ const formSchema = z.object({
   isActive: z.boolean(),
 });
 
-export function BrandForm({ brand, onSaved }: { brand?: Brand; onSaved?: () => void }) {
+export function BrandForm({ brand, onSaved, locale = DEFAULT_LOCALE }: { brand?: Brand; onSaved?: () => void; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.brandForm;
   const isEditing = Boolean(brand);
   const [name, setName] = useState(brand?.name ?? "");
   const [slug, setSlug] = useState(brand?.slug ?? "");
@@ -60,7 +63,7 @@ export function BrandForm({ brand, onSaved }: { brand?: Brand; onSaved?: () => v
         return;
       }
 
-      setSuccessMessage(isEditing ? "Brand updated." : `Brand "${parsed.data.name}" created.`);
+      setSuccessMessage(isEditing ? dict.brandUpdated : dict.brandCreated.replace("{name}", parsed.data.name));
       if (!isEditing) {
         setName("");
         setSlug("");
@@ -77,28 +80,28 @@ export function BrandForm({ brand, onSaved }: { brand?: Brand; onSaved?: () => v
   return (
     <form onSubmit={handleSubmit} noValidate className="flex max-w-xl flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="brand-name">Name</Label>
+        <Label htmlFor="brand-name">{dict.name}</Label>
         <Input id="brand-name" value={name} onChange={(event) => setName(event.target.value)} disabled={isSubmitting} />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="brand-slug">Slug (optional — derived from name if left blank)</Label>
+        <Label htmlFor="brand-slug">{dict.slug}</Label>
         <Input id="brand-slug" value={slug} onChange={(event) => setSlug(event.target.value)} disabled={isSubmitting} />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="brand-description">Description</Label>
+        <Label htmlFor="brand-description">{dict.description}</Label>
         <Textarea id="brand-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={isSubmitting} />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="brand-website">Website</Label>
+        <Label htmlFor="brand-website">{dict.website}</Label>
         <Input id="brand-website" type="url" value={website} onChange={(event) => setWebsite(event.target.value)} disabled={isSubmitting} />
       </div>
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} disabled={isSubmitting} />
-        Active
+        {dict.active}
       </label>
 
       {fieldError && (
@@ -118,7 +121,7 @@ export function BrandForm({ brand, onSaved }: { brand?: Brand; onSaved?: () => v
       )}
 
       <Button type="submit" disabled={isSubmitting} className="w-fit">
-        {isSubmitting ? "Saving…" : isEditing ? "Save changes" : "Create brand"}
+        {isSubmitting ? dict.saving : isEditing ? dict.saveChanges : dict.createBrand}
       </Button>
     </form>
   );

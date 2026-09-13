@@ -1,11 +1,13 @@
 import { ForbiddenError } from "@/core/errors";
 import { hasPermission } from "@/core/auth/permissions";
 import { InventoryTable } from "@/features/catalog/inventory/components/inventory-table";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { listInventoryOverview } from "@/services/catalog/inventory-overview";
 import { requireSession } from "@/services/auth/session";
 
 export default async function InventoryPage() {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
 
   let rows;
   try {
@@ -20,8 +22,8 @@ export default async function InventoryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Inventory</h1>
-      <InventoryTable rows={rows} canAdjust={hasPermission(session, "inventory:adjust")} />
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{getDictionary(locale).admin.inventoryPage.heading}</h1>
+      <InventoryTable rows={rows} canAdjust={hasPermission(session, "inventory:adjust")} locale={locale} />
     </div>
   );
 }

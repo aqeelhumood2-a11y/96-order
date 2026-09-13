@@ -1,5 +1,7 @@
 import { ForbiddenError } from "@/core/errors";
 import { CmsPageForm } from "@/features/admin-cms/components/page-form";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { getCmsPage } from "@/services/cms/manage-pages";
 import { requireSession } from "@/services/auth/session";
 
@@ -8,7 +10,7 @@ interface PageProps {
 }
 
 export default async function EditCmsPagePage({ params }: PageProps) {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
   const { pageId } = await params;
 
   let page;
@@ -24,8 +26,8 @@ export default async function EditCmsPagePage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Edit page</h1>
-      <CmsPageForm existing={page} />
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{getDictionary(locale).admin.cmsPagesPage.editPage}</h1>
+      <CmsPageForm existing={page} locale={locale} />
     </div>
   );
 }

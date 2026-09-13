@@ -1,17 +1,23 @@
 import type { Brand } from "@/core/catalog/entities";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { DeleteBrandButton } from "./delete-brand-button";
 
 export function BrandsTable({
   brands,
   canManage,
   onEdit,
+  locale = DEFAULT_LOCALE,
 }: {
   brands: Brand[];
   canManage: boolean;
   onEdit: (brand: Brand) => void;
+  locale?: Locale;
 }) {
+  const dict = getDictionary(locale).admin.brandsPage;
+
   if (brands.length === 0) {
-    return <p className="text-sm text-foreground/69">No brands yet.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noBrands}</p>;
   }
 
   return (
@@ -20,16 +26,16 @@ export function BrandsTable({
         <li key={brand.id} className="flex items-center justify-between gap-4 border-b border-brand-100 py-2">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-foreground">
-              {brand.name} {!brand.isActive && <span className="text-xs text-foreground/65">(inactive)</span>}
+              {brand.name} {!brand.isActive && <span className="text-xs text-foreground/65">{dict.inactive}</span>}
             </span>
             <span className="text-xs text-foreground/65">/{brand.slug}</span>
           </div>
           {canManage && (
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => onEdit(brand)} className="text-sm text-brand-700 hover:underline">
-                Edit
+                {dict.edit}
               </button>
-              <DeleteBrandButton brandId={brand.id} />
+              <DeleteBrandButton brandId={brand.id} locale={locale} />
             </div>
           )}
         </li>

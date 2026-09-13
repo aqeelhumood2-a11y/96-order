@@ -1,9 +1,13 @@
 import type { SalesBucket } from "@/core/reports/entities";
 import { formatMoney } from "@/core/money/money";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
-export function SalesReportTable({ buckets }: { buckets: SalesBucket[] }) {
+export function SalesReportTable({ buckets, locale = DEFAULT_LOCALE }: { buckets: SalesBucket[]; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.reportsPage;
+
   if (buckets.length === 0) {
-    return <p className="text-sm text-foreground/69">No data in this range.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noDataInRange}</p>;
   }
 
   return (
@@ -11,9 +15,9 @@ export function SalesReportTable({ buckets }: { buckets: SalesBucket[] }) {
       <table className="w-full min-w-[400px] text-left text-sm">
         <thead className="border-b border-brand-100 bg-brand-50/50 text-xs uppercase tracking-wide text-foreground/69">
           <tr>
-            <th className="px-4 py-3 font-medium">Period</th>
-            <th className="px-4 py-3 text-right font-medium">Orders</th>
-            <th className="px-4 py-3 text-right font-medium">Revenue</th>
+            <th className="px-4 py-3 font-medium">{dict.salesTable.period}</th>
+            <th className="px-4 py-3 text-right font-medium">{dict.salesTable.orders}</th>
+            <th className="px-4 py-3 text-right font-medium">{dict.salesTable.revenue}</th>
           </tr>
         </thead>
         <tbody>

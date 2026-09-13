@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { Review, ReviewStatus } from "@/core/reviews/entities";
 import { moderateReviewAction } from "@/features/reviews/actions";
 import { StarRatingDisplay } from "@/features/reviews/components/star-rating-display";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Badge } from "@/ui/primitives/badge";
 import { Button } from "@/ui/primitives/button";
 
@@ -15,8 +17,10 @@ const STATUS_VARIANT: Record<ReviewStatus, "neutral" | "success" | "warning" | "
   hidden: "neutral",
 };
 
-export function AdminReviewsTable({ reviews }: { reviews: Review[] }) {
+export function AdminReviewsTable({ reviews, locale = DEFAULT_LOCALE }: { reviews: Review[]; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.reviewsPage;
+  const reviewStatusDict = getDictionary(locale).admin.reviewStatus;
   const [busyId, setBusyId] = useState<string | null>(null);
 
   async function handleModerate(id: string, status: "approved" | "rejected" | "hidden") {
@@ -30,7 +34,7 @@ export function AdminReviewsTable({ reviews }: { reviews: Review[] }) {
   }
 
   if (reviews.length === 0) {
-    return <p className="text-sm text-foreground/69">No reviews yet.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noReviews}</p>;
   }
 
   return (
@@ -41,24 +45,24 @@ export function AdminReviewsTable({ reviews }: { reviews: Review[] }) {
             <div className="flex items-center gap-2">
               <StarRatingDisplay rating={review.rating} size="sm" />
               <span className="font-medium text-brand-950">{review.title}</span>
-              <Badge variant={STATUS_VARIANT[review.status]}>{review.status}</Badge>
-              {review.verifiedPurchase && <Badge variant="success">Verified purchase</Badge>}
+              <Badge variant={STATUS_VARIANT[review.status]}>{reviewStatusDict[review.status]}</Badge>
+              {review.verifiedPurchase && <Badge variant="success">{dict.verifiedPurchase}</Badge>}
             </div>
             <span className="text-xs text-foreground/65">{review.createdAt.toLocaleDateString()}</span>
           </div>
           <p className="text-xs text-foreground/65">
-            {review.customerName} · product {review.productId}
+            {review.customerName} · {dict.product} {review.productId}
           </p>
           <p className="whitespace-pre-line text-sm text-foreground/80">{review.body}</p>
           <div className="flex gap-2">
             <Button size="sm" disabled={busyId === review.id || review.status === "approved"} onClick={() => handleModerate(review.id, "approved")}>
-              Approve
+              {dict.approve}
             </Button>
             <Button size="sm" variant="outline" disabled={busyId === review.id || review.status === "rejected"} onClick={() => handleModerate(review.id, "rejected")}>
-              Reject
+              {dict.reject}
             </Button>
             <Button size="sm" variant="outline" disabled={busyId === review.id || review.status === "hidden"} onClick={() => handleModerate(review.id, "hidden")}>
-              Hide
+              {dict.hide}
             </Button>
           </div>
         </li>

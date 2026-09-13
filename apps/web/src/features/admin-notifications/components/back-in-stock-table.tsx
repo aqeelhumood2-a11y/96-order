@@ -1,4 +1,6 @@
 import type { BackInStockSubscription } from "@/core/back-in-stock/entities";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Badge } from "@/ui/primitives";
 
 const STATUS_VARIANT: Record<BackInStockSubscription["status"], "neutral" | "success" | "warning"> = {
@@ -7,9 +9,16 @@ const STATUS_VARIANT: Record<BackInStockSubscription["status"], "neutral" | "suc
   cancelled: "neutral",
 };
 
-export function BackInStockTable({ subscriptions }: { subscriptions: BackInStockSubscription[] }) {
+export function BackInStockTable({ subscriptions, locale = DEFAULT_LOCALE }: { subscriptions: BackInStockSubscription[]; locale?: Locale }) {
+  const dict = getDictionary(locale).admin.backInStockPage;
+  const statusLabel: Record<BackInStockSubscription["status"], string> = {
+    pending: dict.statusPending,
+    notified: dict.statusNotified,
+    cancelled: dict.statusCancelled,
+  };
+
   if (subscriptions.length === 0) {
-    return <p className="text-sm text-foreground/69">No back-in-stock subscriptions yet.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noSubscriptions}</p>;
   }
 
   return (
@@ -17,12 +26,12 @@ export function BackInStockTable({ subscriptions }: { subscriptions: BackInStock
       <table className="w-full text-left text-sm">
         <thead className="bg-brand-50 text-xs uppercase tracking-wide text-foreground/69">
           <tr>
-            <th className="px-4 py-2">Email</th>
-            <th className="px-4 py-2">Product</th>
-            <th className="px-4 py-2">Variant</th>
-            <th className="px-4 py-2">Status</th>
-            <th className="px-4 py-2">Subscribed</th>
-            <th className="px-4 py-2">Notified</th>
+            <th className="px-4 py-2">{dict.table.email}</th>
+            <th className="px-4 py-2">{dict.table.product}</th>
+            <th className="px-4 py-2">{dict.table.variant}</th>
+            <th className="px-4 py-2">{dict.table.status}</th>
+            <th className="px-4 py-2">{dict.table.subscribed}</th>
+            <th className="px-4 py-2">{dict.table.notified}</th>
           </tr>
         </thead>
         <tbody>
@@ -32,7 +41,7 @@ export function BackInStockTable({ subscriptions }: { subscriptions: BackInStock
               <td className="px-4 py-2 font-mono text-xs">{subscription.productId}</td>
               <td className="px-4 py-2 font-mono text-xs">{subscription.variantId ?? "—"}</td>
               <td className="px-4 py-2">
-                <Badge variant={STATUS_VARIANT[subscription.status]}>{subscription.status}</Badge>
+                <Badge variant={STATUS_VARIANT[subscription.status]}>{statusLabel[subscription.status]}</Badge>
               </td>
               <td className="px-4 py-2">{subscription.createdAt.toLocaleDateString()}</td>
               <td className="px-4 py-2">{subscription.notifiedAt ? subscription.notifiedAt.toLocaleDateString() : "—"}</td>

@@ -3,6 +3,8 @@ import type { QuestionStatus } from "@/core/questions/entities";
 import { QUESTION_STATUSES } from "@/core/questions/entities";
 import { CursorPagination } from "@/features/admin-shell/components/cursor-pagination";
 import { AdminQuestionsTable } from "@/features/admin-questions/components/questions-table";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { parseCursorState } from "@/lib/cursor-pagination";
 import { adminListQuestions } from "@/services/questions/list-questions";
 import { requireSession } from "@/services/auth/session";
@@ -18,7 +20,7 @@ function firstValue(value: string | string[] | undefined): string | undefined {
 }
 
 export default async function AdminQuestionsPage({ searchParams }: PageProps) {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
   const raw = await searchParams;
   const cursor = firstValue(raw.cursor);
   const cursorsParam = firstValue(raw.cursors);
@@ -38,21 +40,23 @@ export default async function AdminQuestionsPage({ searchParams }: PageProps) {
 
   const cursorState = parseCursorState(cursor, cursorsParam);
   const baseQueryString = status ? `status=${status}` : "";
+  const dict = getDictionary(locale).admin.questionsPage;
+  const questionStatusDict = getDictionary(locale).admin.questionStatus;
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Product questions</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.heading}</h1>
       <div className="flex gap-2 text-sm">
         <a href="/admin/questions" className={!status ? "font-semibold text-brand-950" : "text-brand-700"}>
-          All
+          {dict.all}
         </a>
         {QUESTION_STATUSES.map((value) => (
           <a key={value} href={`/admin/questions?status=${value}`} className={status === value ? "font-semibold text-brand-950" : "text-brand-700"}>
-            {value}
+            {questionStatusDict[value]}
           </a>
         ))}
       </div>
-      <AdminQuestionsTable questions={page.items} />
+      <AdminQuestionsTable questions={page.items} locale={locale} />
       <CursorPagination basePath="/admin/questions" baseQueryString={baseQueryString} cursorState={cursorState} nextCursor={page.nextCursor} />
     </div>
   );

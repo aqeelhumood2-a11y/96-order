@@ -1,11 +1,12 @@
 import { ForbiddenError } from "@/core/errors";
 import { hasPermission } from "@/core/auth/permissions";
 import { BrandsManager } from "@/features/catalog/brands/components/brands-manager";
+import { getLocale } from "@/lib/i18n/locale";
 import { listBrands } from "@/services/catalog/list-brands";
 import { requireSession } from "@/services/auth/session";
 
 export default async function BrandsPage() {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
 
   let brandsPage;
   try {
@@ -18,5 +19,5 @@ export default async function BrandsPage() {
     return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
   }
 
-  return <BrandsManager brands={brandsPage.items} canManage={hasPermission(session, "brands:create")} />;
+  return <BrandsManager brands={brandsPage.items} canManage={hasPermission(session, "brands:create")} locale={locale} />;
 }

@@ -7,6 +7,8 @@ import { CashPaymentsSummaryCard } from "@/features/admin-reports/components/cas
 import { OnlinePaymentsSummaryCard } from "@/features/admin-reports/components/online-payments-summary-card";
 import { PendingCashCollectionTable } from "@/features/admin-reports/components/pending-cash-collection-table";
 import { parseReportsSearchParams } from "@/features/admin-reports/parse-search-params";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { getBestSellingProducts } from "@/services/reports/best-selling-products";
 import { getOrdersByStatusReport } from "@/services/reports/orders-by-status";
 import { getCashPaymentsReport, getOnlinePaymentsReport, getPendingCashCollectionReport } from "@/services/reports/payments-report";
@@ -20,7 +22,7 @@ interface ReportsPageProps {
 const BEST_SELLERS_LIMIT = 20;
 
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
   const raw = await searchParams;
   const query = parseReportsSearchParams(raw);
 
@@ -45,41 +47,43 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
     return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
   }
 
+  const dict = getDictionary(locale).admin.reportsPage;
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Reports</h1>
-      <ReportsFilters query={query} />
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.heading}</h1>
+      <ReportsFilters query={query} locale={locale} />
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold text-brand-950">Sales</h2>
-        <SalesReportTable buckets={data.sales} />
+        <h2 className="text-sm font-semibold text-brand-950">{dict.sales}</h2>
+        <SalesReportTable buckets={data.sales} locale={locale} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-brand-950">Best selling products</h2>
-          <BestSellersTable products={data.bestSellers} />
+          <h2 className="text-sm font-semibold text-brand-950">{dict.bestSellingProducts}</h2>
+          <BestSellersTable products={data.bestSellers} locale={locale} />
         </div>
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-brand-950">Orders by status</h2>
-          <OrdersByStatusTable rows={data.ordersByStatus} />
+          <h2 className="text-sm font-semibold text-brand-950">{dict.ordersByStatus}</h2>
+          <OrdersByStatusTable rows={data.ordersByStatus} locale={locale} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-brand-950">Cash payments</h2>
-          <CashPaymentsSummaryCard summary={data.cashPayments} />
+          <h2 className="text-sm font-semibold text-brand-950">{dict.cashPayments}</h2>
+          <CashPaymentsSummaryCard summary={data.cashPayments} locale={locale} />
         </div>
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-brand-950">Online payments (Tap)</h2>
-          <OnlinePaymentsSummaryCard summary={data.onlinePayments} />
+          <h2 className="text-sm font-semibold text-brand-950">{dict.onlinePayments}</h2>
+          <OnlinePaymentsSummaryCard summary={data.onlinePayments} locale={locale} />
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold text-brand-950">Pending cash collection</h2>
-        <PendingCashCollectionTable rows={data.pendingCashCollection} />
+        <h2 className="text-sm font-semibold text-brand-950">{dict.pendingCashCollection}</h2>
+        <PendingCashCollectionTable rows={data.pendingCashCollection} locale={locale} />
       </div>
     </div>
   );

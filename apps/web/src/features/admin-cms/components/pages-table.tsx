@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { CmsPage } from "@/core/cms/entities";
 import { deleteCmsPageAction } from "@/features/admin-cms/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Badge } from "@/ui/primitives/badge";
 import { Button } from "@/ui/primitives/button";
 
-export function CmsPagesTable({ pages }: { pages: CmsPage[] }) {
+export function CmsPagesTable({ pages, locale = DEFAULT_LOCALE }: { pages: CmsPage[]; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.cmsPagesPage;
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +32,7 @@ export function CmsPagesTable({ pages }: { pages: CmsPage[] }) {
   }
 
   if (pages.length === 0) {
-    return <p className="text-sm text-foreground/69">No pages yet.</p>;
+    return <p className="text-sm text-foreground/69">{dict.noPages}</p>;
   }
 
   return (
@@ -43,11 +46,11 @@ export function CmsPagesTable({ pages }: { pages: CmsPage[] }) {
         <table className="w-full text-left text-sm">
           <thead className="bg-brand-50 text-xs uppercase tracking-wide text-foreground/69">
             <tr>
-              <th className="px-4 py-2">Title</th>
-              <th className="px-4 py-2">Slug</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Nav</th>
-              <th className="px-4 py-2">Footer</th>
+              <th className="px-4 py-2">{dict.table.title}</th>
+              <th className="px-4 py-2">{dict.table.slug}</th>
+              <th className="px-4 py-2">{dict.table.status}</th>
+              <th className="px-4 py-2">{dict.table.nav}</th>
+              <th className="px-4 py-2">{dict.table.footer}</th>
               <th className="px-4 py-2" />
             </tr>
           </thead>
@@ -63,11 +66,11 @@ export function CmsPagesTable({ pages }: { pages: CmsPage[] }) {
                 <td className="px-4 py-2">
                   <Badge variant={page.status === "published" ? "success" : "neutral"}>{page.status}</Badge>
                 </td>
-                <td className="px-4 py-2">{page.showInNav ? "Yes" : "—"}</td>
-                <td className="px-4 py-2">{page.showInFooter ? "Yes" : "—"}</td>
+                <td className="px-4 py-2">{page.showInNav ? dict.yes : "—"}</td>
+                <td className="px-4 py-2">{page.showInFooter ? dict.yes : "—"}</td>
                 <td className="px-4 py-2 text-right">
                   <Button size="sm" variant="outline" disabled={busyId === page.id} onClick={() => handleDelete(page)}>
-                    {busyId === page.id ? "Deleting…" : "Delete"}
+                    {busyId === page.id ? dict.deleting : dict.delete}
                   </Button>
                 </td>
               </tr>

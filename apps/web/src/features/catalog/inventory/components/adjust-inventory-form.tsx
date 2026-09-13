@@ -4,13 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { INVENTORY_ADJUSTMENT_REASONS, type InventoryAdjustmentReason } from "@/core/catalog/entities";
 import { adjustInventoryAction } from "@/features/catalog/inventory/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
 import { Select } from "@/ui/primitives/select";
 
-export function AdjustInventoryForm({ productId, variantId }: { productId: string; variantId: string | null }) {
+export function AdjustInventoryForm({ productId, variantId, locale = DEFAULT_LOCALE }: { productId: string; variantId: string | null; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.adjustInventoryForm;
   const [reason, setReason] = useState<InventoryAdjustmentReason>("manual_adjustment");
   const [quantityDelta, setQuantityDelta] = useState("");
   const [note, setNote] = useState("");
@@ -25,7 +28,7 @@ export function AdjustInventoryForm({ productId, variantId }: { productId: strin
 
     const delta = Number.parseInt(quantityDelta, 10);
     if (!Number.isInteger(delta) || delta === 0) {
-      setError("Enter a non-zero whole number (negative to remove stock).");
+      setError(dict.invalidQuantity);
       return;
     }
 
@@ -44,7 +47,7 @@ export function AdjustInventoryForm({ productId, variantId }: { productId: strin
         return;
       }
 
-      setSuccessMessage(`Updated: on-hand is now ${result.data.onHand} (was ${result.data.onHandBefore}).`);
+      setSuccessMessage(dict.updated.replace("{onHand}", String(result.data.onHand)).replace("{onHandBefore}", String(result.data.onHandBefore)));
       setQuantityDelta("");
       setNote("");
       router.refresh();
@@ -56,7 +59,7 @@ export function AdjustInventoryForm({ productId, variantId }: { productId: strin
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`reason-${productId}-${variantId ?? "-"}`}>Reason</Label>
+        <Label htmlFor={`reason-${productId}-${variantId ?? "-"}`}>{dict.reason}</Label>
         <Select
           id={`reason-${productId}-${variantId ?? "-"}`}
           value={reason}
@@ -73,7 +76,7 @@ export function AdjustInventoryForm({ productId, variantId }: { productId: strin
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`delta-${productId}-${variantId ?? "-"}`}>Quantity change</Label>
+        <Label htmlFor={`delta-${productId}-${variantId ?? "-"}`}>{dict.quantityChange}</Label>
         <Input
           id={`delta-${productId}-${variantId ?? "-"}`}
           type="number"
@@ -86,7 +89,7 @@ export function AdjustInventoryForm({ productId, variantId }: { productId: strin
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`note-${productId}-${variantId ?? "-"}`}>Note (optional)</Label>
+        <Label htmlFor={`note-${productId}-${variantId ?? "-"}`}>{dict.note}</Label>
         <Input
           id={`note-${productId}-${variantId ?? "-"}`}
           value={note}
@@ -97,7 +100,7 @@ export function AdjustInventoryForm({ productId, variantId }: { productId: strin
       </div>
 
       <Button type="submit" size="sm" disabled={isSubmitting}>
-        {isSubmitting ? "Applying…" : "Apply"}
+        {isSubmitting ? dict.applying : dict.apply}
       </Button>
 
       {error && (

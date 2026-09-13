@@ -3,6 +3,8 @@ import type { ReviewStatus } from "@/core/reviews/entities";
 import { REVIEW_STATUSES } from "@/core/reviews/entities";
 import { CursorPagination } from "@/features/admin-shell/components/cursor-pagination";
 import { AdminReviewsTable } from "@/features/admin-reviews/components/reviews-table";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { parseCursorState } from "@/lib/cursor-pagination";
 import { adminListReviews } from "@/services/reviews/admin-list-reviews";
 import { requireSession } from "@/services/auth/session";
@@ -18,7 +20,7 @@ function firstValue(value: string | string[] | undefined): string | undefined {
 }
 
 export default async function AdminReviewsPage({ searchParams }: PageProps) {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
   const raw = await searchParams;
   const cursor = firstValue(raw.cursor);
   const cursorsParam = firstValue(raw.cursors);
@@ -38,21 +40,23 @@ export default async function AdminReviewsPage({ searchParams }: PageProps) {
 
   const cursorState = parseCursorState(cursor, cursorsParam);
   const baseQueryString = status ? `status=${status}` : "";
+  const dict = getDictionary(locale).admin.reviewsPage;
+  const reviewStatusDict = getDictionary(locale).admin.reviewStatus;
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Reviews</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.heading}</h1>
       <div className="flex gap-2 text-sm">
         <a href="/admin/reviews" className={!status ? "font-semibold text-brand-950" : "text-brand-700"}>
-          All
+          {dict.all}
         </a>
         {REVIEW_STATUSES.map((value) => (
           <a key={value} href={`/admin/reviews?status=${value}`} className={status === value ? "font-semibold text-brand-950" : "text-brand-700"}>
-            {value}
+            {reviewStatusDict[value]}
           </a>
         ))}
       </div>
-      <AdminReviewsTable reviews={page.items} />
+      <AdminReviewsTable reviews={page.items} locale={locale} />
       <CursorPagination basePath="/admin/reviews" baseQueryString={baseQueryString} cursorState={cursorState} nextCursor={page.nextCursor} />
     </div>
   );
