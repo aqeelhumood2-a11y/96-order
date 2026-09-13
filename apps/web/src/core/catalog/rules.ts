@@ -40,11 +40,21 @@ export function isDriveFileId(value: string): boolean {
 const DRIVE_SHARE_LINK_PATTERNS = [
   /\/file\/d\/([^/?]+)/, // .../file/d/<id>/view?usp=...
   /[?&]id=([^&]+)/, // .../open?id=<id>, .../uc?id=<id> or .../uc?export=view&id=<id>
-  /googleusercontent\.com\/d\/([^/?]+)/, // already in this app's own output form — re-normalized idempotently
+  /googleusercontent\.com\/d\/([^/?=]+)/, // already in this app's own output form (id or id=w1600) — re-normalized idempotently; stops at "=" so re-matching an already-sized URL doesn't recapture the size suffix as part of the id
 ];
 
+/**
+ * `=w1600` caps the served size to a sensible max for a product photo —
+ * without it this CDN serves the file at its original resolution, which for
+ * an unedited phone photo can be several MB and made every product image on
+ * the storefront noticeably slow to load (the same URL is used for both a
+ * small card thumbnail and the full product-page gallery image, so this
+ * needs to be generous enough for the latter). This one addition beyond
+ * maawoon-menu's ported logic is a pure CDN query suffix, not a different
+ * conversion method.
+ */
 function driveImageUrl(fileId: string): string {
-  return `https://lh3.googleusercontent.com/d/${fileId}`;
+  return `https://lh3.googleusercontent.com/d/${fileId}=w1600`;
 }
 
 /**
