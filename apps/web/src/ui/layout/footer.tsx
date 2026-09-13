@@ -16,6 +16,8 @@ export interface FooterColumnItem {
 
 export interface FooterProps {
   footerPages: FooterLinkItem[];
+  /** Top-level active categories — see `(storefront)/layout.tsx`'s doc comment for why the header/footer's category links are driven by these instead of two hardcoded links. */
+  categoryLinks: FooterLinkItem[];
   footerColumns: FooterColumnItem[];
   contactEmail: string;
   contactPhone: string;
@@ -30,6 +32,7 @@ export interface FooterProps {
 /** Presentational only — see `Header`'s doc comment for why. */
 export function Footer({
   footerPages,
+  categoryLinks,
   footerColumns,
   contactEmail,
   contactPhone,
@@ -43,8 +46,7 @@ export function Footer({
   const dict = getDictionary(locale);
   const discoveryLinks: FooterLinkItem[] = [
     { href: "/products", label: dict.footer.shopAll },
-    { href: "/products?productType=coffee", label: dict.nav.coffee },
-    { href: "/products?productType=equipment", label: dict.nav.equipment },
+    ...categoryLinks,
     { href: "/search", label: dict.nav.search },
   ];
 

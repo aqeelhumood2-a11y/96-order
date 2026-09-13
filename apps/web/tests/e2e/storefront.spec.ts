@@ -168,7 +168,15 @@ test.describe("mobile", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Open menu" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Coffee" })).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("link", { name: "Shop" })).toBeVisible();
+    // The nav's other links are driven by real top-level active categories
+    // (see `(storefront)/layout.tsx`) rather than two hardcoded labels — this
+    // checks for any such link rather than one specific category's name,
+    // since this suite's own category fixtures are seeded via a direct
+    // Firestore write (see storefront-fixtures.ts's doc comment) that,
+    // unlike the real admin UI, doesn't revalidate the cached list this nav
+    // reads from.
+    await expect(page.getByRole("dialog").locator('a[href^="/categories/"]').first()).toBeVisible();
     await page.getByRole("button", { name: "Close menu" }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });

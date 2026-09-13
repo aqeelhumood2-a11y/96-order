@@ -19,8 +19,6 @@ export interface Dictionary {
   };
   nav: {
     shop: string;
-    coffee: string;
-    equipment: string;
     search: string;
     searchPlaceholder: string;
     searchLabel: string;
@@ -562,8 +560,6 @@ export const en: Dictionary = {
   languageSwitcher: { label: "Language" },
   nav: {
     shop: "Shop",
-    coffee: "Coffee",
-    equipment: "Equipment",
     search: "Search",
     searchPlaceholder: "Search coffee, brewers, brands…",
     searchLabel: "Search products",
@@ -1147,8 +1143,6 @@ export const ar: Dictionary = {
   languageSwitcher: { label: "اللغة" },
   nav: {
     shop: "المتجر",
-    coffee: "القهوة",
-    equipment: "المعدات",
     search: "بحث",
     searchPlaceholder: "ابحث عن القهوة، أدوات التحضير، العلامات التجارية…",
     searchLabel: "ابحث عن المنتجات",
