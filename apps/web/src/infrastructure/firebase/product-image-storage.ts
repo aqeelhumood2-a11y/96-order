@@ -1,7 +1,8 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import type { ProductImageStoragePort, UploadedProductImage } from "@/core/interfaces/product-image-storage-port";
-import { getAdminStorage } from "./admin";
+import { logger } from "@/lib/logger";
+import { getAdminApp, getAdminStorage } from "./admin";
 
 const CONTENT_TYPE_EXTENSIONS: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -49,7 +50,26 @@ function buildStoragePath(productId: string, imageId: string, contentType: strin
  * Storage Security Rules still deny every other access pattern.
  */
 export class FirebaseProductImageStorage implements ProductImageStoragePort {
+  /**
+   * `getStorage(app).bucket()` (no name argument) resolves the bucket from
+   * `initializeApp`'s own `storageBucket` option (see `admin.ts`) — when
+   * `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` isn't set, that option is
+   * `undefined` and the Admin SDK throws its own generic "bucket name not
+   * specified" error, which `runAction` then masks into the same opaque
+   * "Something went wrong." every other unclassified failure produces —
+   * indistinguishable from a real bug without this explicit check and log.
+   */
   private bucket() {
+    const storageBucket = getAdminApp().options.storageBucket;
+    if (!storageBucket) {
+      logger.error("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not set — product image upload/download cannot work without it");
+      throw new Error(
+        "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not set. Set it in your deployment platform's environment variables " +
+          "(the Firebase project's Storage bucket name, e.g. \"your-project.appspot.com\") and redeploy — this value " +
+          "is also baked into next.config.ts's image remotePatterns at build time, so a redeploy (not just saving " +
+          "the variable) is required for it to take effect.",
+      );
+    }
     return getAdminStorage().bucket();
   }
 
