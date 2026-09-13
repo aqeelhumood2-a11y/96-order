@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import type { Role } from "@/core/auth/entities";
 import { createStaffAction } from "@/features/staff/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -14,8 +16,9 @@ const formSchema = z.object({
   displayName: z.string().optional(),
 });
 
-export function CreateStaffForm({ roles }: { roles: Role[] }) {
+export function CreateStaffForm({ roles, locale = DEFAULT_LOCALE }: { roles: Role[]; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.createStaffForm;
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
@@ -55,7 +58,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
         return;
       }
 
-      setSuccessMessage(`Staff account created for ${parsed.data.email}. A password-setup email has been sent.`);
+      setSuccessMessage(dict.successMessage.replace("{email}", parsed.data.email));
       setEmail("");
       setDisplayName("");
       setSelectedRoleIds([]);
@@ -68,7 +71,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
   return (
     <form onSubmit={handleSubmit} noValidate className="flex max-w-md flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="new-staff-email">Email</Label>
+        <Label htmlFor="new-staff-email">{dict.email}</Label>
         <Input
           id="new-staff-email"
           type="email"
@@ -85,7 +88,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="new-staff-name">Display name (optional)</Label>
+        <Label htmlFor="new-staff-name">{dict.displayName}</Label>
         <Input
           id="new-staff-name"
           type="text"
@@ -96,8 +99,8 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
       </div>
 
       <fieldset className="flex flex-col gap-1.5">
-        <legend className="text-sm font-medium text-foreground">Roles</legend>
-        {roles.length === 0 && <p className="text-sm text-foreground/69">No roles exist yet.</p>}
+        <legend className="text-sm font-medium text-foreground">{dict.roles}</legend>
+        {roles.length === 0 && <p className="text-sm text-foreground/69">{dict.noRoles}</p>}
         {roles.map((role) => (
           <label key={role.id} className="flex items-center gap-2 text-sm">
             <input
@@ -124,7 +127,7 @@ export function CreateStaffForm({ roles }: { roles: Role[] }) {
       )}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Creating…" : "Create staff account"}
+        {isSubmitting ? dict.creating : dict.createAccount}
       </Button>
     </form>
   );

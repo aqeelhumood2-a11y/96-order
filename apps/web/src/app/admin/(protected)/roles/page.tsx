@@ -4,11 +4,13 @@ import { ForbiddenError } from "@/core/errors";
 import { hasPermission } from "@/core/auth/permissions";
 import { RoleForm } from "@/features/roles/components/role-form";
 import { RolesTable } from "@/features/roles/components/roles-table";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { listRoles } from "@/services/auth/list-roles";
 import { requireSession } from "@/services/auth/session";
 
 export default async function RolesPage() {
-  const session = await requireSession();
+  const [session, locale] = await Promise.all([requireSession(), getLocale()]);
 
   let rolesPage: Page<Role> | null = null;
   try {
@@ -22,18 +24,19 @@ export default async function RolesPage() {
   }
 
   const canManage = hasPermission(session, "staff:manage");
+  const dict = getDictionary(locale).admin.rolesPage;
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Roles</h1>
-        <RolesTable roles={rolesPage.items} canManage={canManage} />
+        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.heading}</h1>
+        <RolesTable roles={rolesPage.items} canManage={canManage} locale={locale} />
       </div>
 
       {canManage && (
         <div className="flex flex-col gap-4 border-t border-brand-100 pt-6">
-          <h2 className="text-lg font-semibold text-brand-950">Create role</h2>
-          <RoleForm />
+          <h2 className="text-lg font-semibold text-brand-950">{dict.createRole}</h2>
+          <RoleForm locale={locale} />
         </div>
       )}
     </div>

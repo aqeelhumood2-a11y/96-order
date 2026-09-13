@@ -7,18 +7,23 @@ import {
   revokeStaffSessionsAction,
   setStaffStatusAction,
 } from "@/features/staff/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 
 export function StaffRowActions({
   uid,
   status,
   canEdit,
+  locale = DEFAULT_LOCALE,
 }: {
   uid: string;
   status: "active" | "deactivated";
   canEdit: boolean;
+  locale?: Locale;
 }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.staffPage;
   const [isPending, setIsPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -49,7 +54,7 @@ export function StaffRowActions({
         disabled={isPending}
         onClick={() => run(() => setStaffStatusAction(uid, status === "active" ? "deactivated" : "active"))}
       >
-        {status === "active" ? "Deactivate" : "Activate"}
+        {status === "active" ? dict.deactivate : dict.activate}
       </Button>
       <Button
         type="button"
@@ -58,7 +63,7 @@ export function StaffRowActions({
         disabled={isPending}
         onClick={() => run(() => revokeStaffSessionsAction(uid))}
       >
-        Force logout
+        {dict.forceLogout}
       </Button>
       <Button
         type="button"
@@ -72,7 +77,7 @@ export function StaffRowActions({
           try {
             const result = await initiatePasswordResetAction(uid);
             if (result.ok) {
-              setStatusMessage("Password reset email sent.");
+              setStatusMessage(dict.passwordResetSent);
             } else {
               setMessage(result.message);
             }
@@ -81,7 +86,7 @@ export function StaffRowActions({
           }
         }}
       >
-        Reset password
+        {dict.resetPassword}
       </Button>
       {message && (
         <p role="alert" className="text-xs text-danger-600">

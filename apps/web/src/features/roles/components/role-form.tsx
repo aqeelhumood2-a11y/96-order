@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { PERMISSION_ACTIONS, PERMISSION_NAMESPACES, formatPermission } from "@/core/auth/permissions";
 import { createRoleAction } from "@/features/roles/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -18,8 +20,9 @@ const formSchema = z.object({
   description: z.string().min(1, "Description is required."),
 });
 
-export function RoleForm() {
+export function RoleForm({ locale = DEFAULT_LOCALE }: { locale?: Locale } = {}) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.roleForm;
   const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -66,15 +69,15 @@ export function RoleForm() {
     <form onSubmit={handleSubmit} noValidate className="flex max-w-2xl flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="role-id">Role id</Label>
+          <Label htmlFor="role-id">{dict.roleId}</Label>
           <Input id="role-id" value={id} onChange={(event) => setId(event.target.value)} disabled={isSubmitting} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="role-name">Name</Label>
+          <Label htmlFor="role-name">{dict.name}</Label>
           <Input id="role-name" value={name} onChange={(event) => setName(event.target.value)} disabled={isSubmitting} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="role-description">Description</Label>
+          <Label htmlFor="role-description">{dict.description}</Label>
           <Input
             id="role-description"
             value={description}
@@ -91,12 +94,12 @@ export function RoleForm() {
       )}
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-medium text-foreground">Permissions</legend>
+        <legend className="text-sm font-medium text-foreground">{dict.permissions}</legend>
         <div className="overflow-x-auto">
           <table className="text-sm">
             <thead>
               <tr>
-                <th className="pr-4 text-left font-medium text-foreground/69">Namespace</th>
+                <th className="pr-4 text-left font-medium text-foreground/69">{dict.namespace}</th>
                 {PERMISSION_ACTIONS.map((action) => (
                   <th key={action} className="px-2 text-left font-medium text-foreground/69">
                     {action}
@@ -136,7 +139,7 @@ export function RoleForm() {
       )}
 
       <Button type="submit" disabled={isSubmitting} className="w-fit">
-        {isSubmitting ? "Creating…" : "Create role"}
+        {isSubmitting ? dict.creating : dict.createRole}
       </Button>
     </form>
   );

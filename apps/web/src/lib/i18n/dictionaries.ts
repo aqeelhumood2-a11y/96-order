@@ -268,6 +268,46 @@ export interface Dictionary {
       activate: string;
       newPromotion: string;
     };
+    staffPage: {
+      heading: string;
+      addStaffAccount: string;
+      noStaff: string;
+      table: { email: string; roles: string; status: string; actions: string };
+      statusActive: string;
+      statusDeactivated: string;
+      deactivate: string;
+      activate: string;
+      forceLogout: string;
+      resetPassword: string;
+      passwordResetSent: string;
+    };
+    createStaffForm: {
+      email: string;
+      displayName: string;
+      roles: string;
+      noRoles: string;
+      creating: string;
+      createAccount: string;
+      /** `{email}` replaced */
+      successMessage: string;
+    };
+    rolesPage: {
+      heading: string;
+      createRole: string;
+      noRoles: string;
+      table: { name: string; description: string; permissions: string; actions: string };
+      system: string;
+      delete: string;
+    };
+    roleForm: {
+      roleId: string;
+      name: string;
+      description: string;
+      permissions: string;
+      namespace: string;
+      creating: string;
+      createRole: string;
+    };
   };
 }
 
@@ -570,6 +610,45 @@ export const en: Dictionary = {
       activate: "Activate",
       newPromotion: "New promotion",
     },
+    staffPage: {
+      heading: "Staff",
+      addStaffAccount: "Add staff account",
+      noStaff: "No staff accounts yet.",
+      table: { email: "Email", roles: "Roles", status: "Status", actions: "Actions" },
+      statusActive: "active",
+      statusDeactivated: "deactivated",
+      deactivate: "Deactivate",
+      activate: "Activate",
+      forceLogout: "Force logout",
+      resetPassword: "Reset password",
+      passwordResetSent: "Password reset email sent.",
+    },
+    createStaffForm: {
+      email: "Email",
+      displayName: "Display name (optional)",
+      roles: "Roles",
+      noRoles: "No roles exist yet.",
+      creating: "Creating…",
+      createAccount: "Create staff account",
+      successMessage: "Staff account created for {email}. A password-setup email has been sent.",
+    },
+    rolesPage: {
+      heading: "Roles",
+      createRole: "Create role",
+      noRoles: "No roles yet.",
+      table: { name: "Name", description: "Description", permissions: "Permissions", actions: "Actions" },
+      system: "system",
+      delete: "Delete",
+    },
+    roleForm: {
+      roleId: "Role id",
+      name: "Name",
+      description: "Description",
+      permissions: "Permissions",
+      namespace: "Namespace",
+      creating: "Creating…",
+      createRole: "Create role",
+    },
   },
 };
 
@@ -871,6 +950,45 @@ export const ar: Dictionary = {
       deactivate: "إيقاف",
       activate: "تفعيل",
       newPromotion: "عرض جديد",
+    },
+    staffPage: {
+      heading: "الموظفون",
+      addStaffAccount: "إضافة حساب موظف",
+      noStaff: "لا يوجد موظفون بعد.",
+      table: { email: "الإيميل", roles: "الصلاحيات", status: "الحالة", actions: "الإجراءات" },
+      statusActive: "نشط",
+      statusDeactivated: "معطّل",
+      deactivate: "تعطيل",
+      activate: "تفعيل",
+      forceLogout: "تسجيل خروج إجباري",
+      resetPassword: "إعادة تعيين كلمة السر",
+      passwordResetSent: "تم إرسال إيميل إعادة تعيين كلمة السر.",
+    },
+    createStaffForm: {
+      email: "الإيميل",
+      displayName: "الاسم الظاهر (اختياري)",
+      roles: "الأدوار",
+      noRoles: "لا توجد أدوار بعد.",
+      creating: "جارٍ الإنشاء…",
+      createAccount: "إنشاء حساب موظف",
+      successMessage: "تم إنشاء حساب موظف لـ {email}. تم إرسال إيميل لتعيين كلمة السر.",
+    },
+    rolesPage: {
+      heading: "الأدوار",
+      createRole: "إنشاء دور",
+      noRoles: "لا توجد أدوار بعد.",
+      table: { name: "الاسم", description: "الوصف", permissions: "الصلاحيات", actions: "الإجراءات" },
+      system: "نظامي",
+      delete: "حذف",
+    },
+    roleForm: {
+      roleId: "معرّف الدور",
+      name: "الاسم",
+      description: "الوصف",
+      permissions: "الصلاحيات",
+      namespace: "القسم",
+      creating: "جارٍ الإنشاء…",
+      createRole: "إنشاء الدور",
     },
   },
 };
