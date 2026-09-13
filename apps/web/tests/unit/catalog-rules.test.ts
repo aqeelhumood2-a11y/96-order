@@ -122,40 +122,44 @@ describe("isDriveFileId", () => {
 });
 
 describe("normalizeImageUrl", () => {
-  it("rewrites a Google Drive 'view this file' share link (mobile app share sheet form) to the thumbnail endpoint", () => {
+  it("rewrites a Google Drive 'view this file' share link (mobile app share sheet form) to the googleusercontent CDN form", () => {
     expect(normalizeImageUrl("https://drive.google.com/file/d/1AbC-XyZ_9rq1g2/view?usp=drivesdk")).toBe(
-      "https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000",
+      "https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2",
     );
   });
 
-  it("rewrites a Google Drive 'view this file' share link (desktop share dialog form) to the thumbnail endpoint", () => {
+  it("rewrites a Google Drive 'view this file' share link (desktop share dialog form) to the googleusercontent CDN form", () => {
     expect(normalizeImageUrl("https://drive.google.com/file/d/1AbC-XyZ_9rq1g2/view?usp=sharing")).toBe(
-      "https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000",
+      "https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2",
     );
   });
 
   it("rewrites Drive's older 'open?id=' link shape too", () => {
-    expect(normalizeImageUrl("https://drive.google.com/open?id=1AbC-XyZ_9rq1g2")).toBe("https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000");
+    expect(normalizeImageUrl("https://drive.google.com/open?id=1AbC-XyZ_9rq1g2")).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
   });
 
-  it("upgrades an older direct-view ('uc?export=view') link saved before the thumbnail endpoint was used", () => {
+  it("upgrades an older direct-view ('uc?export=view') link saved before this format was used", () => {
     expect(normalizeImageUrl("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2")).toBe(
-      "https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000",
+      "https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2",
     );
   });
 
-  it("re-normalizes an already-thumbnail-form Drive URL to the current size param", () => {
-    const url = "https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000";
+  it("re-normalizes an already-converted googleusercontent URL idempotently", () => {
+    const url = "https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2";
     expect(normalizeImageUrl(url)).toBe(url);
   });
 
-  it("converts a bare Google Drive file id (pasted directly, not as part of a URL) to the thumbnail endpoint", () => {
-    expect(normalizeImageUrl("1AbC-XyZ_9rq1g2")).toBe("https://drive.google.com/thumbnail?id=1AbC-XyZ_9rq1g2&sz=w2000");
+  it("converts a bare Google Drive file id (pasted directly, not as part of a URL)", () => {
+    expect(normalizeImageUrl("1AbC-XyZ_9rq1g2")).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
   });
 
   it("leaves a non-Drive URL unchanged", () => {
     const url = "https://example.com/photos/coffee.jpg";
     expect(normalizeImageUrl(url)).toBe(url);
+  });
+
+  it("trims surrounding whitespace before matching", () => {
+    expect(normalizeImageUrl("  1AbC-XyZ_9rq1g2  ")).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
   });
 });
 

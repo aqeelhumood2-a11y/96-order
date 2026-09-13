@@ -55,9 +55,9 @@ describe("FirebaseProductImageStorage (emulator)", () => {
     await expect(storage.getDownloadUrl(externalUrl)).resolves.toBe(externalUrl);
   });
 
-  it("getDownloadUrl() re-normalizes an already-saved Drive URL to the current thumbnail format, without touching the bucket", async () => {
+  it("getDownloadUrl() re-normalizes an already-saved Drive URL to the current googleusercontent CDN format, without touching the bucket", async () => {
     const staleUrl = "https://drive.google.com/uc?export=view&id=abc123";
-    await expect(storage.getDownloadUrl(staleUrl)).resolves.toBe("https://drive.google.com/thumbnail?id=abc123&sz=w2000");
+    await expect(storage.getDownloadUrl(staleUrl)).resolves.toBe("https://lh3.googleusercontent.com/d/abc123");
   });
 
   it("delete() on an externally-hosted image URL is a no-op that never touches the bucket", async () => {

@@ -21,14 +21,21 @@ const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/forgot-password"];
  * added only in development, where webpack/Turbopack's eval-based source
  * maps and HMR runtime need it; production builds never include it.
  *
- * Every resource this app actually loads is first-party: no Google Fonts
- * CDN (next/font self-hosts Geist), no client-side Firebase SDK calls (the
- * client never talks to Identity Toolkit/Firestore directly — see
- * `services/auth/create-session.ts`'s doc comment), and Firebase Storage
- * product images are served through `/_next/image` (same-origin) rather
- * than fetched directly by the browser — see `next.config.ts`'s
- * `images.remotePatterns` comment for why that remote host is configured
- * there (server-side fetch) rather than needed here.
+ * Every resource this app actually loads is first-party, with one
+ * deliberate exception: `img-src` also allows any `https:` host. A product
+ * image can be an admin-pasted external URL (Google Drive, or any other
+ * host — see `core/catalog/rules.ts#isExternalImageUrl`) rendered through a
+ * plain `<img>` tag rather than `/_next/image`, since `next/image` only
+ * optimizes hosts explicitly listed in `next.config.ts`'s
+ * `images.remotePatterns`, which can't reasonably enumerate every host an
+ * admin might paste. That `<img>` request goes straight from the browser to
+ * the external host, so it needs `img-src` to actually allow it — Firebase
+ * Storage images are the one case still proxied same-origin through
+ * `/_next/image`, but this policy no longer assumes every image is. No
+ * Google Fonts CDN (next/font self-hosts Geist) and no client-side Firebase
+ * SDK calls (the client never talks to Identity Toolkit/Firestore directly
+ * — see `services/auth/create-session.ts`'s doc comment) are affected by
+ * this: `connect-src`/`script-src` stay first-party-only.
  */
 function buildContentSecurityPolicy(nonce: string): string {
   const isDev = process.env.NODE_ENV !== "production";
@@ -41,7 +48,7 @@ function buildContentSecurityPolicy(nonce: string): string {
     // through; style-based XSS is a materially smaller risk than
     // script-based, so 'unsafe-inline' here is an accepted tradeoff.
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self'",
     "object-src 'none'",

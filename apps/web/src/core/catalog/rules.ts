@@ -28,23 +28,24 @@ export function isDriveFileId(value: string): boolean {
   return DRIVE_FILE_ID_PATTERN.test(value);
 }
 
-function driveThumbnailUrl(fileId: string): string {
-  // Drive's thumbnail endpoint, not `uc?export=view` — the latter is
-  // increasingly rate-limited/blocked for third-party hotlinking regardless
-  // of the file's sharing permissions, which is exactly the "the image
-  // saves but never displays" failure this app hit in production. The
-  // thumbnail endpoint is the pattern that reliably works for a publicly
-  // shared file; `sz=w2000` asks for a size large enough for a full product
-  // photo rather than a small preview thumbnail.
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
-}
-
+// The exact file-id extraction patterns and output URL shape used by this
+// company's other Google-Drive-backed project (maawoon-menu's
+// `ImageUploader.tsx#getGoogleDriveImageUrl`), which is verified working in
+// production there — ported as-is rather than re-derived, since this app's
+// own two earlier attempts (`uc?export=view`, then Drive's `thumbnail`
+// endpoint) both turned out to be unreliable for third-party hotlinking in
+// practice. `lh3.googleusercontent.com` is Google's photo/image CDN host,
+// not the Drive UI host, which is what makes it hotlink-reliable where the
+// `drive.google.com/...` forms are not.
 const DRIVE_SHARE_LINK_PATTERNS = [
-  /drive\.google\.com\/file\/d\/([^/?#]+)/, // .../file/d/<id>/view?usp=...
-  /drive\.google\.com\/open\?[^#]*\bid=([^&#]+)/, // .../open?id=<id> (legacy)
-  /drive\.google\.com\/uc\?[^#]*\bid=([^&#]+)/, // .../uc?id=<id> or .../uc?export=view&id=<id>
-  /drive\.google\.com\/thumbnail\?[^#]*\bid=([^&#]+)/, // already-thumbnail form, re-normalized so an older record upgrades to the current `sz` too
+  /\/file\/d\/([^/?]+)/, // .../file/d/<id>/view?usp=...
+  /[?&]id=([^&]+)/, // .../open?id=<id>, .../uc?id=<id> or .../uc?export=view&id=<id>
+  /googleusercontent\.com\/d\/([^/?]+)/, // already in this app's own output form — re-normalized idempotently
 ];
+
+function driveImageUrl(fileId: string): string {
+  return `https://lh3.googleusercontent.com/d/${fileId}`;
+}
 
 /**
  * What an admin actually has to paste is whatever their phone's share
@@ -57,20 +58,23 @@ const DRIVE_SHARE_LINK_PATTERNS = [
  * works. Any URL that doesn't match a known Drive shape passes through
  * unchanged, so a genuinely different external host is untouched.
  *
- * This runs both when an image is added (`services/catalog/upload-product-image.ts#addProductImageByUrl`)
- * and every time an already-saved external image is resolved for display
+ * This runs both when an image is added (`services/catalog/upload-product-image.ts#addProductImageByUrl`),
+ * live in the admin form as the admin types (`ProductImages`'s preview, so
+ * a broken link is obvious before saving, not after), and every time an
+ * already-saved external image is resolved for display
  * (`infrastructure/firebase/product-image-storage.ts#getDownloadUrl`) — the
- * second call site is what transparently upgrades a record saved before
- * this function existed, or saved with the older `uc?export=view` form, to
- * the current reliable format without needing to delete and re-add it.
+ * last call site is what transparently upgrades a record saved before this
+ * function existed, or saved with an earlier/less reliable URL form, to the
+ * current format without needing to delete and re-add it.
  */
 export function normalizeImageUrl(url: string): string {
+  const trimmed = url.trim();
   for (const pattern of DRIVE_SHARE_LINK_PATTERNS) {
-    const fileId = url.match(pattern)?.[1];
-    if (fileId) return driveThumbnailUrl(fileId);
+    const fileId = trimmed.match(pattern)?.[1];
+    if (fileId) return driveImageUrl(fileId);
   }
-  if (isDriveFileId(url)) return driveThumbnailUrl(url);
-  return url;
+  if (isDriveFileId(trimmed)) return driveImageUrl(trimmed);
+  return trimmed;
 }
 
 /**

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProductImage } from "@/core/catalog/entities";
+import { normalizeImageUrl } from "@/core/catalog/rules";
 import { addProductImageByUrlAction, deleteProductImageAction } from "@/features/catalog/products/actions";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
@@ -29,6 +30,15 @@ export function ProductImages({
   const [error, setError] = useState<string | null>(null);
   const [isAddingFromUrl, setIsAddingFromUrl] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
+
+  // Converted the same way, and at the same call site, as the saved value
+  // will be (see `addProductImageByUrl`) — so what the admin sees here
+  // before saving is exactly what will actually be stored and displayed
+  // afterward, not just a guess at what the pasted link might resolve to.
+  const trimmedImageUrl = imageUrl.trim();
+  const previewUrl = trimmedImageUrl ? normalizeImageUrl(trimmedImageUrl) : "";
 
   async function handleAddFromUrl(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,11 +92,18 @@ export function ProductImages({
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map((image) => (
               <div key={image.id} className="flex w-40 flex-col gap-2 rounded-md border border-brand-100 p-2">
-                {imageUrls[image.id] ? (
+                {imageUrls[image.id] && !failedImageIds.has(image.id) ? (
                   // eslint-disable-next-line @next/next/no-img-element -- admin preview via a short-lived signed URL (or an external URL), not a Next-optimized public asset
-                  <img src={imageUrls[image.id]} alt={image.altText} className="h-32 w-full rounded object-cover" />
+                  <img
+                    src={imageUrls[image.id]}
+                    alt={image.altText}
+                    className="h-32 w-full rounded object-cover"
+                    onError={() => setFailedImageIds((previous) => new Set(previous).add(image.id))}
+                  />
                 ) : (
-                  <div className="h-32 w-full rounded bg-brand-50" />
+                  <div className="flex h-32 w-full items-center justify-center rounded bg-brand-50 p-2 text-center text-xs text-danger-600">
+                    {imageUrls[image.id] ? dict.previewLoadError : ""}
+                  </div>
                 )}
                 <p className="truncate text-xs text-foreground/69">{image.altText || dict.noAltText}</p>
                 {image.isPrimary && <span className="text-xs font-medium text-brand-700">{dict.primary}</span>}
@@ -99,6 +116,22 @@ export function ProductImages({
       )}
 
       <form onSubmit={handleAddFromUrl} noValidate className="flex flex-col gap-3">
+        {previewUrl && (
+          <div className="h-32 w-32 overflow-hidden rounded-md border border-brand-100 bg-brand-50">
+            {!previewFailed ? (
+              // eslint-disable-next-line @next/next/no-img-element -- ad-hoc preview of a not-yet-saved external URL, not a Next-optimized public asset
+              <img
+                key={previewUrl}
+                src={previewUrl}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={() => setPreviewFailed(true)}
+              />
+            ) : (
+              <p className="flex h-full items-center justify-center p-2 text-center text-xs text-danger-600">{dict.previewLoadError}</p>
+            )}
+          </div>
+        )}
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="product-image-url">{dict.imageUrlLabel}</Label>
@@ -106,7 +139,10 @@ export function ProductImages({
               id="product-image-url"
               type="url"
               value={imageUrl}
-              onChange={(event) => setImageUrl(event.target.value)}
+              onChange={(event) => {
+                setImageUrl(event.target.value);
+                setPreviewFailed(false);
+              }}
               disabled={isAddingFromUrl}
               placeholder={dict.imageUrlPlaceholder}
               className="w-64"
