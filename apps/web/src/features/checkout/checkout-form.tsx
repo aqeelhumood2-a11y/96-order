@@ -16,9 +16,11 @@ export interface CheckoutFormProps {
   pickupLocationName: string;
   pickupLocationAddress: string;
   paymentProviders: PaymentProviderSettings;
+  /** Lets a parent (the order-summary sidebar) mirror which fulfillment method is selected — see `CheckoutSummaryPanel`. */
+  onFulfillmentMethodChange?: (method: FulfillmentMethod) => void;
 }
 
-type FulfillmentMethod = "delivery" | "pickup";
+export type FulfillmentMethod = "delivery" | "pickup";
 type PaymentMethod = "cash" | "tap";
 
 function formatSlotLabel(slot: AvailableSlot): string {
@@ -30,7 +32,7 @@ function cashEnabledFor(fulfillmentMethod: FulfillmentMethod, paymentProviders: 
   return fulfillmentMethod === "delivery" ? paymentProviders.cashOnDeliveryEnabled : paymentProviders.cashOnPickupEnabled;
 }
 
-export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocationAddress, paymentProviders }: CheckoutFormProps) {
+export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocationAddress, paymentProviders, onFulfillmentMethodChange }: CheckoutFormProps) {
   const router = useRouter();
   const formId = useId();
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
@@ -50,6 +52,7 @@ export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocatio
   // be silently submitted.
   function handleFulfillmentChange(next: FulfillmentMethod) {
     setFulfillmentMethod(next);
+    onFulfillmentMethodChange?.(next);
     const nextCashEnabled = cashEnabledFor(next, paymentProviders);
     if (paymentMethod === "cash" && !nextCashEnabled && tapEnabled) {
       setPaymentMethod("tap");

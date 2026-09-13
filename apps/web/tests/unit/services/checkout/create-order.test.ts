@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ConflictError, ValidationError } from "@/core/errors";
+import { ZERO_BHD } from "@/core/money/money";
 import type { Order } from "@/core/orders/entities";
 import { createOrder, type CheckoutInput } from "@/services/checkout/create-order";
 import { createMockCheckoutDeps, futureIsoDate, seedCart } from "./test-helpers";
@@ -52,6 +53,29 @@ describe("createOrder", () => {
     expect(result.order.paymentStatus).toBe("pending");
     expect(result.paymentRedirectUrl).toBe("https://pay.example/chg_1");
     expect(deps.payments.provider.createCharge).toHaveBeenCalledTimes(1);
+  });
+
+  it("charges no shipping fee on a pickup order even though the priced cart carries a delivery-tier estimate", async () => {
+    const deps = createMockCheckoutDeps();
+    await seedCart(deps, 2); // subtotal 10.000 BHD -> computeShippingFee would charge the 2.000 BHD standard tier
+
+    const result = await createOrder(baseInput({ fulfillmentMethod: "pickup" }), deps);
+
+    expect(result.order.shippingFee).toEqual(ZERO_BHD);
+    expect(result.order.grandTotal).toEqual(result.order.subtotal);
+  });
+
+  it("still charges the priced shipping fee on a delivery order", async () => {
+    const deps = createMockCheckoutDeps();
+    await seedCart(deps, 2); // subtotal 10.000 BHD -> standard 2.000 BHD tier
+
+    const result = await createOrder(
+      baseInput({ fulfillmentMethod: "delivery", deliveryAddress: { country: "BH", area: "Manama", block: "304", road: "1502", building: "96" } }),
+      deps,
+    );
+
+    expect(result.order.shippingFee).toEqual({ amount: 2000, currency: "BHD" });
+    expect(result.order.grandTotal).toEqual({ amount: result.order.subtotal.amount + 2000, currency: "BHD" });
   });
 
   it("rejects a tap checkout without a return URL before doing anything else", async () => {

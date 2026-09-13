@@ -3,7 +3,7 @@ import { RESERVATION_EXPIRY_MS } from "@/config/inventory";
 import type { PricedCartLine } from "@/core/cart/rules";
 import type { DeliveryAddress, FulfillmentMethod, FulfillmentSchedule } from "@/core/delivery/entities";
 import { ConflictError, ValidationError } from "@/core/errors";
-import { ACTIVE_CURRENCY } from "@/core/money/money";
+import { ACTIVE_CURRENCY, subtract, ZERO_BHD } from "@/core/money/money";
 import { customerKeyFromEmail } from "@/core/customer/rules";
 import type { Order } from "@/core/orders/entities";
 import { buildOrderLinesFromPricedCart, buildOrderNumber, buildOrderSearchTokens, ORDER_NUMBER_RANDOM_LENGTH } from "@/core/orders/rules";
@@ -119,6 +119,16 @@ export async function createOrder(input: CheckoutInput, deps: CheckoutDeps = def
       throw new ValidationError("Some items in your cart are no longer available. Please review your cart before checking out.");
     }
 
+    // `priced.shippingFee` comes from `computeShippingFee`, which is a pure
+    // subtotal-tiered delivery fee with no concept of fulfillment method —
+    // it's the right number for a delivery order, but a pickup order has no
+    // delivery leg at all and must never be charged it. This is the one
+    // place that distinction gets applied, so every downstream use of the
+    // order's total (payment amount, customer lifetime spend, confirmation
+    // email) is correct regardless of what any pre-checkout estimate showed.
+    const shippingFee = input.fulfillmentMethod === "pickup" ? ZERO_BHD : priced.shippingFee;
+    const grandTotal = subtract(priced.grandTotal, subtract(priced.shippingFee, shippingFee));
+
     const lines = buildOrderLinesFromPricedCart(priced.lines);
     const orderId = randomUUID();
 
@@ -133,9 +143,9 @@ export async function createOrder(input: CheckoutInput, deps: CheckoutDeps = def
         fulfillment,
         lines,
         subtotal: priced.subtotal,
-        shippingFee: priced.shippingFee,
+        shippingFee,
         discountTotal: priced.discountTotal,
-        grandTotal: priced.grandTotal,
+        grandTotal,
         couponCode: priced.appliedDiscounts.find((discount) => discount.source === "coupon")?.id ?? null,
         appliedDiscounts: priced.appliedDiscounts,
         currency: ACTIVE_CURRENCY.code,

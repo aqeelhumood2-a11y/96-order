@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PICKUP_LOCATION } from "@/config/pickup";
 import { listAvailableSlots } from "@/core/scheduling/rules";
-import { CartSummary } from "@/features/cart/components/cart-summary";
-import { CheckoutForm } from "@/features/checkout/checkout-form";
+import { CheckoutSummaryPanel } from "@/features/checkout/checkout-summary-panel";
 import { peekCartId } from "@/services/cart/cart-session";
 import { getCustomerSession } from "@/services/customer-auth/session";
 import { getDiscountedPricedCart } from "@/services/pricing/get-discounted-cart";
@@ -44,15 +43,13 @@ export default async function CheckoutPage() {
   return (
     <Container className="py-8 sm:py-12">
       <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Checkout</h1>
-      <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
-        <CheckoutForm
-          availableSlots={availableSlots}
-          pickupLocationName={PICKUP_LOCATION.locationName}
-          pickupLocationAddress={PICKUP_LOCATION.locationAddress}
-          paymentProviders={paymentProviders}
-        />
-        <CartSummary priced={priced} />
-      </div>
+      <CheckoutSummaryPanel
+        priced={priced}
+        availableSlots={availableSlots}
+        pickupLocationName={PICKUP_LOCATION.locationName}
+        pickupLocationAddress={PICKUP_LOCATION.locationAddress}
+        paymentProviders={paymentProviders}
+      />
     </Container>
   );
 }
