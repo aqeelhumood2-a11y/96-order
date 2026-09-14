@@ -12,22 +12,24 @@ import { Button } from "@/ui/primitives";
  */
 export function Hero() {
   return (
-    <section className="relative overflow-hidden bg-brand-900">
+    <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800">
       <LeafAccent corner="top-right" size={480} color="white" />
       <LeafAccent corner="bottom-left" size={360} color="white" />
-      <Container className="relative flex flex-col items-start gap-6 py-16 sm:py-24">
-        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white/80">
+      <Container className="relative flex flex-col items-start gap-6 py-20 sm:py-28">
+        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white/80">
           Coffee &amp; brewing equipment
         </span>
-        <h1 className="font-display max-w-2xl text-4xl text-white sm:text-5xl">Thoughtfully sourced coffee, brewed right.</h1>
+        <h1 className="font-display max-w-2xl text-4xl text-balance text-white sm:text-6xl">
+          Thoughtfully sourced coffee, brewed right.
+        </h1>
         <p className="max-w-xl text-base text-white/70 sm:text-lg">
           Browse our current selection of beans and brewing gear. New arrivals and favorites, all in one place.
         </p>
         <div className="flex flex-wrap gap-3">
-          <Button asChild className="bg-white text-brand-900 hover:bg-white/90">
+          <Button asChild className="bg-white text-brand-900 shadow-lg hover:-translate-y-px hover:bg-white/90 hover:shadow-xl">
             <Link href="/products">Shop all products</Link>
           </Button>
-          <Button asChild variant="outline" className="border-white/30 text-white hover:bg-white/10">
+          <Button asChild variant="outline" className="border-white/30 text-white hover:border-white/50 hover:bg-white/10">
             <Link href="/search">Search the catalog</Link>
           </Button>
         </div>

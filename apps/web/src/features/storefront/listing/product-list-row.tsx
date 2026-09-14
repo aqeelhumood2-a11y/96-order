@@ -8,7 +8,7 @@ export function ProductListRow({ product }: { product: PublicProductSummary }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group flex gap-4 rounded-lg border border-brand-100 bg-background p-3 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+      className="group flex gap-4 rounded-xl border border-brand-100 bg-background p-3 transition-all duration-200 hover:border-brand-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
     >
       <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-md bg-brand-50 sm:w-32">
         <ProductImage src={product.primaryImage?.url} alt={product.primaryImage?.altText ?? product.name} sizes="128px" />

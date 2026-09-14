@@ -44,7 +44,7 @@ export function ProductListing({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{heading}</h1>
+            <h1 className="font-display text-2xl text-brand-950">{heading}</h1>
             {description && <p className="mt-1 text-sm text-foreground/69">{description}</p>}
           </div>
           <div className="flex items-center gap-3">

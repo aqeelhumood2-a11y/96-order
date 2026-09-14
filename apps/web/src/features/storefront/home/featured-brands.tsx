@@ -8,7 +8,7 @@ export function FeaturedBrands({ brands }: { brands: PublicBrand[] }) {
   return (
     <section className="py-12 sm:py-16">
       <Container>
-        <h2 className="text-2xl font-semibold tracking-tight text-brand-950">Brands we carry</h2>
+        <h2 className="font-display text-2xl text-brand-950">Brands we carry</h2>
         <ul className="mt-6 flex flex-wrap gap-3">
           {brands.map((brand) => (
             <li key={brand.id}>

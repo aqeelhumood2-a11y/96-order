@@ -282,6 +282,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-arabic: var(--font-noto-sans-arabic), var(--font-geist-sans), sans-serif;
+  --font-display-face: var(--font-display), var(--font-sans);
 }
 
 /**
@@ -300,11 +301,22 @@ body {
 }
 
 /**
- * Display heading treatment — tighter tracking and a heavier weight,
- * evoking the logo's bold condensed wordmark. Applied selectively (hero
- * headlines, section titles), not to every heading in the app.
+ * Display heading treatment — a warm, high-contrast serif (Fraunces) for
+ * English/LTR headlines, evoking a premium coffee-brand feel while every
+ * brand color and the logo itself stay exactly as they are. Applied
+ * selectively (hero headlines, section titles), not to every heading in
+ * the app. Arabic has no equivalent paired serif available, so `[dir="rtl"]`
+ * keeps the clean Arabic sans face instead of falling back to Latin-only
+ * Fraunces glyphs (which would render blank/mismatched for Arabic text).
  */
 .font-display {
+  font-family: var(--font-display-face);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+[dir="rtl"] .font-display {
+  font-family: var(--font-arabic);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }

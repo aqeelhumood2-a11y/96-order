@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Noto_Sans_Arabic } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono, Noto_Sans_Arabic } from "next/font/google";
 import { SITE_NAME, SITE_URL } from "@/config/site";
 import { dirForLocale, getLocale } from "@/lib/i18n/locale";
 import "./globals.css";
@@ -17,6 +17,17 @@ const geistMono = Geist_Mono({
 const notoSansArabic = Noto_Sans_Arabic({
   variable: "--font-noto-sans-arabic",
   subsets: ["arabic"],
+});
+
+/**
+ * Headline/display face — see `globals.css`'s `.font-display` doc comment
+ * for why this only applies to LTR (English/Latin) headings, with Arabic
+ * headings staying on the Arabic sans face instead.
+ */
+const fraunces = Fraunces({
+  variable: "--font-display",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -56,7 +67,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${geistSans.variable} ${geistMono.variable} ${notoSansArabic.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${notoSansArabic.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className={dir === "rtl" ? "flex min-h-full flex-col font-arabic" : "flex min-h-full flex-col font-sans"}>{children}</body>
     </html>

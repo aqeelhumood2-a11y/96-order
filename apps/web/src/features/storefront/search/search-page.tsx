@@ -22,7 +22,7 @@ export function SearchPage({ query, products, nextCursor, cursor, cursorsParam }
 
   return (
     <Container className="py-8 sm:py-12">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Search</h1>
+      <h1 className="font-display text-2xl text-brand-950">Search</h1>
       <div className="mt-4 max-w-lg">
         <SearchInput initialQuery={query} />
       </div>

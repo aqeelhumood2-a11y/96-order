@@ -14,13 +14,14 @@ export interface ProductCardProps {
 
 export function ProductCard({ product, highlightQuery }: ProductCardProps) {
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-brand-100 bg-background transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-brand-500">
+    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-brand-100 bg-background transition-all duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-brand-500">
       <Link href={`/products/${product.slug}`} className="absolute inset-0 z-10 focus:outline-none" aria-label={product.name} />
       <div className="relative aspect-square w-full bg-brand-50">
         <ProductImage
           src={product.primaryImage?.url}
           alt={product.primaryImage?.altText ?? product.name}
           sizes="(min-width: 1024px) 25vw, 50vw"
+          className="transition-transform duration-300 group-hover:scale-105"
         />
         {product.featured && (
           <span className="absolute left-2 top-2 rounded-full bg-accent-600 px-2 py-0.5 text-xs font-medium text-white">Featured</span>

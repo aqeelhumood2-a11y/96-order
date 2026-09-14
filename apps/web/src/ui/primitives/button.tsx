@@ -5,13 +5,13 @@ import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "bg-brand-600 text-white hover:bg-brand-700",
+        primary: "bg-brand-600 text-white shadow-sm hover:-translate-y-px hover:bg-brand-700 hover:shadow-md active:translate-y-0",
         secondary: "bg-brand-50 text-brand-900 hover:bg-brand-100",
-        outline: "border border-brand-300 text-brand-900 hover:bg-brand-50",
+        outline: "border border-brand-300 text-brand-900 hover:border-brand-400 hover:bg-brand-50",
         ghost: "text-brand-900 hover:bg-brand-50",
         destructive: "border border-danger-300 bg-danger-50 text-danger-700 hover:bg-danger-100",
       },
