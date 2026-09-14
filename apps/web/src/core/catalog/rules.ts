@@ -89,6 +89,35 @@ export function normalizeImageUrl(url: string): string {
   return trimmed;
 }
 
+const DRIVE_HOTLINK_PATTERN = /^https:\/\/lh3\.googleusercontent\.com\/d\/([^/?]+)$/;
+
+/**
+ * Rewrites this app's own canonical Drive hotlink URL (what
+ * `normalizeImageUrl` above produces/stores) to a same-origin proxy path
+ * served by `app/api/drive-image/[fileId]/route.ts`. That route re-fetches
+ * the file through the official, documented Drive API
+ * (`files.get?alt=media`) instead of the browser hitting
+ * `lh3.googleusercontent.com` directly — this app tried three different
+ * shapes of that undocumented hotlink trick (`uc?export=view`, the
+ * `thumbnail` endpoint, then this one) and confirmed, file by file, that
+ * Google's own servers can return a genuine 403 for it even when the file's
+ * sharing is fully correct ("anyone with the link: viewer") — a reliability
+ * problem in Google's serving of that URL shape, not in this app's request
+ * for it. The Drive API's own `alt=media` download, authenticated with a
+ * plain API key, is the officially supported way to fetch a publicly-shared
+ * file's bytes and doesn't share that failure mode.
+ *
+ * Only ever applied by a caller that has confirmed `GOOGLE_DRIVE_API_KEY`
+ * (server) / `NEXT_PUBLIC_GOOGLE_DRIVE_IMAGE_PROXY_ENABLED` (client) is
+ * actually configured — see `docs/environment-variables.md`. With neither
+ * set, callers keep using the direct hotlink URL exactly as before, so a
+ * site that hasn't configured the proxy never regresses.
+ */
+export function toDriveProxyUrl(url: string): string {
+  const fileId = url.match(DRIVE_HOTLINK_PATTERN)?.[1];
+  return fileId ? `/api/drive-image/${fileId}` : url;
+}
+
 /**
  * `available` is deliberately never persisted alongside `onHand`/`reserved`
  * — storing a third field that's purely a function of the other two would

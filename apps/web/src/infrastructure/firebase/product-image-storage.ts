@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { isExternalImageUrl, normalizeImageUrl } from "@/core/catalog/rules";
+import { isExternalImageUrl, normalizeImageUrl, toDriveProxyUrl } from "@/core/catalog/rules";
 import type { ProductImageStoragePort, UploadedProductImage } from "@/core/interfaces/product-image-storage-port";
 import { logger } from "@/lib/logger";
 import { getAdminApp, getAdminStorage } from "./admin";
@@ -106,8 +106,14 @@ export class FirebaseProductImageStorage implements ProductImageStoragePort {
     // (not just at add-time) means a record saved before that function
     // existed, or saved with an older/less reliable Drive URL shape, gets
     // transparently upgraded to the current format on every read — no
-    // migration, no re-adding the image by hand.
-    if (isExternalImageUrl(storagePath)) return normalizeImageUrl(storagePath);
+    // migration, no re-adding the image by hand. When `GOOGLE_DRIVE_API_KEY`
+    // is configured, a Drive-hosted URL is additionally rewritten to this
+    // app's own `/api/drive-image` proxy (see `toDriveProxyUrl`'s doc
+    // comment) — with no key set, this is a no-op and behavior is unchanged.
+    if (isExternalImageUrl(storagePath)) {
+      const normalized = normalizeImageUrl(storagePath);
+      return process.env.GOOGLE_DRIVE_API_KEY ? toDriveProxyUrl(normalized) : normalized;
+    }
 
     const file = this.bucket().file(storagePath);
     const [metadata] = await file.getMetadata();

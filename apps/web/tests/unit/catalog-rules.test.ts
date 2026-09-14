@@ -8,6 +8,7 @@ import {
   isExternalImageUrl,
   normalizeCatalogCode,
   normalizeImageUrl,
+  toDriveProxyUrl,
   variantSelectionsKey,
   wouldCreateCircularCategoryReference,
 } from "@/core/catalog/rules";
@@ -166,6 +167,22 @@ describe("normalizeImageUrl", () => {
 
   it("trims surrounding whitespace before matching", () => {
     expect(normalizeImageUrl("  1AbC-XyZ_9rq1g2  ")).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
+  });
+});
+
+describe("toDriveProxyUrl", () => {
+  it("rewrites this app's canonical Drive hotlink URL to the same-origin proxy path", () => {
+    expect(toDriveProxyUrl("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2")).toBe("/api/drive-image/1AbC-XyZ_9rq1g2");
+  });
+
+  it("leaves a non-Drive URL unchanged", () => {
+    const url = "https://example.com/photos/coffee.jpg";
+    expect(toDriveProxyUrl(url)).toBe(url);
+  });
+
+  it("leaves a stale, not-yet-re-normalized Drive URL shape unchanged (only the current hotlink shape is proxied)", () => {
+    const url = "https://drive.google.com/uc?export=view&id=abc123";
+    expect(toDriveProxyUrl(url)).toBe(url);
   });
 });
 

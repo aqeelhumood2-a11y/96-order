@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProductImage } from "@/core/catalog/entities";
-import { normalizeImageUrl } from "@/core/catalog/rules";
+import { normalizeImageUrl, toDriveProxyUrl } from "@/core/catalog/rules";
 import { addProductImageByUrlAction, deleteProductImageAction } from "@/features/catalog/products/actions";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
@@ -37,8 +37,19 @@ export function ProductImages({
   // will be (see `addProductImageByUrl`) — so what the admin sees here
   // before saving is exactly what will actually be stored and displayed
   // afterward, not just a guess at what the pasted link might resolve to.
+  // `NEXT_PUBLIC_GOOGLE_DRIVE_IMAGE_PROXY_ENABLED` mirrors whether the
+  // server has `GOOGLE_DRIVE_API_KEY` configured (see
+  // `product-image-storage.ts#getDownloadUrl`) — a client component can't
+  // read that server secret directly, so this flag is how it learns
+  // whether to preview through the reliable `/api/drive-image` proxy
+  // instead of the raw, occasionally-403 Drive hotlink.
   const trimmedImageUrl = imageUrl.trim();
-  const previewUrl = trimmedImageUrl ? normalizeImageUrl(trimmedImageUrl) : "";
+  const isDriveProxyEnabled = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_IMAGE_PROXY_ENABLED === "true";
+  const previewUrl = trimmedImageUrl
+    ? isDriveProxyEnabled
+      ? toDriveProxyUrl(normalizeImageUrl(trimmedImageUrl))
+      : normalizeImageUrl(trimmedImageUrl)
+    : "";
 
   async function handleAddFromUrl(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
