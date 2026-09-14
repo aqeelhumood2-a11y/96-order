@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Container } from "@/ui/layout/container";
 import { LeafAccent } from "@/ui/layout/leaf-accent";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives";
 import { cn } from "@/lib/cn";
 
@@ -24,39 +26,19 @@ interface HeroSlide {
  * sellers" slide: that's an admin-only report, not a public listing), so a
  * customer never lands on an empty or missing page from the hero.
  */
-const SLIDES: HeroSlide[] = [
-  {
-    badge: "Coffee & brewing equipment",
-    title: "Thoughtfully sourced coffee, brewed right.",
-    subtitle: "Browse our current selection of beans and brewing gear. New arrivals and favorites, all in one place.",
-    primaryHref: "/products",
-    primaryLabel: "Shop all products",
-    secondaryHref: "/search",
-    secondaryLabel: "Search the catalog",
-  },
-  {
-    badge: "Just landed",
-    title: "Fresh arrivals, roasted for now.",
-    subtitle: "New beans and gear land regularly — the catalog sorts newest-first, so today's additions are always up top.",
-    primaryHref: "/products",
-    primaryLabel: "See new arrivals",
-    secondaryHref: "/search",
-    secondaryLabel: "Search the catalog",
-  },
-  {
-    badge: "Staff picks",
-    title: "Our favorites, front and center.",
-    subtitle: "A curated shortlist of what we think you'll love — hand-picked, not just best-selling.",
-    primaryHref: "/products?featured=true",
-    primaryLabel: "Shop featured picks",
-    secondaryHref: "/search",
-    secondaryLabel: "Search the catalog",
-  },
-];
+function buildSlides(dict: ReturnType<typeof getDictionary>["storefront"]["home"]["hero"]): HeroSlide[] {
+  return [
+    { ...dict.slide1, primaryHref: "/products", secondaryHref: "/search" },
+    { ...dict.slide2, primaryHref: "/products", secondaryHref: "/search" },
+    { ...dict.slide3, primaryHref: "/products?featured=true", secondaryHref: "/search" },
+  ];
+}
 
 const AUTO_ADVANCE_MS = 6000;
 
-export function Hero() {
+export function Hero({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
+  const dict = getDictionary(locale).storefront.home.hero;
+  const slides = buildSlides(dict);
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Always advances every AUTO_ADVANCE_MS, full stop — an earlier version
@@ -66,10 +48,10 @@ export function Hero() {
   // to fix: the carousel only ever advancing when manually tapped.
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveIndex((current) => (current + 1) % SLIDES.length);
+      setActiveIndex((current) => (current + 1) % slides.length);
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800">
@@ -77,7 +59,7 @@ export function Hero() {
       <LeafAccent corner="bottom-left" size={360} color="white" />
       <Container className="relative py-20 sm:py-28">
         <div className="grid">
-          {SLIDES.map((slide, index) => (
+          {slides.map((slide, index) => (
             <div
               key={slide.title}
               aria-hidden={index !== activeIndex}
@@ -104,14 +86,14 @@ export function Hero() {
           ))}
         </div>
 
-        <div className="mt-16 flex gap-2 sm:mt-20" role="tablist" aria-label="Hero highlights">
-          {SLIDES.map((slide, index) => (
+        <div className="mt-16 flex gap-2 sm:mt-20" role="tablist" aria-label={dict.highlightsLabel}>
+          {slides.map((slide, index) => (
             <button
               key={slide.title}
               type="button"
               role="tab"
               aria-selected={index === activeIndex}
-              aria-label={`Show highlight ${index + 1} of ${SLIDES.length}`}
+              aria-label={dict.showHighlight.replace("{n}", String(index + 1)).replace("{total}", String(slides.length))}
               onClick={() => setActiveIndex(index)}
               className={cn(
                 "h-1.5 rounded-full transition-all",

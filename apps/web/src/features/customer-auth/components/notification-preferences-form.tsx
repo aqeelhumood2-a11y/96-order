@@ -3,17 +3,27 @@
 import { useState } from "react";
 import { updateMarketingConsentAction, updateNotificationPreferencesAction } from "@/features/customer-auth/actions";
 import type { NotificationPreferences } from "@/core/customer-auth/entities";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 
-const LABELS: Record<keyof NotificationPreferences, string> = {
-  orderUpdates: "Order status updates",
-  backInStock: "Back-in-stock alerts",
-  promotions: "Promotions and offers",
-  questionAnswered: "My product questions were answered",
-  reviewStatusChanges: "My review status changes",
-};
-
-export function NotificationPreferencesForm({ preferences, marketingConsent }: { preferences: NotificationPreferences; marketingConsent: boolean }) {
+export function NotificationPreferencesForm({
+  preferences,
+  marketingConsent,
+  locale = DEFAULT_LOCALE,
+}: {
+  preferences: NotificationPreferences;
+  marketingConsent: boolean;
+  locale?: Locale;
+}) {
+  const dict = getDictionary(locale).storefront.account.notifications;
+  const labels: Record<keyof NotificationPreferences, string> = {
+    orderUpdates: dict.orderUpdates,
+    backInStock: dict.backInStock,
+    promotions: dict.promotions,
+    questionAnswered: dict.questionAnswered,
+    reviewStatusChanges: dict.reviewStatusChanges,
+  };
   const [prefs, setPrefs] = useState(preferences);
   const [consent, setConsent] = useState(marketingConsent);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +34,7 @@ export function NotificationPreferencesForm({ preferences, marketingConsent }: {
     setMessage(null);
     try {
       const [prefsResult, consentResult] = await Promise.all([updateNotificationPreferencesAction(prefs), updateMarketingConsentAction({ marketingConsent: consent })]);
-      setMessage(prefsResult.ok && consentResult.ok ? "Preferences saved." : "Something went wrong. Please try again.");
+      setMessage(prefsResult.ok && consentResult.ok ? dict.preferencesSaved : dict.genericError);
     } finally {
       setIsSubmitting(false);
     }
@@ -33,22 +43,22 @@ export function NotificationPreferencesForm({ preferences, marketingConsent }: {
   return (
     <div className="flex max-w-md flex-col gap-4">
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-semibold text-brand-950">Transactional notifications</legend>
-        {(Object.keys(LABELS) as (keyof NotificationPreferences)[])
+        <legend className="text-sm font-semibold text-brand-950">{dict.transactionalHeading}</legend>
+        {(Object.keys(labels) as (keyof NotificationPreferences)[])
           .filter((key) => key !== "promotions")
           .map((key) => (
             <label key={key} className="flex items-center gap-2 text-sm text-foreground/80">
               <input type="checkbox" checked={prefs[key]} onChange={(event) => setPrefs((prev) => ({ ...prev, [key]: event.target.checked }))} disabled={isSubmitting} />
-              {LABELS[key]}
+              {labels[key]}
             </label>
           ))}
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-semibold text-brand-950">Marketing</legend>
+        <legend className="text-sm font-semibold text-brand-950">{dict.marketingHeading}</legend>
         <label className="flex items-center gap-2 text-sm text-foreground/80">
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={isSubmitting} />
-          Send me offers and promotions by email
+          {dict.marketingConsentLabel}
         </label>
       </fieldset>
 
@@ -59,7 +69,7 @@ export function NotificationPreferencesForm({ preferences, marketingConsent }: {
       )}
 
       <Button type="button" onClick={handleSave} disabled={isSubmitting}>
-        {isSubmitting ? "Saving…" : "Save preferences"}
+        {isSubmitting ? dict.saving : dict.savePreferences}
       </Button>
     </div>
   );

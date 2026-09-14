@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { OrderLookupForm } from "@/features/tracking/order-lookup-form";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { buildStaticPageMetadata } from "@/services/storefront/seo";
 import { Container } from "@/ui/layout/container";
 
@@ -25,11 +27,13 @@ interface CheckoutSuccessPageProps {
  */
 export default async function CheckoutSuccessPage({ searchParams }: CheckoutSuccessPageProps) {
   const { order } = await searchParams;
+  const locale = await getLocale();
+  const dict = getDictionary(locale).storefront.checkout;
 
   return (
     <Container className="py-12">
-      <p className="mb-2 text-sm font-medium text-brand-700">Thank you — your order has been placed!</p>
-      <OrderLookupForm initialOrderNumber={order} heading="View your order confirmation" />
+      <p className="mb-2 text-sm font-medium text-brand-700">{dict.thankYouOrderPlaced}</p>
+      <OrderLookupForm initialOrderNumber={order} heading={dict.viewYourOrderConfirmation} locale={locale} />
     </Container>
   );
 }

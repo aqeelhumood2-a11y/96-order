@@ -49,6 +49,353 @@ export interface Dictionary {
     inStock: string;
     outOfStock: string;
   };
+  storefront: {
+    cart: {
+      heading: string;
+      empty: string;
+      continueShopping: string;
+      unavailableItemName: string;
+      itemNoLongerAvailable: string;
+      itemOutOfStock: string;
+      /** `{qty}` replaced */
+      quantityReduced: string;
+      /** `{name}` replaced */
+      quantityFor: string;
+      remove: string;
+      proceedToCheckout: string;
+      resolveIssues: string;
+      orderSummary: string;
+      subtotal: string;
+      freeDelivery: string;
+      delivery: string;
+      total: string;
+      couponCode: string;
+      couponCodePlaceholder: string;
+      apply: string;
+      /** `{code}` replaced */
+      couponApplied: string;
+    };
+    checkout: {
+      heading: string;
+      cartNeedsAttention: string;
+      cartEmpty: string;
+      backToCart: string;
+      yourDetails: string;
+      fullName: string;
+      mobileNumber: string;
+      email: string;
+      /** `{email}` replaced */
+      signedInAs: string;
+      companyOptional: string;
+      orderNoteOptional: string;
+      deliveryOrPickup: string;
+      delivery: string;
+      pickup: string;
+      areaGovernorate: string;
+      block: string;
+      road: string;
+      buildingHouse: string;
+      flatOfficeOptional: string;
+      landmarkOptional: string;
+      deliveryInstructionsOptional: string;
+      pickupInstructionsOptional: string;
+      schedule: string;
+      dateAndTime: string;
+      noSlotsAvailable: string;
+      unavailableSuffix: string;
+      payment: string;
+      noPaymentMethods: string;
+      cashOnDelivery: string;
+      cashOnPickup: string;
+      payByCard: string;
+      placingOrder: string;
+      placeOrder: string;
+      thankYouOrderPlaced: string;
+      viewYourOrderConfirmation: string;
+    };
+    tracking: {
+      heading: string;
+      description: string;
+      orderNumber: string;
+      mobileOrEmail: string;
+      lookingUp: string;
+      trackOrder: string;
+      fulfillment: string;
+      scheduledFor: string;
+      payment: string;
+      total: string;
+    };
+    listing: {
+      category: string;
+      allCategories: string;
+      brand: string;
+      allBrands: string;
+      productType: string;
+      productTypePlaceholder: string;
+      minPrice: string;
+      maxPrice: string;
+      availability: string;
+      allItems: string;
+      inStockOnly: string;
+      featuredOnly: string;
+      sortBy: string;
+      sortNewest: string;
+      sortNameAsc: string;
+      sortPriceAsc: string;
+      sortPriceDesc: string;
+      applyFilters: string;
+      clearAll: string;
+      filters: string;
+      closeFilters: string;
+      layout: string;
+      grid: string;
+      list: string;
+      pagination: string;
+      previous: string;
+      next: string;
+      noProductsTitle: string;
+      noProductsDescription: string;
+      featuredBadge: string;
+      lowStock: string;
+      /** `{price}` replaced */
+      compareAtPriceLabel: string;
+      loadError: string;
+      loadErrorHint: string;
+      tryAgain: string;
+      breadcrumb: string;
+      shopAllHeading: string;
+    };
+    search: {
+      heading: string;
+      startTyping: string;
+      startTypingHint: string;
+      keepTyping: string;
+      /** `{count}` replaced */
+      keepTypingHint: string;
+      /** `{query}` replaced */
+      resultsFor: string;
+      /** `{query}` replaced */
+      noResultsFor: string;
+    };
+    home: {
+      hero: {
+        highlightsLabel: string;
+        /** `{n}` and `{total}` replaced */
+        showHighlight: string;
+        slide1: { badge: string; title: string; subtitle: string; primaryLabel: string; secondaryLabel: string };
+        slide2: { badge: string; title: string; subtitle: string; primaryLabel: string; secondaryLabel: string };
+        slide3: { badge: string; title: string; subtitle: string; primaryLabel: string; secondaryLabel: string };
+      };
+      brandsWeCarry: string;
+      browse: string;
+      allProducts: string;
+      featured: string;
+      featuredProductsTitle: string;
+      newArrivalsTitle: string;
+      coffeeTitle: string;
+      coffeeDescription: string;
+      equipmentTitle: string;
+      equipmentDescription: string;
+      shopByBrandTitle: string;
+      viewAll: string;
+    };
+    detail: {
+      home: string;
+      skuLabel: string;
+      selectOptionToContinue: string;
+      outOfStockShort: string;
+      productImagesLabel: string;
+      /** `{n}` and `{total}` replaced */
+      showImage: string;
+      weightLabel: string;
+      dimensionsLabel: string;
+      relatedProductsHeading: string;
+    };
+    reviews: {
+      heading: string;
+      reviewSingular: string;
+      reviewPlural: string;
+      /** `{status}` replaced */
+      yourReviewStatus: string;
+      statusAwaitingModeration: string;
+      cancel: string;
+      editYourReview: string;
+      writeAReview: string;
+      signInToReview: string;
+      noReviews: string;
+      verifiedPurchase: string;
+      title: string;
+      reviewLabel: string;
+      saving: string;
+      saveChanges: string;
+      submitReview: string;
+      deleting: string;
+      delete: string;
+      ratingLegend: string;
+      /** `{rating}` replaced */
+      starsAriaLabel: string;
+    };
+    questions: {
+      heading: string;
+      askAQuestion: string;
+      thanksWeWillAnswer: string;
+      submitting: string;
+      submitQuestion: string;
+      signInToAsk: string;
+      noQuestions: string;
+      questionPrefix: string;
+      answerPrefix: string;
+    };
+    backInStock: {
+      emailMeLabel: string;
+      notifyMe: string;
+      submitting: string;
+      subscribedMessage: string;
+      genericError: string;
+      notWaitingOnAlerts: string;
+      productUnavailable: string;
+      unsubscribe: string;
+    };
+    account: {
+      login: {
+        email: string;
+        password: string;
+        signingIn: string;
+        signIn: string;
+        emailRequired: string;
+        enterValidEmail: string;
+        passwordRequired: string;
+        rateLimited: string;
+        invalidCredentials: string;
+        genericError: string;
+      };
+      register: {
+        fullName: string;
+        email: string;
+        password: string;
+        passwordHint: string;
+        marketingConsentLabel: string;
+        creatingAccount: string;
+        createAccount: string;
+        fullNameRequired: string;
+        emailRequired: string;
+        enterValidEmail: string;
+        passwordMinLength: string;
+        accountExists: string;
+        genericError: string;
+      };
+      forgotPassword: {
+        email: string;
+        emailRequired: string;
+        enterValidEmail: string;
+        sending: string;
+        sendResetLink: string;
+        rateLimited: string;
+        genericError: string;
+        successMessage: string;
+      };
+      notifications: {
+        transactionalHeading: string;
+        marketingHeading: string;
+        orderUpdates: string;
+        backInStock: string;
+        promotions: string;
+        questionAnswered: string;
+        reviewStatusChanges: string;
+        marketingConsentLabel: string;
+        preferencesSaved: string;
+        genericError: string;
+        saving: string;
+        savePreferences: string;
+      };
+      profile: {
+        fullName: string;
+        mobile: string;
+        saving: string;
+        saveChanges: string;
+        profileUpdated: string;
+      };
+      resendVerification: {
+        sending: string;
+        resend: string;
+        sent: string;
+      };
+      logout: {
+        signingOut: string;
+        signOut: string;
+      };
+      pages: {
+        signIn: string;
+        forgotYourPassword: string;
+        newHere: string;
+        createAnAccount: string;
+        createYourAccount: string;
+        alreadyHaveAccount: string;
+        resetYourPassword: string;
+        navOverview: string;
+        navOrders: string;
+        navProfile: string;
+        navAddresses: string;
+        navWishlist: string;
+        navNotifications: string;
+        /** `{name}` replaced */
+        welcome: string;
+        verifyEmailPrompt: string;
+        totalOrders: string;
+        manageAddresses: string;
+        viewWishlist: string;
+        recentOrders: string;
+        viewAll: string;
+        noOrdersYet: string;
+        profileHeading: string;
+        backInStockAlertsHeading: string;
+        notificationPreferencesHeading: string;
+        orderHistoryHeading: string;
+        backToOrders: string;
+        wishlistHeading: string;
+        savedAddressesHeading: string;
+        noOrdersPlaced: string;
+        reorder: string;
+        addingToCart: string;
+        /** `{count}` replaced */
+        addedToCartMessage: string;
+        /** `{added}` and `{skipped}` replaced */
+        addedToCartWithSkipped: string;
+        verificationLinkMissingHeading: string;
+        verificationLinkMissingMessage: string;
+        emailVerifiedHeading: string;
+        emailVerifiedMessage: string;
+        goToYourAccount: string;
+        verificationLinkInvalidHeading: string;
+        verificationLinkInvalidMessage: string;
+        goToAccountRequestNew: string;
+        wishlistEmpty: string;
+        moveToCart: string;
+      };
+    };
+    addresses: {
+      noAddresses: string;
+      defaultBadge: string;
+      edit: string;
+      setAsDefault: string;
+      delete: string;
+      addNewAddress: string;
+      label: string;
+      labelValues: Record<"home" | "work" | "farm" | "custom", string>;
+      customLabel: string;
+      recipientName: string;
+      mobile: string;
+      area: string;
+      block: string;
+      road: string;
+      building: string;
+      flatOptional: string;
+      setAsDefaultCheckbox: string;
+      saving: string;
+      saveChanges: string;
+      addAddress: string;
+    };
+  };
   admin: {
     dashboard: string;
     catalog: string;
@@ -692,6 +1039,356 @@ export const en: Dictionary = {
     quantity: "Quantity",
     inStock: "In stock",
     outOfStock: "Out of stock",
+  },
+  storefront: {
+    cart: {
+      heading: "Your cart",
+      empty: "Your cart is empty.",
+      continueShopping: "Continue shopping",
+      unavailableItemName: "Item no longer available",
+      itemNoLongerAvailable: "This item is no longer available and won't be included at checkout.",
+      itemOutOfStock: "This item is out of stock and won't be included at checkout.",
+      quantityReduced: "Quantity reduced to {qty} due to limited stock.",
+      quantityFor: "Quantity for {name}",
+      remove: "Remove",
+      proceedToCheckout: "Proceed to checkout",
+      resolveIssues: "Please resolve the issues above before checking out.",
+      orderSummary: "Order summary",
+      subtotal: "Subtotal",
+      freeDelivery: "Free delivery",
+      delivery: "Delivery",
+      total: "Total",
+      couponCode: "Coupon code",
+      couponCodePlaceholder: "Coupon code",
+      apply: "Apply",
+      couponApplied: "Coupon {code} applied",
+    },
+    checkout: {
+      heading: "Checkout",
+      cartNeedsAttention: "Some items in your cart need attention before you can check out.",
+      cartEmpty: "Your cart is empty.",
+      backToCart: "Back to cart",
+      yourDetails: "Your details",
+      fullName: "Full name",
+      mobileNumber: "Mobile number",
+      email: "Email",
+      signedInAs: "Signed in as {email} — this order will appear in your order history.",
+      companyOptional: "Company (optional)",
+      orderNoteOptional: "Order note (optional)",
+      deliveryOrPickup: "Delivery or pickup",
+      delivery: "Delivery",
+      pickup: "Pickup",
+      areaGovernorate: "Area / Governorate",
+      block: "Block",
+      road: "Road",
+      buildingHouse: "Building / House",
+      flatOfficeOptional: "Flat / Office (optional)",
+      landmarkOptional: "Landmark (optional)",
+      deliveryInstructionsOptional: "Delivery instructions (optional)",
+      pickupInstructionsOptional: "Pickup instructions (optional)",
+      schedule: "Schedule",
+      dateAndTime: "Date and time",
+      noSlotsAvailable: "No slots available",
+      unavailableSuffix: " (unavailable)",
+      payment: "Payment",
+      noPaymentMethods: "No payment methods are currently available. Please check back later.",
+      cashOnDelivery: "Cash on delivery",
+      cashOnPickup: "Cash on pickup",
+      payByCard: "Pay by card",
+      placingOrder: "Placing order…",
+      placeOrder: "Place order",
+      thankYouOrderPlaced: "Thank you — your order has been placed!",
+      viewYourOrderConfirmation: "View your order confirmation",
+    },
+    tracking: {
+      heading: "Track your order",
+      description: "Enter your order number and the mobile number or email you used at checkout.",
+      orderNumber: "Order number",
+      mobileOrEmail: "Mobile number or email",
+      lookingUp: "Looking up…",
+      trackOrder: "Track order",
+      fulfillment: "Fulfillment",
+      scheduledFor: "Scheduled for",
+      payment: "Payment",
+      total: "Total",
+    },
+    listing: {
+      category: "Category",
+      allCategories: "All categories",
+      brand: "Brand",
+      allBrands: "All brands",
+      productType: "Product type",
+      productTypePlaceholder: "coffee, equipment…",
+      minPrice: "Min price (BHD)",
+      maxPrice: "Max price (BHD)",
+      availability: "Availability",
+      allItems: "All items",
+      inStockOnly: "In stock only",
+      featuredOnly: "Featured only",
+      sortBy: "Sort by",
+      sortNewest: "Newest",
+      sortNameAsc: "Name (A–Z)",
+      sortPriceAsc: "Price (low to high)",
+      sortPriceDesc: "Price (high to low)",
+      applyFilters: "Apply filters",
+      clearAll: "Clear all",
+      filters: "Filters",
+      closeFilters: "Close filters",
+      layout: "Layout",
+      grid: "Grid",
+      list: "List",
+      pagination: "Pagination",
+      previous: "Previous",
+      next: "Next",
+      noProductsTitle: "No products match these filters",
+      noProductsDescription: "Try widening your price range or clearing a filter to see more results.",
+      featuredBadge: "Featured",
+      lowStock: "Low stock",
+      compareAtPriceLabel: "Compare at price {price}",
+      loadError: "Something went wrong loading products",
+      loadErrorHint: "Please try again in a moment.",
+      tryAgain: "Try again",
+      breadcrumb: "Breadcrumb",
+      shopAllHeading: "Shop all products",
+    },
+    search: {
+      heading: "Search",
+      startTyping: "Start typing to search",
+      startTypingHint: "Search by product name, brand, category, or tag.",
+      keepTyping: "Keep typing…",
+      keepTypingHint: "Enter at least {count} characters to search.",
+      resultsFor: 'Results for "{query}"',
+      noResultsFor: 'No products matched "{query}"',
+    },
+    home: {
+      hero: {
+        highlightsLabel: "Hero highlights",
+        showHighlight: "Show highlight {n} of {total}",
+        slide1: {
+          badge: "Coffee & brewing equipment",
+          title: "Thoughtfully sourced coffee, brewed right.",
+          subtitle: "Browse our current selection of beans and brewing gear. New arrivals and favorites, all in one place.",
+          primaryLabel: "Shop all products",
+          secondaryLabel: "Search the catalog",
+        },
+        slide2: {
+          badge: "Just landed",
+          title: "Fresh arrivals, roasted for now.",
+          subtitle: "New beans and gear land regularly — the catalog sorts newest-first, so today's additions are always up top.",
+          primaryLabel: "See new arrivals",
+          secondaryLabel: "Search the catalog",
+        },
+        slide3: {
+          badge: "Staff picks",
+          title: "Our favorites, front and center.",
+          subtitle: "A curated shortlist of what we think you'll love — hand-picked, not just best-selling.",
+          primaryLabel: "Shop featured picks",
+          secondaryLabel: "Search the catalog",
+        },
+      },
+      brandsWeCarry: "Brands we carry",
+      browse: "Browse",
+      allProducts: "All products",
+      featured: "Featured",
+      featuredProductsTitle: "Featured products",
+      newArrivalsTitle: "New arrivals",
+      coffeeTitle: "Coffee",
+      coffeeDescription: "Beans from our current lineup.",
+      equipmentTitle: "Equipment",
+      equipmentDescription: "Brewers, grinders, and accessories.",
+      shopByBrandTitle: "Shop by brand",
+      viewAll: "View all",
+    },
+    detail: {
+      home: "Home",
+      skuLabel: "SKU:",
+      selectOptionToContinue: "Select an available option to continue.",
+      outOfStockShort: "Out of stock.",
+      productImagesLabel: "Product images",
+      showImage: "Show image {n} of {total}",
+      weightLabel: "Weight",
+      dimensionsLabel: "Dimensions",
+      relatedProductsHeading: "You might also like",
+    },
+    reviews: {
+      heading: "Reviews",
+      reviewSingular: "review",
+      reviewPlural: "reviews",
+      yourReviewStatus: "Your review is {status}.",
+      statusAwaitingModeration: "awaiting moderation",
+      cancel: "Cancel",
+      editYourReview: "Edit your review",
+      writeAReview: "Write a review",
+      signInToReview: "Sign in to write a review.",
+      noReviews: "No reviews yet.",
+      verifiedPurchase: "Verified purchase",
+      title: "Title",
+      reviewLabel: "Review",
+      saving: "Saving…",
+      saveChanges: "Save changes",
+      submitReview: "Submit review",
+      deleting: "Deleting…",
+      delete: "Delete",
+      ratingLegend: "Rating",
+      starsAriaLabel: "{rating} out of 5 stars",
+    },
+    questions: {
+      heading: "Questions & answers",
+      askAQuestion: "Ask a question",
+      thanksWeWillAnswer: "Thanks — we'll post an answer soon.",
+      submitting: "Submitting…",
+      submitQuestion: "Submit question",
+      signInToAsk: "Sign in to ask a question.",
+      noQuestions: "No questions yet.",
+      questionPrefix: "Q:",
+      answerPrefix: "A:",
+    },
+    backInStock: {
+      emailMeLabel: "Email me when back in stock",
+      notifyMe: "Notify me",
+      submitting: "Submitting…",
+      subscribedMessage: "We'll email you when this is back in stock.",
+      genericError: "Something went wrong. Please try again.",
+      notWaitingOnAlerts: "You're not waiting on any back-in-stock alerts.",
+      productUnavailable: "Product no longer available",
+      unsubscribe: "Unsubscribe",
+    },
+    account: {
+      login: {
+        email: "Email",
+        password: "Password",
+        signingIn: "Signing in…",
+        signIn: "Sign in",
+        emailRequired: "Email is required.",
+        enterValidEmail: "Enter a valid email address.",
+        passwordRequired: "Password is required.",
+        rateLimited: "Too many sign-in attempts. Please try again shortly.",
+        invalidCredentials: "Invalid email or password.",
+        genericError: "Something went wrong signing you in. Please try again.",
+      },
+      register: {
+        fullName: "Full name",
+        email: "Email",
+        password: "Password",
+        passwordHint: "At least 8 characters.",
+        marketingConsentLabel: "Send me offers and promotions by email (optional — you can change this anytime in your account).",
+        creatingAccount: "Creating account…",
+        createAccount: "Create account",
+        fullNameRequired: "Please enter your full name.",
+        emailRequired: "Email is required.",
+        enterValidEmail: "Enter a valid email address.",
+        passwordMinLength: "Password must be at least 8 characters.",
+        accountExists: "An account with this email already exists.",
+        genericError: "Something went wrong. Please try again.",
+      },
+      forgotPassword: {
+        email: "Email",
+        emailRequired: "Email is required.",
+        enterValidEmail: "Enter a valid email address.",
+        sending: "Sending…",
+        sendResetLink: "Send reset link",
+        rateLimited: "Too many requests. Please try again shortly.",
+        genericError: "Something went wrong. Please try again.",
+        successMessage: "If an account exists for this email, a password reset email has been sent.",
+      },
+      notifications: {
+        transactionalHeading: "Transactional notifications",
+        marketingHeading: "Marketing",
+        orderUpdates: "Order status updates",
+        backInStock: "Back-in-stock alerts",
+        promotions: "Promotions and offers",
+        questionAnswered: "My product questions were answered",
+        reviewStatusChanges: "My review status changes",
+        marketingConsentLabel: "Send me offers and promotions by email",
+        preferencesSaved: "Preferences saved.",
+        genericError: "Something went wrong. Please try again.",
+        saving: "Saving…",
+        savePreferences: "Save preferences",
+      },
+      profile: {
+        fullName: "Full name",
+        mobile: "Mobile",
+        saving: "Saving…",
+        saveChanges: "Save changes",
+        profileUpdated: "Profile updated.",
+      },
+      resendVerification: {
+        sending: "Sending…",
+        resend: "Resend verification email",
+        sent: "Verification email sent.",
+      },
+      logout: {
+        signingOut: "Signing out…",
+        signOut: "Sign out",
+      },
+      pages: {
+        signIn: "Sign in",
+        forgotYourPassword: "Forgot your password?",
+        newHere: "New here?",
+        createAnAccount: "Create an account",
+        createYourAccount: "Create your account",
+        alreadyHaveAccount: "Already have an account?",
+        resetYourPassword: "Reset your password",
+        navOverview: "Overview",
+        navOrders: "Orders",
+        navProfile: "Profile",
+        navAddresses: "Addresses",
+        navWishlist: "Wishlist",
+        navNotifications: "Notifications",
+        welcome: "Welcome, {name}",
+        verifyEmailPrompt: "Please verify your email address to unlock all account features.",
+        totalOrders: "Total orders",
+        manageAddresses: "Manage addresses",
+        viewWishlist: "View wishlist",
+        recentOrders: "Recent orders",
+        viewAll: "View all",
+        noOrdersYet: "No orders yet.",
+        profileHeading: "Profile",
+        backInStockAlertsHeading: "Back-in-stock alerts",
+        notificationPreferencesHeading: "Notification preferences",
+        orderHistoryHeading: "Order history",
+        backToOrders: "← Orders",
+        wishlistHeading: "Wishlist",
+        savedAddressesHeading: "Saved addresses",
+        noOrdersPlaced: "You haven't placed any orders yet.",
+        reorder: "Reorder",
+        addingToCart: "Adding to cart…",
+        addedToCartMessage: "Added {count} item(s) to your cart.",
+        addedToCartWithSkipped: "Added {added} item(s) to your cart ({skipped} no longer available).",
+        verificationLinkMissingHeading: "Verification link missing",
+        verificationLinkMissingMessage: "This link is missing its verification code.",
+        emailVerifiedHeading: "Email verified",
+        emailVerifiedMessage: "Your email address has been verified.",
+        goToYourAccount: "Go to your account",
+        verificationLinkInvalidHeading: "Verification link invalid",
+        verificationLinkInvalidMessage: "This verification link is invalid or has expired.",
+        goToAccountRequestNew: "Go to your account to request a new one",
+        wishlistEmpty: "Your wishlist is empty. Browse products and tap the heart to save them here.",
+        moveToCart: "Move to cart",
+      },
+    },
+    addresses: {
+      noAddresses: "You haven't saved any addresses yet.",
+      defaultBadge: "Default",
+      edit: "Edit",
+      setAsDefault: "Set as default",
+      delete: "Delete",
+      addNewAddress: "Add a new address",
+      label: "Label",
+      labelValues: { home: "Home", work: "Work", farm: "Farm", custom: "Custom" },
+      customLabel: "Custom label",
+      recipientName: "Recipient name",
+      mobile: "Mobile",
+      area: "Area",
+      block: "Block",
+      road: "Road",
+      building: "Building",
+      flatOptional: "Flat (optional)",
+      setAsDefaultCheckbox: "Set as default address",
+      saving: "Saving…",
+      saveChanges: "Save changes",
+      addAddress: "Add address",
+    },
   },
   admin: {
     dashboard: "Dashboard",
@@ -1374,6 +2071,356 @@ export const ar: Dictionary = {
     quantity: "الكمية",
     inStock: "متوفر",
     outOfStock: "غير متوفر",
+  },
+  storefront: {
+    cart: {
+      heading: "سلتك",
+      empty: "سلتك فارغة.",
+      continueShopping: "متابعة التسوق",
+      unavailableItemName: "المنتج لم يعد متوفراً",
+      itemNoLongerAvailable: "هذا المنتج لم يعد متوفراً ولن يُدرج عند الدفع.",
+      itemOutOfStock: "هذا المنتج غير متوفر بالمخزون ولن يُدرج عند الدفع.",
+      quantityReduced: "تم تقليل الكمية إلى {qty} بسبب محدودية المخزون.",
+      quantityFor: "الكمية لـ {name}",
+      remove: "إزالة",
+      proceedToCheckout: "المتابعة إلى الدفع",
+      resolveIssues: "يرجى حل المشاكل أعلاه قبل إتمام الدفع.",
+      orderSummary: "ملخص الطلب",
+      subtotal: "المجموع الفرعي",
+      freeDelivery: "توصيل مجاني",
+      delivery: "التوصيل",
+      total: "الإجمالي",
+      couponCode: "كود الخصم",
+      couponCodePlaceholder: "كود الخصم",
+      apply: "تطبيق",
+      couponApplied: "تم تطبيق كود الخصم {code}",
+    },
+    checkout: {
+      heading: "الدفع",
+      cartNeedsAttention: "بعض المنتجات في سلتك تحتاج انتباه قبل إتمام الدفع.",
+      cartEmpty: "سلتك فارغة.",
+      backToCart: "الرجوع إلى السلة",
+      yourDetails: "بياناتك",
+      fullName: "الاسم الكامل",
+      mobileNumber: "رقم الجوال",
+      email: "البريد الإلكتروني",
+      signedInAs: "مسجل الدخول كـ {email} — سيظهر هذا الطلب في سجل طلباتك.",
+      companyOptional: "الشركة (اختياري)",
+      orderNoteOptional: "ملاحظة على الطلب (اختياري)",
+      deliveryOrPickup: "التوصيل أو الاستلام",
+      delivery: "التوصيل",
+      pickup: "الاستلام",
+      areaGovernorate: "المنطقة / المحافظة",
+      block: "المجمع",
+      road: "الطريق",
+      buildingHouse: "المبنى / المنزل",
+      flatOfficeOptional: "الشقة / المكتب (اختياري)",
+      landmarkOptional: "علامة مميزة (اختياري)",
+      deliveryInstructionsOptional: "تعليمات التوصيل (اختياري)",
+      pickupInstructionsOptional: "تعليمات الاستلام (اختياري)",
+      schedule: "الموعد",
+      dateAndTime: "التاريخ والوقت",
+      noSlotsAvailable: "لا توجد مواعيد متاحة",
+      unavailableSuffix: " (غير متاح)",
+      payment: "الدفع",
+      noPaymentMethods: "لا توجد طرق دفع متاحة حالياً. يرجى المحاولة لاحقاً.",
+      cashOnDelivery: "الدفع نقداً عند التوصيل",
+      cashOnPickup: "الدفع نقداً عند الاستلام",
+      payByCard: "الدفع بالبطاقة",
+      placingOrder: "جارٍ إرسال الطلب…",
+      placeOrder: "إرسال الطلب",
+      thankYouOrderPlaced: "شكراً لك — تم إرسال طلبك!",
+      viewYourOrderConfirmation: "عرض تأكيد طلبك",
+    },
+    tracking: {
+      heading: "تتبع طلبك",
+      description: "أدخل رقم الطلب ورقم الجوال أو البريد الإلكتروني الذي استخدمته عند الدفع.",
+      orderNumber: "رقم الطلب",
+      mobileOrEmail: "رقم الجوال أو البريد الإلكتروني",
+      lookingUp: "جارٍ البحث…",
+      trackOrder: "تتبع الطلب",
+      fulfillment: "طريقة التسليم",
+      scheduledFor: "موعد التسليم",
+      payment: "الدفع",
+      total: "الإجمالي",
+    },
+    listing: {
+      category: "الفئة",
+      allCategories: "كل الفئات",
+      brand: "العلامة التجارية",
+      allBrands: "كل العلامات التجارية",
+      productType: "نوع المنتج",
+      productTypePlaceholder: "قهوة، أدوات تحضير…",
+      minPrice: "أقل سعر (د.ب)",
+      maxPrice: "أعلى سعر (د.ب)",
+      availability: "التوفر",
+      allItems: "كل المنتجات",
+      inStockOnly: "المتوفر فقط",
+      featuredOnly: "المميز فقط",
+      sortBy: "ترتيب حسب",
+      sortNewest: "الأحدث",
+      sortNameAsc: "الاسم (أ–ي)",
+      sortPriceAsc: "السعر (من الأقل للأعلى)",
+      sortPriceDesc: "السعر (من الأعلى للأقل)",
+      applyFilters: "تطبيق الفلاتر",
+      clearAll: "مسح الكل",
+      filters: "الفلاتر",
+      closeFilters: "إغلاق الفلاتر",
+      layout: "طريقة العرض",
+      grid: "شبكة",
+      list: "قائمة",
+      pagination: "تصفح الصفحات",
+      previous: "السابق",
+      next: "التالي",
+      noProductsTitle: "لا توجد منتجات مطابقة لهذه الفلاتر",
+      noProductsDescription: "جرّب توسيع نطاق السعر أو إزالة أحد الفلاتر لرؤية المزيد من النتائج.",
+      featuredBadge: "مميز",
+      lowStock: "مخزون منخفض",
+      compareAtPriceLabel: "سعر المقارنة {price}",
+      loadError: "حدث خطأ أثناء تحميل المنتجات",
+      loadErrorHint: "يرجى المحاولة مرة أخرى بعد قليل.",
+      tryAgain: "حاول مرة أخرى",
+      breadcrumb: "مسار التنقل",
+      shopAllHeading: "تسوّق كل المنتجات",
+    },
+    search: {
+      heading: "البحث",
+      startTyping: "ابدأ الكتابة للبحث",
+      startTypingHint: "ابحث باسم المنتج، العلامة التجارية، الفئة، أو الوسم.",
+      keepTyping: "أكمل الكتابة…",
+      keepTypingHint: "أدخل {count} أحرف على الأقل للبحث.",
+      resultsFor: 'نتائج البحث عن "{query}"',
+      noResultsFor: 'لا توجد منتجات مطابقة لـ "{query}"',
+    },
+    home: {
+      hero: {
+        highlightsLabel: "أبرز العروض",
+        showHighlight: "عرض الميزة {n} من {total}",
+        slide1: {
+          badge: "القهوة وأدوات التحضير",
+          title: "قهوة مختارة بعناية، تُحضَّر بالطريقة الصحيحة.",
+          subtitle: "تصفح مجموعتنا الحالية من حبوب القهوة وأدوات التحضير. أحدث الوصولات والمفضلات، كلها في مكان واحد.",
+          primaryLabel: "تسوّق كل المنتجات",
+          secondaryLabel: "ابحث في الكتالوج",
+        },
+        slide2: {
+          badge: "وصل حديثاً",
+          title: "وصولات جديدة، محمّصة لهذه اللحظة.",
+          subtitle: "تصل حبوب وأدوات جديدة بانتظام — يُرتَّب الكتالوج بالأحدث أولاً، فتظهر إضافات اليوم دائماً في الأعلى.",
+          primaryLabel: "شاهد الوصولات الجديدة",
+          secondaryLabel: "ابحث في الكتالوج",
+        },
+        slide3: {
+          badge: "اختيارات الفريق",
+          title: "مفضلاتنا، في الواجهة.",
+          subtitle: "قائمة مختارة بعناية لما نعتقد أنك ستحبه — منتقاة يدوياً، وليست فقط الأكثر مبيعاً.",
+          primaryLabel: "تسوّق الاختيارات المميزة",
+          secondaryLabel: "ابحث في الكتالوج",
+        },
+      },
+      brandsWeCarry: "العلامات التجارية لدينا",
+      browse: "تصفح",
+      allProducts: "كل المنتجات",
+      featured: "مميز",
+      featuredProductsTitle: "منتجات مميزة",
+      newArrivalsTitle: "وصولات جديدة",
+      coffeeTitle: "القهوة",
+      coffeeDescription: "حبوب من تشكيلتنا الحالية.",
+      equipmentTitle: "المعدات",
+      equipmentDescription: "أدوات تحضير، مطاحن، وملحقات.",
+      shopByBrandTitle: "تسوّق حسب العلامة التجارية",
+      viewAll: "عرض الكل",
+    },
+    detail: {
+      home: "الرئيسية",
+      skuLabel: "رمز المنتج:",
+      selectOptionToContinue: "اختر خياراً متاحاً للمتابعة.",
+      outOfStockShort: "غير متوفر بالمخزون.",
+      productImagesLabel: "صور المنتج",
+      showImage: "عرض الصورة {n} من {total}",
+      weightLabel: "الوزن",
+      dimensionsLabel: "الأبعاد",
+      relatedProductsHeading: "قد يعجبك أيضاً",
+    },
+    reviews: {
+      heading: "التقييمات",
+      reviewSingular: "تقييم",
+      reviewPlural: "تقييمات",
+      yourReviewStatus: "تقييمك حالياً {status}.",
+      statusAwaitingModeration: "بانتظار المراجعة",
+      cancel: "إلغاء",
+      editYourReview: "تعديل تقييمك",
+      writeAReview: "أضف تقييماً",
+      signInToReview: "سجّل الدخول لإضافة تقييم.",
+      noReviews: "لا توجد تقييمات بعد.",
+      verifiedPurchase: "عملية شراء موثّقة",
+      title: "العنوان",
+      reviewLabel: "التقييم",
+      saving: "جارٍ الحفظ…",
+      saveChanges: "حفظ التغييرات",
+      submitReview: "إرسال التقييم",
+      deleting: "جارٍ الحذف…",
+      delete: "حذف",
+      ratingLegend: "التقييم",
+      starsAriaLabel: "{rating} من 5 نجوم",
+    },
+    questions: {
+      heading: "الأسئلة والأجوبة",
+      askAQuestion: "اطرح سؤالاً",
+      thanksWeWillAnswer: "شكراً — سننشر الإجابة قريباً.",
+      submitting: "جارٍ الإرسال…",
+      submitQuestion: "إرسال السؤال",
+      signInToAsk: "سجّل الدخول لطرح سؤال.",
+      noQuestions: "لا توجد أسئلة بعد.",
+      questionPrefix: "س:",
+      answerPrefix: "ج:",
+    },
+    backInStock: {
+      emailMeLabel: "أرسل لي بريداً عند توفره",
+      notifyMe: "أعلمني",
+      submitting: "جارٍ الإرسال…",
+      subscribedMessage: "سنرسل لك بريداً عندما يتوفر هذا المنتج مجدداً.",
+      genericError: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      notWaitingOnAlerts: "لا تنتظر أي تنبيهات لتوفر المنتجات.",
+      productUnavailable: "المنتج لم يعد متوفراً",
+      unsubscribe: "إلغاء الاشتراك",
+    },
+    account: {
+      login: {
+        email: "البريد الإلكتروني",
+        password: "كلمة المرور",
+        signingIn: "جارٍ تسجيل الدخول…",
+        signIn: "تسجيل الدخول",
+        emailRequired: "البريد الإلكتروني مطلوب.",
+        enterValidEmail: "أدخل بريداً إلكترونياً صحيحاً.",
+        passwordRequired: "كلمة المرور مطلوبة.",
+        rateLimited: "محاولات تسجيل دخول كثيرة. يرجى المحاولة لاحقاً.",
+        invalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+        genericError: "حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.",
+      },
+      register: {
+        fullName: "الاسم الكامل",
+        email: "البريد الإلكتروني",
+        password: "كلمة المرور",
+        passwordHint: "8 أحرف على الأقل.",
+        marketingConsentLabel: "أرسل لي عروضاً وخصومات عبر البريد الإلكتروني (اختياري — يمكنك تغيير هذا لاحقاً من حسابك).",
+        creatingAccount: "جارٍ إنشاء الحساب…",
+        createAccount: "إنشاء حساب",
+        fullNameRequired: "يرجى إدخال اسمك الكامل.",
+        emailRequired: "البريد الإلكتروني مطلوب.",
+        enterValidEmail: "أدخل بريداً إلكترونياً صحيحاً.",
+        passwordMinLength: "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
+        accountExists: "يوجد حساب بهذا البريد الإلكتروني بالفعل.",
+        genericError: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      },
+      forgotPassword: {
+        email: "البريد الإلكتروني",
+        emailRequired: "البريد الإلكتروني مطلوب.",
+        enterValidEmail: "أدخل بريداً إلكترونياً صحيحاً.",
+        sending: "جارٍ الإرسال…",
+        sendResetLink: "إرسال رابط إعادة التعيين",
+        rateLimited: "طلبات كثيرة. يرجى المحاولة لاحقاً.",
+        genericError: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+        successMessage: "إذا كان هناك حساب بهذا البريد الإلكتروني، فقد تم إرسال بريد إعادة تعيين كلمة المرور.",
+      },
+      notifications: {
+        transactionalHeading: "الإشعارات التشغيلية",
+        marketingHeading: "التسويق",
+        orderUpdates: "تحديثات حالة الطلب",
+        backInStock: "تنبيهات توفر المنتج",
+        promotions: "العروض والخصومات",
+        questionAnswered: "تمت الإجابة على أسئلتي عن المنتجات",
+        reviewStatusChanges: "تغيّرت حالة تقييمي",
+        marketingConsentLabel: "أرسل لي عروضاً وخصومات عبر البريد الإلكتروني",
+        preferencesSaved: "تم حفظ التفضيلات.",
+        genericError: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+        saving: "جارٍ الحفظ…",
+        savePreferences: "حفظ التفضيلات",
+      },
+      profile: {
+        fullName: "الاسم الكامل",
+        mobile: "رقم الجوال",
+        saving: "جارٍ الحفظ…",
+        saveChanges: "حفظ التغييرات",
+        profileUpdated: "تم تحديث الملف الشخصي.",
+      },
+      resendVerification: {
+        sending: "جارٍ الإرسال…",
+        resend: "إعادة إرسال بريد التحقق",
+        sent: "تم إرسال بريد التحقق.",
+      },
+      logout: {
+        signingOut: "جارٍ تسجيل الخروج…",
+        signOut: "تسجيل الخروج",
+      },
+      pages: {
+        signIn: "تسجيل الدخول",
+        forgotYourPassword: "نسيت كلمة المرور؟",
+        newHere: "جديد هنا؟",
+        createAnAccount: "إنشاء حساب",
+        createYourAccount: "أنشئ حسابك",
+        alreadyHaveAccount: "لديك حساب بالفعل؟",
+        resetYourPassword: "إعادة تعيين كلمة المرور",
+        navOverview: "نظرة عامة",
+        navOrders: "الطلبات",
+        navProfile: "الملف الشخصي",
+        navAddresses: "العناوين",
+        navWishlist: "المفضلة",
+        navNotifications: "الإشعارات",
+        welcome: "مرحباً، {name}",
+        verifyEmailPrompt: "يرجى تأكيد بريدك الإلكتروني لفتح جميع ميزات الحساب.",
+        totalOrders: "إجمالي الطلبات",
+        manageAddresses: "إدارة العناوين",
+        viewWishlist: "عرض المفضلة",
+        recentOrders: "الطلبات الأخيرة",
+        viewAll: "عرض الكل",
+        noOrdersYet: "لا توجد طلبات بعد.",
+        profileHeading: "الملف الشخصي",
+        backInStockAlertsHeading: "تنبيهات توفر المنتج",
+        notificationPreferencesHeading: "تفضيلات الإشعارات",
+        orderHistoryHeading: "سجل الطلبات",
+        backToOrders: "← الطلبات",
+        wishlistHeading: "المفضلة",
+        savedAddressesHeading: "العناوين المحفوظة",
+        noOrdersPlaced: "لم تقم بطلب أي شيء بعد.",
+        reorder: "إعادة الطلب",
+        addingToCart: "جارٍ الإضافة إلى السلة…",
+        addedToCartMessage: "تمت إضافة {count} عنصر إلى سلتك.",
+        addedToCartWithSkipped: "تمت إضافة {added} عنصر إلى سلتك ({skipped} لم يعد متوفراً).",
+        verificationLinkMissingHeading: "رابط التحقق مفقود",
+        verificationLinkMissingMessage: "هذا الرابط لا يحتوي على رمز التحقق.",
+        emailVerifiedHeading: "تم تأكيد البريد الإلكتروني",
+        emailVerifiedMessage: "تم تأكيد بريدك الإلكتروني.",
+        goToYourAccount: "الذهاب إلى حسابك",
+        verificationLinkInvalidHeading: "رابط التحقق غير صالح",
+        verificationLinkInvalidMessage: "رابط التحقق هذا غير صالح أو منتهي الصلاحية.",
+        goToAccountRequestNew: "اذهب إلى حسابك لطلب رابط جديد",
+        wishlistEmpty: "قائمة مفضلتك فارغة. تصفح المنتجات واضغط على القلب لحفظها هنا.",
+        moveToCart: "نقل إلى السلة",
+      },
+    },
+    addresses: {
+      noAddresses: "لم تحفظ أي عناوين بعد.",
+      defaultBadge: "افتراضي",
+      edit: "تعديل",
+      setAsDefault: "تعيين كافتراضي",
+      delete: "حذف",
+      addNewAddress: "إضافة عنوان جديد",
+      label: "التسمية",
+      labelValues: { home: "المنزل", work: "العمل", farm: "المزرعة", custom: "مخصص" },
+      customLabel: "تسمية مخصصة",
+      recipientName: "اسم المستلم",
+      mobile: "رقم الجوال",
+      area: "المنطقة",
+      block: "المجمع",
+      road: "الطريق",
+      building: "المبنى",
+      flatOptional: "الشقة (اختياري)",
+      setAsDefaultCheckbox: "تعيين كعنوان افتراضي",
+      saving: "جارٍ الحفظ…",
+      saveChanges: "حفظ التغييرات",
+      addAddress: "إضافة عنوان",
+    },
   },
   admin: {
     dashboard: "لوحة التحكم",

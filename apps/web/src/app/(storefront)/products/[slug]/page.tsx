@@ -10,6 +10,7 @@ import { getCustomerSession } from "@/services/customer-auth/session";
 import { listProductReviews } from "@/services/reviews/list-product-reviews";
 import { getMyReviewForProduct } from "@/services/reviews/get-my-review";
 import { listProductQuestions } from "@/services/questions/list-questions";
+import { getLocale } from "@/lib/i18n/locale";
 
 const RELATED_PRODUCTS_LIMIT = 8;
 const REVIEWS_PAGE_LIMIT = 20;
@@ -47,6 +48,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const reviewsView = await listProductReviews(product.id, { limit: REVIEWS_PAGE_LIMIT });
   const myReview = session ? await getMyReviewForProduct(session, product.id) : null;
   const questionsPage = await listProductQuestions(product.id, { limit: QUESTIONS_PAGE_LIMIT });
+  const locale = await getLocale();
 
   const canonicalUrl = absoluteUrl(`/products/${product.slug}`);
   const structuredData = [
@@ -71,6 +73,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       myReview={myReview}
       signedInAsCustomer={session !== null}
       questions={questionsPage.items}
+      locale={locale}
     />
   );
 }

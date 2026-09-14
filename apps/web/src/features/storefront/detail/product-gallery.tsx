@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import type { PublicImage } from "@/core/storefront/dto";
 import { ProductImage } from "@/features/storefront/shared/product-image";
 import { preloadImage } from "@/features/storefront/shared/image-load-cache";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { cn } from "@/lib/cn";
 
-export function ProductGallery({ images, productName }: { images: PublicImage[]; productName: string }) {
+export function ProductGallery({ images, productName, locale = DEFAULT_LOCALE }: { images: PublicImage[]; productName: string; locale?: Locale }) {
+  const dict = getDictionary(locale).storefront.detail;
   const sorted = [...images].sort((a, b) => a.sortOrder - b.sortOrder);
   const [activeIndex, setActiveIndex] = useState(0);
   const active = sorted[activeIndex] ?? null;
@@ -35,14 +38,14 @@ export function ProductGallery({ images, productName }: { images: PublicImage[];
         />
       </div>
       {sorted.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Product images">
+        <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label={dict.productImagesLabel}>
           {sorted.map((image, index) => (
             <button
               key={`${image.url}-${index}`}
               type="button"
               role="tab"
               aria-selected={index === activeIndex}
-              aria-label={`Show image ${index + 1} of ${sorted.length}`}
+              aria-label={dict.showImage.replace("{n}", String(index + 1)).replace("{total}", String(sorted.length))}
               onClick={() => setActiveIndex(index)}
               className={cn(
                 "relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",

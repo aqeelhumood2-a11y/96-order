@@ -6,6 +6,8 @@ import type { PaymentProviderSettings } from "@/core/site-settings/entities";
 import type { AvailableSlot } from "@/core/scheduling/rules";
 import { submitCheckoutAction } from "@/features/checkout/actions";
 import { saveCheckoutContactForLookup } from "@/features/tracking/checkout-contact-storage";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -30,6 +32,7 @@ export interface CheckoutFormProps {
    * up in their own order history.
    */
   signedInEmail?: string;
+  locale?: Locale;
 }
 
 export type FulfillmentMethod = "delivery" | "pickup";
@@ -44,8 +47,17 @@ function cashEnabledFor(fulfillmentMethod: FulfillmentMethod, paymentProviders: 
   return fulfillmentMethod === "delivery" ? paymentProviders.cashOnDeliveryEnabled : paymentProviders.cashOnPickupEnabled;
 }
 
-export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocationAddress, paymentProviders, onFulfillmentMethodChange, signedInEmail }: CheckoutFormProps) {
+export function CheckoutForm({
+  availableSlots,
+  pickupLocationName,
+  pickupLocationAddress,
+  paymentProviders,
+  onFulfillmentMethodChange,
+  signedInEmail,
+  locale = DEFAULT_LOCALE,
+}: CheckoutFormProps) {
   const router = useRouter();
+  const dict = getDictionary(locale).storefront.checkout;
   const formId = useId();
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
 
@@ -131,73 +143,73 @@ export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocatio
   return (
     <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-brand-950">Your details</h2>
+        <h2 className="text-lg font-semibold text-brand-950">{dict.yourDetails}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="fullName">Full name</Label>
+            <Label htmlFor="fullName">{dict.fullName}</Label>
             <Input id="fullName" name="fullName" required autoComplete="name" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="mobile">Mobile number</Label>
+            <Label htmlFor="mobile">{dict.mobileNumber}</Label>
             <Input id="mobile" name="mobile" required placeholder="3XXXXXXX" autoComplete="tel" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{dict.email}</Label>
             <Input id="email" name="email" type="email" required autoComplete="email" defaultValue={signedInEmail} readOnly={!!signedInEmail} className={signedInEmail ? "bg-surface-sunken" : undefined} />
-            {signedInEmail && <p className="text-xs text-foreground/60">Signed in as {signedInEmail} — this order will appear in your order history.</p>}
+            {signedInEmail && <p className="text-xs text-foreground/60">{dict.signedInAs.replace("{email}", signedInEmail)}</p>}
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="companyName">Company (optional)</Label>
+            <Label htmlFor="companyName">{dict.companyOptional}</Label>
             <Input id="companyName" name="companyName" />
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="note">Order note (optional)</Label>
+          <Label htmlFor="note">{dict.orderNoteOptional}</Label>
           <Textarea id="note" name="note" rows={2} />
         </div>
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-brand-950">Delivery or pickup</h2>
+        <h2 className="text-lg font-semibold text-brand-950">{dict.deliveryOrPickup}</h2>
         <div className="flex gap-4">
           <label className="flex items-center gap-2 text-sm">
             <input type="radio" name="fulfillment" value="delivery" checked={fulfillmentMethod === "delivery"} onChange={() => handleFulfillmentChange("delivery")} />
-            Delivery
+            {dict.delivery}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="radio" name="fulfillment" value="pickup" checked={fulfillmentMethod === "pickup"} onChange={() => handleFulfillmentChange("pickup")} />
-            Pickup
+            {dict.pickup}
           </label>
         </div>
 
         {fulfillmentMethod === "delivery" ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="area">Area / Governorate</Label>
+              <Label htmlFor="area">{dict.areaGovernorate}</Label>
               <Input id="area" name="area" required />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="block">Block</Label>
+              <Label htmlFor="block">{dict.block}</Label>
               <Input id="block" name="block" required />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="road">Road</Label>
+              <Label htmlFor="road">{dict.road}</Label>
               <Input id="road" name="road" required />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="building">Building / House</Label>
+              <Label htmlFor="building">{dict.buildingHouse}</Label>
               <Input id="building" name="building" required />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="flat">Flat / Office (optional)</Label>
+              <Label htmlFor="flat">{dict.flatOfficeOptional}</Label>
               <Input id="flat" name="flat" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="landmark">Landmark (optional)</Label>
+              <Label htmlFor="landmark">{dict.landmarkOptional}</Label>
               <Input id="landmark" name="landmark" />
             </div>
             <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <Label htmlFor="deliveryInstructions">Delivery instructions (optional)</Label>
+              <Label htmlFor="deliveryInstructions">{dict.deliveryInstructionsOptional}</Label>
               <Textarea id="deliveryInstructions" name="deliveryInstructions" rows={2} />
             </div>
           </div>
@@ -208,7 +220,7 @@ export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocatio
               <p className="text-foreground/70">{pickupLocationAddress}</p>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="pickupInstructions">Pickup instructions (optional)</Label>
+              <Label htmlFor="pickupInstructions">{dict.pickupInstructionsOptional}</Label>
               <Textarea id="pickupInstructions" name="pickupInstructions" rows={2} />
             </div>
           </div>
@@ -216,15 +228,15 @@ export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocatio
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-brand-950">Schedule</h2>
+        <h2 className="text-lg font-semibold text-brand-950">{dict.schedule}</h2>
         <div className="flex flex-col gap-1.5 sm:max-w-xs">
-          <Label htmlFor="slot">Date and time</Label>
+          <Label htmlFor="slot">{dict.dateAndTime}</Label>
           <Select id="slot" name="slot" required defaultValue={firstAvailableSlot ? `${firstAvailableSlot.date}|${firstAvailableSlot.timeWindow}` : ""}>
-            {!firstAvailableSlot && <option value="">No slots available</option>}
+            {!firstAvailableSlot && <option value="">{dict.noSlotsAvailable}</option>}
             {availableSlots.map((slot) => (
               <option key={`${slot.date}|${slot.timeWindow}`} value={`${slot.date}|${slot.timeWindow}`} disabled={!slot.available}>
                 {formatSlotLabel(slot)}
-                {!slot.available ? " (unavailable)" : ""}
+                {!slot.available ? dict.unavailableSuffix : ""}
               </option>
             ))}
           </Select>
@@ -232,23 +244,23 @@ export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocatio
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-brand-950">Payment</h2>
+        <h2 className="text-lg font-semibold text-brand-950">{dict.payment}</h2>
         {!cashEnabled && !tapEnabled ? (
           <p role="alert" className="text-sm text-danger-600">
-            No payment methods are currently available. Please check back later.
+            {dict.noPaymentMethods}
           </p>
         ) : (
           <div className="flex gap-4">
             {cashEnabled && (
               <label className="flex items-center gap-2 text-sm">
                 <input type="radio" name="payment" value="cash" checked={paymentMethod === "cash"} onChange={() => setPaymentMethod("cash")} />
-                Cash on {fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
+                {fulfillmentMethod === "delivery" ? dict.cashOnDelivery : dict.cashOnPickup}
               </label>
             )}
             {tapEnabled && (
               <label className="flex items-center gap-2 text-sm">
                 <input type="radio" name="payment" value="tap" checked={paymentMethod === "tap"} onChange={() => setPaymentMethod("tap")} />
-                Pay by card
+                {dict.payByCard}
               </label>
             )}
           </div>
@@ -262,7 +274,7 @@ export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocatio
       )}
 
       <Button type="submit" size="lg" disabled={pending || !firstAvailableSlot || (!cashEnabled && !tapEnabled)}>
-        {pending ? "Placing order…" : "Place order"}
+        {pending ? dict.placingOrder : dict.placeOrder}
       </Button>
     </form>
   );

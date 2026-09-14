@@ -5,6 +5,8 @@ import type { PublicOrderView } from "@/core/orders/public-view";
 import { formatMoney } from "@/core/money/money";
 import { trackOrderAction } from "@/features/tracking/actions";
 import { readCheckoutContactForLookup } from "@/features/tracking/checkout-contact-storage";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -12,19 +14,12 @@ import { Label } from "@/ui/primitives/label";
 export interface OrderLookupFormProps {
   initialOrderNumber?: string;
   heading?: string;
+  locale?: Locale;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  pending_payment: "Awaiting payment",
-  confirmed: "Confirmed",
-  preparing: "Preparing your order",
-  ready: "Ready",
-  out_for_delivery: "Out for delivery",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
-
-export function OrderLookupForm({ initialOrderNumber, heading = "Track your order" }: OrderLookupFormProps) {
+export function OrderLookupForm({ initialOrderNumber, heading, locale = DEFAULT_LOCALE }: OrderLookupFormProps) {
+  const dict = getDictionary(locale);
+  const trackingDict = dict.storefront.tracking;
   const orderNumberId = useId();
   const contactId = useId();
   const [orderNumber, setOrderNumber] = useState(initialOrderNumber ?? "");
@@ -84,12 +79,12 @@ export function OrderLookupForm({ initialOrderNumber, heading = "Track your orde
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{heading}</h1>
-      <p className="mt-2 text-sm text-foreground/70">Enter your order number and the mobile number or email you used at checkout.</p>
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{heading ?? trackingDict.heading}</h1>
+      <p className="mt-2 text-sm text-foreground/70">{trackingDict.description}</p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={orderNumberId}>Order number</Label>
+          <Label htmlFor={orderNumberId}>{trackingDict.orderNumber}</Label>
           <Input
             id={orderNumberId}
             value={orderNumber}
@@ -99,11 +94,11 @@ export function OrderLookupForm({ initialOrderNumber, heading = "Track your orde
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={contactId}>Mobile number or email</Label>
+          <Label htmlFor={contactId}>{trackingDict.mobileOrEmail}</Label>
           <Input id={contactId} value={contact} onChange={(event) => setContact(event.target.value)} required />
         </div>
         <Button type="submit" disabled={status === "loading"}>
-          {status === "loading" ? "Looking up…" : "Track order"}
+          {status === "loading" ? trackingDict.lookingUp : trackingDict.trackOrder}
         </Button>
         {status === "error" && error && (
           <p role="alert" className="text-sm text-danger-600">
@@ -116,25 +111,25 @@ export function OrderLookupForm({ initialOrderNumber, heading = "Track your orde
         <div className="mt-8 rounded-lg border border-brand-100 bg-brand-50/40 p-6">
           <div className="flex items-center justify-between">
             <p className="font-semibold text-brand-950">{view.orderNumber}</p>
-            <span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-900">{STATUS_LABELS[view.status] ?? view.status}</span>
+            <span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-900">{dict.admin.orderStatus[view.status]}</span>
           </div>
           <dl className="mt-4 space-y-1 text-sm text-foreground/70">
             <div className="flex justify-between">
-              <dt>Fulfillment</dt>
+              <dt>{trackingDict.fulfillment}</dt>
               <dd className="capitalize text-brand-950">{view.fulfillmentMethod}</dd>
             </div>
             <div className="flex justify-between">
-              <dt>Scheduled for</dt>
+              <dt>{trackingDict.scheduledFor}</dt>
               <dd className="text-brand-950">
                 {view.schedule.date}, {view.schedule.timeWindow}
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt>Payment</dt>
+              <dt>{trackingDict.payment}</dt>
               <dd className="text-brand-950">{view.paymentStatusLabel}</dd>
             </div>
             <div className="flex justify-between border-t border-brand-200 pt-2 text-base font-semibold text-brand-950">
-              <dt>Total</dt>
+              <dt>{trackingDict.total}</dt>
               <dd>{formatMoney(view.grandTotal)}</dd>
             </div>
           </dl>

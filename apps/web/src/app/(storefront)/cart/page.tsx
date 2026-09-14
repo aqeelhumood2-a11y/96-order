@@ -4,6 +4,8 @@ import { Container } from "@/ui/layout/container";
 import { Button } from "@/ui/primitives/button";
 import { CartLineRow } from "@/features/cart/components/cart-line-row";
 import { CartSummary } from "@/features/cart/components/cart-summary";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { buildStaticPageMetadata } from "@/services/storefront/seo";
 import { peekCartId } from "@/services/cart/cart-session";
 import { getCustomerSession } from "@/services/customer-auth/session";
@@ -15,17 +17,17 @@ export const metadata: Metadata = buildStaticPageMetadata("Your cart", "Review t
 export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
-  const cartId = await peekCartId();
-  const session = await getCustomerSession();
+  const [cartId, session, locale] = await Promise.all([peekCartId(), getCustomerSession(), getLocale()]);
   const priced = cartId ? (await getDiscountedPricedCart(cartId, session?.email ?? null)).priced : null;
+  const dict = getDictionary(locale).storefront.cart;
 
   if (!priced || priced.lines.length === 0) {
     return (
       <Container className="py-12">
-        <h1 className="font-display text-2xl text-brand-950">Your cart</h1>
-        <p className="mt-4 text-sm text-foreground/70">Your cart is empty.</p>
+        <h1 className="font-display text-2xl text-brand-950">{dict.heading}</h1>
+        <p className="mt-4 text-sm text-foreground/70">{dict.empty}</p>
         <Button asChild className="mt-6">
-          <Link href="/products">Continue shopping</Link>
+          <Link href="/products">{dict.continueShopping}</Link>
         </Button>
       </Container>
     );
@@ -33,25 +35,25 @@ export default async function CartPage() {
 
   return (
     <Container className="py-8 sm:py-12">
-      <h1 className="font-display text-2xl text-brand-950">Your cart</h1>
+      <h1 className="font-display text-2xl text-brand-950">{dict.heading}</h1>
 
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
         <div>
           {priced.lines.map((line) => (
-            <CartLineRow key={line.line.id} line={line} />
+            <CartLineRow key={line.line.id} line={line} locale={locale} />
           ))}
         </div>
 
         <div className="flex flex-col gap-4">
-          <CartSummary priced={priced} editableCoupon />
+          <CartSummary priced={priced} editableCoupon locale={locale} />
           <Button asChild size="lg" disabled={priced.hasBlockingIssues} className="w-full">
             <Link href="/checkout" aria-disabled={priced.hasBlockingIssues}>
-              Proceed to checkout
+              {dict.proceedToCheckout}
             </Link>
           </Button>
           {priced.hasBlockingIssues && (
             <p role="alert" className="text-xs text-danger-600">
-              Please resolve the issues above before checking out.
+              {dict.resolveIssues}
             </p>
           )}
         </div>

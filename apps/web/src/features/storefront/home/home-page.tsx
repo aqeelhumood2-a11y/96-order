@@ -1,5 +1,7 @@
 import type { PublicBrand, PublicProductSummary } from "@/core/storefront/dto";
 import type { HomepageSectionConfig, HomepageSectionKey } from "@/core/site-settings/entities";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Hero } from "./hero";
 import { ProductSection } from "./product-section";
 import { FeaturedBrands } from "./featured-brands";
@@ -13,16 +15,21 @@ export interface HomePageProps {
   equipmentProducts: PublicProductSummary[];
   featuredBrands: PublicBrand[];
   categoryLinks: { href: string; label: string }[];
+  locale?: Locale;
 }
 
-const DEFAULT_TITLES: Record<HomepageSectionKey, { title: string; description?: string; viewAllHref: string }> = {
-  hero: { title: "", viewAllHref: "/" },
-  featured: { title: "Featured products", viewAllHref: "/products?featured=true" },
-  new_arrivals: { title: "New arrivals", viewAllHref: "/products?sort=newest" },
-  coffee: { title: "Coffee", description: "Beans from our current lineup.", viewAllHref: "/products?productType=coffee" },
-  equipment: { title: "Equipment", description: "Brewers, grinders, and accessories.", viewAllHref: "/products?productType=equipment" },
-  brands: { title: "Shop by brand", viewAllHref: "/products" },
-};
+function defaultTitlesFor(
+  dict: ReturnType<typeof getDictionary>["storefront"]["home"],
+): Record<HomepageSectionKey, { title: string; description?: string; viewAllHref: string }> {
+  return {
+    hero: { title: "", viewAllHref: "/" },
+    featured: { title: dict.featuredProductsTitle, viewAllHref: "/products?featured=true" },
+    new_arrivals: { title: dict.newArrivalsTitle, viewAllHref: "/products?sort=newest" },
+    coffee: { title: dict.coffeeTitle, description: dict.coffeeDescription, viewAllHref: "/products?productType=coffee" },
+    equipment: { title: dict.equipmentTitle, description: dict.equipmentDescription, viewAllHref: "/products?productType=equipment" },
+    brands: { title: dict.shopByBrandTitle, viewAllHref: "/products" },
+  };
+}
 
 /**
  * Renders every configured, `visible` section in the admin's `sortOrder` —
@@ -31,7 +38,17 @@ const DEFAULT_TITLES: Record<HomepageSectionKey, { title: string; description?: 
  * doc comment) — category browsing lives in the header/hamburger nav only,
  * per the Phase 7 spec.
  */
-export function HomePage({ sections, featuredProducts, newArrivals, coffeeProducts, equipmentProducts, featuredBrands, categoryLinks }: HomePageProps) {
+export function HomePage({
+  sections,
+  featuredProducts,
+  newArrivals,
+  coffeeProducts,
+  equipmentProducts,
+  featuredBrands,
+  categoryLinks,
+  locale = DEFAULT_LOCALE,
+}: HomePageProps) {
+  const defaultTitles = defaultTitlesFor(getDictionary(locale).storefront.home);
   const productsByKey: Partial<Record<HomepageSectionKey, PublicProductSummary[]>> = {
     featured: featuredProducts,
     new_arrivals: newArrivals,
@@ -44,9 +61,9 @@ export function HomePage({ sections, featuredProducts, newArrivals, coffeeProduc
   return (
     <>
       {ordered.map((section) => {
-        const defaults = DEFAULT_TITLES[section.key];
-        if (section.key === "hero") return <Hero key={section.key} />;
-        if (section.key === "brands") return <FeaturedBrands key={section.key} brands={featuredBrands} />;
+        const defaults = defaultTitles[section.key];
+        if (section.key === "hero") return <Hero key={section.key} locale={locale} />;
+        if (section.key === "brands") return <FeaturedBrands key={section.key} brands={featuredBrands} locale={locale} />;
 
         const products = productsByKey[section.key] ?? [];
         return (
@@ -56,10 +73,11 @@ export function HomePage({ sections, featuredProducts, newArrivals, coffeeProduc
             description={section.subtitle ?? defaults.description}
             viewAllHref={defaults.viewAllHref}
             products={products}
+            locale={locale}
           />
         );
       })}
-      <DiscoveryLinks categoryLinks={categoryLinks} />
+      <DiscoveryLinks categoryLinks={categoryLinks} locale={locale} />
     </>
   );
 }

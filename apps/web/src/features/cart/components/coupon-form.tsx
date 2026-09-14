@@ -4,10 +4,13 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AppliedDiscount } from "@/core/pricing/apply-discounts";
 import { applyCouponAction, removeCouponAction } from "@/features/cart/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button, Input } from "@/ui/primitives";
 
-export function CouponForm({ appliedCoupon }: { appliedCoupon: AppliedDiscount | null }) {
+export function CouponForm({ appliedCoupon, locale = DEFAULT_LOCALE }: { appliedCoupon: AppliedDiscount | null; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).storefront.cart;
   const codeId = useId();
   const [code, setCode] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting">("idle");
@@ -37,9 +40,9 @@ export function CouponForm({ appliedCoupon }: { appliedCoupon: AppliedDiscount |
   if (appliedCoupon) {
     return (
       <div className="flex items-center justify-between gap-2 text-sm">
-        <span className="text-brand-800">Coupon {appliedCoupon.id} applied</span>
+        <span className="text-brand-800">{dict.couponApplied.replace("{code}", appliedCoupon.id)}</span>
         <Button type="button" size="sm" variant="outline" disabled={status === "submitting"} onClick={handleRemove}>
-          Remove
+          {dict.remove}
         </Button>
       </div>
     );
@@ -49,11 +52,11 @@ export function CouponForm({ appliedCoupon }: { appliedCoupon: AppliedDiscount |
     <form onSubmit={handleApply} noValidate className="flex flex-col gap-2">
       <div className="flex gap-2">
         <label htmlFor={codeId} className="sr-only">
-          Coupon code
+          {dict.couponCode}
         </label>
-        <Input id={codeId} value={code} onChange={(event) => setCode(event.target.value)} disabled={status === "submitting"} placeholder="Coupon code" className="flex-1" />
+        <Input id={codeId} value={code} onChange={(event) => setCode(event.target.value)} disabled={status === "submitting"} placeholder={dict.couponCodePlaceholder} className="flex-1" />
         <Button type="submit" size="sm" variant="outline" disabled={status === "submitting" || code.trim().length === 0}>
-          Apply
+          {dict.apply}
         </Button>
       </div>
       {error && (

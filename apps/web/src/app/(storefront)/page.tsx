@@ -7,6 +7,7 @@ import { listActiveBrands } from "@/services/storefront/get-brand";
 import { listActiveCategories } from "@/services/storefront/get-category";
 import { buildStaticPageMetadata } from "@/services/storefront/seo";
 import { getPublicSiteSettings } from "@/services/site-settings/get-public-settings";
+import { getLocale } from "@/lib/i18n/locale";
 
 export const metadata: Metadata = buildStaticPageMetadata(
   "Home",
@@ -32,7 +33,7 @@ const HOMEPAGE_BRAND_LIMIT = 12;
 const HOMEPAGE_CATEGORY_LIMIT = 20;
 
 export default async function Home() {
-  const [settings, featuredProducts, newArrivals, coffeeProducts, equipmentProducts, featuredBrands, categories] = await Promise.all([
+  const [settings, featuredProducts, newArrivals, coffeeProducts, equipmentProducts, featuredBrands, categories, locale] = await Promise.all([
     getPublicSiteSettings(),
     listFeaturedProducts(HOMEPAGE_SECTION_LIMIT),
     listNewArrivals(HOMEPAGE_SECTION_LIMIT),
@@ -40,6 +41,7 @@ export default async function Home() {
     listProducts({ productType: "equipment", sort: "newest", limit: HOMEPAGE_SECTION_LIMIT }).then((page) => page.items),
     listActiveBrands(HOMEPAGE_BRAND_LIMIT),
     listActiveCategories(HOMEPAGE_CATEGORY_LIMIT),
+    getLocale(),
   ]);
 
   const categoryLinks = categories
@@ -55,6 +57,7 @@ export default async function Home() {
       equipmentProducts={equipmentProducts}
       featuredBrands={featuredBrands}
       categoryLinks={categoryLinks}
+      locale={locale}
     />
   );
 }

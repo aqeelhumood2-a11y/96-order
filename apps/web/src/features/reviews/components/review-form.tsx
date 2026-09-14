@@ -4,6 +4,8 @@ import { useId, useState } from "react";
 import type { Review } from "@/core/reviews/entities";
 import { createReviewAction, deleteMyReviewAction, updateMyReviewAction } from "@/features/reviews/actions";
 import { StarRatingInput } from "@/features/reviews/components/star-rating-input";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button, Input, Label, Textarea } from "@/ui/primitives";
 
 export interface ReviewFormProps {
@@ -12,9 +14,11 @@ export interface ReviewFormProps {
   /** When set, the form edits this existing (always `"pending"`) review instead of creating a new one. */
   existing?: Review;
   onDone?: () => void;
+  locale?: Locale;
 }
 
-export function ReviewForm({ productId, productSlug, existing, onDone }: ReviewFormProps) {
+export function ReviewForm({ productId, productSlug, existing, onDone, locale = DEFAULT_LOCALE }: ReviewFormProps) {
+  const dict = getDictionary(locale).storefront.reviews;
   const titleId = useId();
   const bodyId = useId();
   const [rating, setRating] = useState(existing?.rating ?? 5);
@@ -48,13 +52,13 @@ export function ReviewForm({ productId, productSlug, existing, onDone }: ReviewF
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3 rounded-md border border-brand-100 p-4">
-      <StarRatingInput value={rating} onChange={setRating} disabled={status !== "idle"} />
+      <StarRatingInput value={rating} onChange={setRating} disabled={status !== "idle"} locale={locale} />
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={titleId}>Title</Label>
+        <Label htmlFor={titleId}>{dict.title}</Label>
         <Input id={titleId} value={title} onChange={(event) => setTitle(event.target.value)} disabled={status !== "idle"} required maxLength={150} />
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={bodyId}>Review</Label>
+        <Label htmlFor={bodyId}>{dict.reviewLabel}</Label>
         <Textarea id={bodyId} value={body} onChange={(event) => setBody(event.target.value)} disabled={status !== "idle"} required maxLength={5000} rows={4} />
       </div>
       {error && (
@@ -64,11 +68,11 @@ export function ReviewForm({ productId, productSlug, existing, onDone }: ReviewF
       )}
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={status !== "idle"}>
-          {status === "submitting" ? "Saving…" : existing ? "Save changes" : "Submit review"}
+          {status === "submitting" ? dict.saving : existing ? dict.saveChanges : dict.submitReview}
         </Button>
         {existing && (
           <Button type="button" size="sm" variant="destructive" disabled={status !== "idle"} onClick={handleDelete}>
-            {status === "deleting" ? "Deleting…" : "Delete"}
+            {status === "deleting" ? dict.deleting : dict.delete}
           </Button>
         )}
       </div>

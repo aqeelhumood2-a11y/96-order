@@ -6,6 +6,7 @@ import { listProducts } from "@/services/storefront/list-products";
 import { buildCategoryMetadata } from "@/services/storefront/seo";
 import { ProductListing } from "@/features/storefront/listing/product-listing";
 import { firstValue, parseListingSearchParams, parseView } from "@/features/storefront/listing/parse-search-params";
+import { getLocale } from "@/lib/i18n/locale";
 
 const FILTER_OPTION_LIMIT = 100;
 
@@ -34,7 +35,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const query = { ...parsed, category: category.slug };
   const view = parseView(raw);
 
-  const [{ items, nextCursor }, brands] = await Promise.all([listProducts(query), listActiveBrands(FILTER_OPTION_LIMIT)]);
+  const [{ items, nextCursor }, brands, locale] = await Promise.all([listProducts(query), listActiveBrands(FILTER_OPTION_LIMIT), getLocale()]);
 
   return (
     <ProductListing
@@ -47,6 +48,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       cursorsParam={firstValue(raw.cursors)}
       view={view}
       brands={brands}
+      locale={locale}
     />
   );
 }

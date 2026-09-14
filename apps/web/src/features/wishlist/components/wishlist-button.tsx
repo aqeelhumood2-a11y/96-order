@@ -1,15 +1,19 @@
 "use client";
 
 import { useWishlist } from "@/features/wishlist/wishlist-context";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
 export interface WishlistButtonProps {
   productId: string;
   variantId: string | null;
   className?: string;
+  locale?: Locale;
 }
 
 /** Heart toggle used on both product cards and the product detail page — reads/writes through `WishlistProvider`, so guest vs. signed-in is invisible to callers. */
-export function WishlistButton({ productId, variantId, className }: WishlistButtonProps) {
+export function WishlistButton({ productId, variantId, className, locale = DEFAULT_LOCALE }: WishlistButtonProps) {
+  const dict = getDictionary(locale).product;
   const { isWishlisted, toggle, pending } = useWishlist();
   const active = isWishlisted(productId, variantId);
 
@@ -17,7 +21,7 @@ export function WishlistButton({ productId, variantId, className }: WishlistButt
     <button
       type="button"
       aria-pressed={active}
-      aria-label={active ? "Remove from wishlist" : "Add to wishlist"}
+      aria-label={active ? dict.wishlistRemove : dict.wishlistAdd}
       disabled={pending}
       onClick={(event) => {
         event.preventDefault();

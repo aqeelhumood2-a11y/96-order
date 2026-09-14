@@ -4,6 +4,8 @@ import { NotFoundError } from "@/core/errors";
 import { OrderStatusBadge } from "@/features/admin-orders/components/order-status-badge";
 import { CustomerInfoPanel, FulfillmentInfoPanel, LineItemsPanel, PaymentInfoPanel } from "@/features/admin-orders/components/order-info-panels";
 import { ReorderButton } from "@/features/customer-orders/components/reorder-button";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { requireCustomerSession } from "@/services/customer-auth/session";
 import { getMyOrder } from "@/services/customer-orders/list-my-orders";
 
@@ -12,8 +14,9 @@ interface AccountOrderDetailPageProps {
 }
 
 export default async function AccountOrderDetailPage({ params }: AccountOrderDetailPageProps) {
-  const session = await requireCustomerSession();
+  const [session, locale] = await Promise.all([requireCustomerSession(), getLocale()]);
   const { orderNumber } = await params;
+  const dict = getDictionary(locale).storefront.account.pages;
 
   let order;
   try {
@@ -28,21 +31,21 @@ export default async function AccountOrderDetailPage({ params }: AccountOrderDet
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/account/orders" className="text-sm text-brand-700 hover:underline">
-            ← Orders
+            {dict.backToOrders}
           </Link>
           <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{order.orderNumber}</h1>
-          <OrderStatusBadge status={order.status} />
+          <OrderStatusBadge status={order.status} locale={locale} />
         </div>
-        <ReorderButton orderNumber={order.orderNumber} />
+        <ReorderButton orderNumber={order.orderNumber} locale={locale} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CustomerInfoPanel order={order} />
-        <PaymentInfoPanel order={order} />
-        <FulfillmentInfoPanel order={order} />
+        <CustomerInfoPanel order={order} locale={locale} />
+        <PaymentInfoPanel order={order} locale={locale} />
+        <FulfillmentInfoPanel order={order} locale={locale} />
       </div>
 
-      <LineItemsPanel order={order} />
+      <LineItemsPanel order={order} locale={locale} />
     </div>
   );
 }

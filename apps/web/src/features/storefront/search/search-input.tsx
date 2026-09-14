@@ -4,11 +4,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/ui/primitives";
 import { MIN_SEARCH_QUERY_LENGTH } from "@/core/storefront/schemas";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
 const DEBOUNCE_MS = 350;
 
 export interface SearchInputProps {
   initialQuery: string;
+  locale?: Locale;
 }
 
 /**
@@ -19,9 +22,10 @@ export interface SearchInputProps {
  * characters, the `q` param is dropped entirely rather than firing a query
  * that would always be rejected.
  */
-export function SearchInput({ initialQuery }: SearchInputProps) {
+export function SearchInput({ initialQuery, locale = DEFAULT_LOCALE }: SearchInputProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const dict = getDictionary(locale).nav;
   const [value, setValue] = useState(initialQuery);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -54,7 +58,7 @@ export function SearchInput({ initialQuery }: SearchInputProps) {
       }}
     >
       <label htmlFor="search-q" className="sr-only">
-        Search products
+        {dict.searchLabel}
       </label>
       <Input
         id="search-q"
@@ -62,7 +66,7 @@ export function SearchInput({ initialQuery }: SearchInputProps) {
         type="search"
         value={value}
         onChange={(event) => handleChange(event.target.value)}
-        placeholder="Search coffee, brewers, brands…"
+        placeholder={dict.searchPlaceholder}
         minLength={MIN_SEARCH_QUERY_LENGTH}
         autoComplete="off"
       />

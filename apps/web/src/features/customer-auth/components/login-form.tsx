@@ -3,16 +3,14 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button, Input, Label } from "@/ui/primitives";
-
-const formSchema = z.object({
-  email: z.string().min(1, "Email is required.").email("Enter a valid email address."),
-  password: z.string().min(1, "Password is required."),
-});
 
 type FieldErrors = Partial<Record<"email" | "password", string>>;
 
-export function CustomerLoginForm() {
+export function CustomerLoginForm({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
+  const dict = getDictionary(locale).storefront.account.login;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -20,6 +18,22 @@ export function CustomerLoginForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formSchema = z.object({
+    email: z.string().min(1, dict.emailRequired).email(dict.enterValidEmail),
+    password: z.string().min(1, dict.passwordRequired),
+  });
+
+  function mapErrorMessage(code: string | undefined): string {
+    switch (code) {
+      case "RATE_LIMITED":
+        return dict.rateLimited;
+      case "UNAUTHORIZED":
+        return dict.invalidCredentials;
+      default:
+        return dict.genericError;
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -62,7 +76,7 @@ export function CustomerLoginForm() {
   return (
     <form onSubmit={handleSubmit} noValidate className="flex w-full max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="login-email">Email</Label>
+        <Label htmlFor="login-email">{dict.email}</Label>
         <Input
           id="login-email"
           type="email"
@@ -81,7 +95,7 @@ export function CustomerLoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="login-password">Password</Label>
+        <Label htmlFor="login-password">{dict.password}</Label>
         <Input
           id="login-password"
           type="password"
@@ -106,19 +120,8 @@ export function CustomerLoginForm() {
       )}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Signing in…" : "Sign in"}
+        {isSubmitting ? dict.signingIn : dict.signIn}
       </Button>
     </form>
   );
-}
-
-function mapErrorMessage(code: string | undefined): string {
-  switch (code) {
-    case "RATE_LIMITED":
-      return "Too many sign-in attempts. Please try again shortly.";
-    case "UNAUTHORIZED":
-      return "Invalid email or password.";
-    default:
-      return "Something went wrong signing you in. Please try again.";
-  }
 }

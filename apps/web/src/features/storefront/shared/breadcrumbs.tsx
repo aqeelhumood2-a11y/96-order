@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
 export interface BreadcrumbItem {
   label: string;
@@ -9,11 +11,14 @@ export interface BreadcrumbItem {
 export interface BreadcrumbsProps {
   items: BreadcrumbItem[];
   className?: string;
+  locale?: Locale;
 }
 
-export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, className, locale = DEFAULT_LOCALE }: BreadcrumbsProps) {
+  const dict = getDictionary(locale).storefront.listing;
+
   return (
-    <nav aria-label="Breadcrumb" className={className}>
+    <nav aria-label={dict.breadcrumb} className={className}>
       <ol className="flex flex-wrap items-center gap-1.5 text-sm text-foreground/69">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;

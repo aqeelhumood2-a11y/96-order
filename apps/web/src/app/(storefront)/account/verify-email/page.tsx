@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 import { verifyCustomerEmail } from "@/services/customer-auth/verify-email";
 
 interface VerifyEmailPageProps {
@@ -15,9 +17,11 @@ interface VerifyEmailPageProps {
  */
 export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageProps) {
   const { token } = await searchParams;
+  const locale = await getLocale();
+  const dict = getDictionary(locale).storefront.account.pages;
 
   if (!token) {
-    return <VerifyEmailResult heading="Verification link missing" message="This link is missing its verification code." />;
+    return <VerifyEmailResult heading={dict.verificationLinkMissingHeading} message={dict.verificationLinkMissingMessage} />;
   }
 
   let verified = true;
@@ -28,15 +32,15 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
   }
 
   return verified ? (
-    <VerifyEmailResult heading="Email verified" message="Your email address has been verified.">
+    <VerifyEmailResult heading={dict.emailVerifiedHeading} message={dict.emailVerifiedMessage}>
       <Link href="/account" className="text-sm text-brand-700 hover:underline">
-        Go to your account
+        {dict.goToYourAccount}
       </Link>
     </VerifyEmailResult>
   ) : (
-    <VerifyEmailResult heading="Verification link invalid" message="This verification link is invalid or has expired.">
+    <VerifyEmailResult heading={dict.verificationLinkInvalidHeading} message={dict.verificationLinkInvalidMessage}>
       <Link href="/account" className="text-sm text-brand-700 hover:underline">
-        Go to your account to request a new one
+        {dict.goToAccountRequestNew}
       </Link>
     </VerifyEmailResult>
   );

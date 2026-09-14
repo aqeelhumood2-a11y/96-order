@@ -13,6 +13,8 @@ import { AddToCartButton } from "@/features/cart/components/add-to-cart-button";
 import { WishlistButton } from "@/features/wishlist/components/wishlist-button";
 import { BackInStockSubscribeForm } from "@/features/back-in-stock/components/subscribe-form";
 import { ReviewsSection } from "@/features/reviews/components/reviews-section";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
 import { AttributesTable } from "./attributes-table";
@@ -31,6 +33,7 @@ export interface ProductDetailProps {
   myReview: Review | null;
   signedInAsCustomer: boolean;
   questions: ProductQuestion[];
+  locale?: Locale;
 }
 
 export function ProductDetail({
@@ -45,7 +48,9 @@ export function ProductDetail({
   myReview,
   signedInAsCustomer,
   questions,
+  locale = DEFAULT_LOCALE,
 }: ProductDetailProps) {
+  const dict = getDictionary(locale).storefront.detail;
   const { attributeNames, selections, matchedVariant } = resolveVariantSelection(product.variants, rawSelections);
 
   const price = matchedVariant?.price ?? product.basePrice;
@@ -62,14 +67,15 @@ export function ProductDetail({
       {structuredData?.map((data, index) => <StructuredData key={index} data={data} />)}
       <Breadcrumbs
         items={[
-          { label: "Home", href: "/" },
+          { label: dict.home, href: "/" },
           { label: product.primaryCategory.name, href: `/categories/${product.primaryCategory.slug}` },
           { label: product.name },
         ]}
+        locale={locale}
       />
 
       <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-2">
-        <ProductGallery images={product.images} productName={product.name} />
+        <ProductGallery images={product.images} productName={product.name} locale={locale} />
 
         <div className="flex flex-col gap-6">
           <div>
@@ -79,12 +85,12 @@ export function ProductDetail({
           </div>
 
           <div className="flex items-center gap-3">
-            <PriceDisplay price={price} compareAtPrice={compareAtPrice} className="text-lg" />
-            <AvailabilityBadge availability={availability} />
+            <PriceDisplay price={price} compareAtPrice={compareAtPrice} className="text-lg" locale={locale} />
+            <AvailabilityBadge availability={availability} locale={locale} />
           </div>
 
           <p className="text-sm text-foreground/65">
-            SKU: <span className="font-medium text-foreground/70">{sku}</span>
+            {dict.skuLabel} <span className="font-medium text-foreground/70">{sku}</span>
           </p>
 
           {product.tags.length > 0 && (
@@ -106,16 +112,17 @@ export function ProductDetail({
               productId={product.id}
               variantId={matchedVariant?.id ?? null}
               disabled={!purchaseAvailable}
-              disabledReason={product.hasVariants && !matchedVariant ? "Select an available option to continue." : !availability.inStock ? "Out of stock." : undefined}
+              disabledReason={product.hasVariants && !matchedVariant ? dict.selectOptionToContinue : !availability.inStock ? dict.outOfStockShort : undefined}
+              locale={locale}
             />
-            <WishlistButton productId={product.id} variantId={matchedVariant?.id ?? null} />
+            <WishlistButton productId={product.id} variantId={matchedVariant?.id ?? null} locale={locale} />
           </div>
 
           {!purchaseAvailable && (!product.hasVariants || matchedVariant !== null) && (
-            <BackInStockSubscribeForm productId={product.id} variantId={matchedVariant?.id ?? null} signedInEmail={signedInEmail} />
+            <BackInStockSubscribeForm productId={product.id} variantId={matchedVariant?.id ?? null} signedInEmail={signedInEmail} locale={locale} />
           )}
 
-          <AttributesTable coffee={product.attributes?.coffee} equipment={product.attributes?.equipment} weightGrams={weightGrams} dimensions={product.dimensions} />
+          <AttributesTable coffee={product.attributes?.coffee} equipment={product.attributes?.equipment} weightGrams={weightGrams} dimensions={product.dimensions} locale={locale} />
 
           {product.fullDescription && (
             <div className="prose prose-sm max-w-none whitespace-pre-line text-foreground/80">{product.fullDescription}</div>
@@ -131,16 +138,17 @@ export function ProductDetail({
         reviewCount={reviewCount}
         myReview={myReview}
         signedIn={signedInAsCustomer}
+        locale={locale}
       />
 
-      <QuestionsSection productId={product.id} productSlug={product.slug} questions={questions} signedIn={signedInAsCustomer} />
+      <QuestionsSection productId={product.id} productSlug={product.slug} questions={questions} signedIn={signedInAsCustomer} locale={locale} />
 
       {relatedProducts.length > 0 && (
         <section className="mt-16">
-          <h2 className="font-display text-2xl text-brand-950">You might also like</h2>
+          <h2 className="font-display text-2xl text-brand-950">{dict.relatedProductsHeading}</h2>
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {relatedProducts.map((related) => (
-              <ProductCard key={related.id} product={related} />
+              <ProductCard key={related.id} product={related} locale={locale} />
             ))}
           </div>
         </section>

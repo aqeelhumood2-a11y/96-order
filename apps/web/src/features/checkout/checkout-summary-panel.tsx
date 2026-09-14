@@ -4,6 +4,7 @@ import { useState } from "react";
 import { subtract, ZERO_BHD } from "@/core/money/money";
 import type { DiscountedPricedCart } from "@/core/pricing/priced-cart";
 import { CartSummary } from "@/features/cart/components/cart-summary";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locale-types";
 import { CheckoutForm, type CheckoutFormProps, type FulfillmentMethod } from "./checkout-form";
 
 type CheckoutSummaryPanelProps = Omit<CheckoutFormProps, "onFulfillmentMethodChange"> & {
@@ -31,7 +32,7 @@ export function CheckoutSummaryPanel({ priced, ...formProps }: CheckoutSummaryPa
   return (
     <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
       <CheckoutForm {...formProps} onFulfillmentMethodChange={setFulfillmentMethod} />
-      <CartSummary priced={displayPriced} />
+      <CartSummary priced={displayPriced} locale={formProps.locale ?? DEFAULT_LOCALE} />
     </div>
   );
 }

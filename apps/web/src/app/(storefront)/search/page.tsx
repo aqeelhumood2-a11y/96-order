@@ -4,6 +4,7 @@ import { searchProducts } from "@/services/storefront/search-products";
 import { buildStaticPageMetadata } from "@/services/storefront/seo";
 import { SearchPage } from "@/features/storefront/search/search-page";
 import { firstValue } from "@/features/storefront/listing/parse-search-params";
+import { getLocale } from "@/lib/i18n/locale";
 
 export const metadata: Metadata = buildStaticPageMetadata("Search", "Search our catalog of coffee and brewing equipment.", "/search");
 
@@ -18,14 +19,15 @@ export default async function SearchRoute({ searchParams }: SearchRouteProps) {
   const raw = await searchParams;
   const q = firstValue(raw.q) ?? "";
   const cursor = firstValue(raw.cursor);
+  const locale = await getLocale();
 
   const result = searchQuerySchema.safeParse({ q, cursor });
 
   if (!result.success) {
-    return <SearchPage query={q} products={[]} nextCursor={null} />;
+    return <SearchPage query={q} products={[]} nextCursor={null} locale={locale} />;
   }
 
   const { items, nextCursor } = await searchProducts(result.data);
 
-  return <SearchPage query={q} products={items} nextCursor={nextCursor} cursor={cursor} cursorsParam={firstValue(raw.cursors)} />;
+  return <SearchPage query={q} products={items} nextCursor={nextCursor} cursor={cursor} cursorsParam={firstValue(raw.cursors)} locale={locale} />;
 }

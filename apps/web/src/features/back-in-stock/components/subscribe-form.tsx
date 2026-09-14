@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button, Input, Label } from "@/ui/primitives";
 
 export interface BackInStockSubscribeFormProps {
@@ -8,9 +10,11 @@ export interface BackInStockSubscribeFormProps {
   variantId: string | null;
   /** Set when the visitor is signed in — their account email is used and no input is shown. */
   signedInEmail?: string;
+  locale?: Locale;
 }
 
-export function BackInStockSubscribeForm({ productId, variantId, signedInEmail }: BackInStockSubscribeFormProps) {
+export function BackInStockSubscribeForm({ productId, variantId, signedInEmail, locale = DEFAULT_LOCALE }: BackInStockSubscribeFormProps) {
+  const dict = getDictionary(locale).storefront.backInStock;
   const emailId = useId();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -29,20 +33,20 @@ export function BackInStockSubscribeForm({ productId, variantId, signedInEmail }
       const body: unknown = await response.json().catch(() => null);
       if (!response.ok) {
         setStatus("error");
-        setMessage((body as { message?: string } | null)?.message ?? "Something went wrong. Please try again.");
+        setMessage((body as { message?: string } | null)?.message ?? dict.genericError);
         return;
       }
       setStatus("success");
     } catch {
       setStatus("error");
-      setMessage("Something went wrong. Please try again.");
+      setMessage(dict.genericError);
     }
   }
 
   if (status === "success") {
     return (
       <p role="status" className="text-sm text-brand-700">
-        We&apos;ll email you when this is back in stock.
+        {dict.subscribedMessage}
       </p>
     );
   }
@@ -52,12 +56,12 @@ export function BackInStockSubscribeForm({ productId, variantId, signedInEmail }
       <div className="flex items-end gap-2">
         {!signedInEmail && (
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor={emailId}>Email me when back in stock</Label>
+            <Label htmlFor={emailId}>{dict.emailMeLabel}</Label>
             <Input id={emailId} type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={status === "loading"} required className="w-64" />
           </div>
         )}
         <Button type="submit" variant="outline" disabled={status === "loading"}>
-          {status === "loading" ? "Submitting…" : "Notify me"}
+          {status === "loading" ? dict.submitting : dict.notifyMe}
         </Button>
       </div>
       {status === "error" && message && (

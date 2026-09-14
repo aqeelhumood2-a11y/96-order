@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { PublicProductSummary } from "@/core/storefront/dto";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { ProductImage } from "@/features/storefront/shared/product-image";
 import { PriceDisplay } from "@/features/storefront/shared/price-display";
 import { AvailabilityBadge } from "@/features/storefront/shared/availability-badge";
 
-export function ProductListRow({ product }: { product: PublicProductSummary }) {
+export function ProductListRow({ product, locale = DEFAULT_LOCALE }: { product: PublicProductSummary; locale?: Locale }) {
   return (
     <Link
       href={`/products/${product.slug}`}
@@ -18,8 +19,8 @@ export function ProductListRow({ product }: { product: PublicProductSummary }) {
         <span className="font-medium text-brand-950 group-hover:underline">{product.name}</span>
         {product.shortDescription && <p className="line-clamp-2 text-sm text-foreground/69">{product.shortDescription}</p>}
         <div className="mt-1 flex items-center gap-3">
-          <PriceDisplay price={product.displayPrice} compareAtPrice={product.compareAtPrice} />
-          <AvailabilityBadge availability={product.availability} />
+          <PriceDisplay price={product.displayPrice} compareAtPrice={product.compareAtPrice} locale={locale} />
+          <AvailabilityBadge availability={product.availability} locale={locale} />
         </div>
       </div>
     </Link>

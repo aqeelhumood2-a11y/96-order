@@ -1,10 +1,14 @@
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
+
 /** Read-only stars — a single `role="img"` with a text `aria-label` (e.g. "4.3 out of 5 stars") rather than five separately-announced icons, so screen readers get one clear number instead of noise. */
-export function StarRatingDisplay({ rating, size = "md" }: { rating: number; size?: "sm" | "md" }) {
+export function StarRatingDisplay({ rating, size = "md", locale = DEFAULT_LOCALE }: { rating: number; size?: "sm" | "md"; locale?: Locale }) {
+  const dict = getDictionary(locale).storefront.reviews;
   const rounded = Math.round(rating * 2) / 2;
   const dimension = size === "sm" ? "14" : "18";
 
   return (
-    <span role="img" aria-label={`${rating} out of 5 stars`} className="inline-flex items-center gap-0.5 text-warning-500">
+    <span role="img" aria-label={dict.starsAriaLabel.replace("{rating}", String(rating))} className="inline-flex items-center gap-0.5 text-warning-500">
       {Array.from({ length: 5 }, (_, index) => {
         const filled = index + 1 <= rounded;
         const half = !filled && index + 0.5 === rounded;

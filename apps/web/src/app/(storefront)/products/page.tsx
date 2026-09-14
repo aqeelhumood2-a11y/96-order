@@ -5,6 +5,8 @@ import { listActiveBrands } from "@/services/storefront/get-brand";
 import { buildStaticPageMetadata } from "@/services/storefront/seo";
 import { ProductListing } from "@/features/storefront/listing/product-listing";
 import { firstValue, parseListingSearchParams, parseView } from "@/features/storefront/listing/parse-search-params";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 
 export const metadata: Metadata = buildStaticPageMetadata(
   "Shop all products",
@@ -26,16 +28,17 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const query = parseListingSearchParams(raw);
   const view = parseView(raw);
 
-  const [{ items, nextCursor }, categories, brands] = await Promise.all([
+  const [{ items, nextCursor }, categories, brands, locale] = await Promise.all([
     listProducts(query),
     listActiveCategories(FILTER_OPTION_LIMIT),
     listActiveBrands(FILTER_OPTION_LIMIT),
+    getLocale(),
   ]);
 
   return (
     <ProductListing
       basePath="/products"
-      heading="Shop all products"
+      heading={getDictionary(locale).storefront.listing.shopAllHeading}
       query={query}
       products={items}
       nextCursor={nextCursor}
@@ -43,6 +46,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       view={view}
       categories={categories}
       brands={brands}
+      locale={locale}
     />
   );
 }

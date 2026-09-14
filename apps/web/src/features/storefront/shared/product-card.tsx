@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { PublicProductSummary } from "@/core/storefront/dto";
 import { WishlistButton } from "@/features/wishlist/components/wishlist-button";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { ProductImage } from "./product-image";
 import { PriceDisplay } from "./price-display";
 import { AvailabilityBadge } from "./availability-badge";
@@ -12,9 +14,12 @@ export interface ProductCardProps {
   highlightQuery?: string;
   /** Set on the first handful of above-the-fold cards (e.g. a homepage section's first row) so their image starts fetching immediately instead of waiting on lazy-load — see `ProductImage`'s doc comment. */
   priority?: boolean;
+  locale?: Locale;
 }
 
-export function ProductCard({ product, highlightQuery, priority }: ProductCardProps) {
+export function ProductCard({ product, highlightQuery, priority, locale = DEFAULT_LOCALE }: ProductCardProps) {
+  const dict = getDictionary(locale).storefront.listing;
+
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-brand-100 bg-background transition-all duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-brand-500">
       <Link href={`/products/${product.slug}`} className="absolute inset-0 z-10 focus:outline-none" aria-label={product.name} />
@@ -27,9 +32,9 @@ export function ProductCard({ product, highlightQuery, priority }: ProductCardPr
           priority={priority}
         />
         {product.featured && (
-          <span className="absolute left-2 top-2 rounded-full bg-accent-600 px-2 py-0.5 text-xs font-medium text-white">Featured</span>
+          <span className="absolute left-2 top-2 rounded-full bg-accent-600 px-2 py-0.5 text-xs font-medium text-white">{dict.featuredBadge}</span>
         )}
-        <WishlistButton productId={product.id} variantId={null} className="absolute right-2 top-2 z-20" />
+        <WishlistButton productId={product.id} variantId={null} className="absolute right-2 top-2 z-20" locale={locale} />
       </div>
       <div className="flex flex-1 flex-col gap-1 p-4">
         {product.brand && <span className="text-xs font-medium uppercase tracking-wide text-foreground/65">{product.brand.name}</span>}
@@ -37,8 +42,8 @@ export function ProductCard({ product, highlightQuery, priority }: ProductCardPr
           <HighlightText text={product.name} query={highlightQuery} />
         </span>
         <div className="mt-auto flex items-center justify-between pt-2">
-          <PriceDisplay price={product.displayPrice} compareAtPrice={product.compareAtPrice} />
-          <AvailabilityBadge availability={product.availability} />
+          <PriceDisplay price={product.displayPrice} compareAtPrice={product.compareAtPrice} locale={locale} />
+          <AvailabilityBadge availability={product.availability} locale={locale} />
         </div>
       </div>
     </div>

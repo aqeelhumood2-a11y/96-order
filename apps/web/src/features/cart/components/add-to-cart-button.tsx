@@ -3,6 +3,8 @@
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addToCartAction } from "@/features/cart/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 
 export interface AddToCartButtonProps {
@@ -10,10 +12,12 @@ export interface AddToCartButtonProps {
   variantId: string | null;
   disabled?: boolean;
   disabledReason?: string;
+  locale?: Locale;
 }
 
-export function AddToCartButton({ productId, variantId, disabled, disabledReason }: AddToCartButtonProps) {
+export function AddToCartButton({ productId, variantId, disabled, disabledReason, locale = DEFAULT_LOCALE }: AddToCartButtonProps) {
   const router = useRouter();
+  const dict = getDictionary(locale).product;
   const quantityId = useId();
   const [quantity, setQuantity] = useState(1);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -36,7 +40,7 @@ export function AddToCartButton({ productId, variantId, disabled, disabledReason
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-3">
         <label className="sr-only" htmlFor={quantityId}>
-          Quantity
+          {dict.quantity}
         </label>
         <input
           id={quantityId}
@@ -49,13 +53,13 @@ export function AddToCartButton({ productId, variantId, disabled, disabledReason
           className="h-10 w-20 rounded-md border border-brand-300 bg-background px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button type="button" onClick={handleAdd} disabled={disabled || status === "loading"} className="flex-1 sm:flex-none">
-          {status === "loading" ? "Adding…" : "Add to cart"}
+          {status === "loading" ? dict.adding : dict.addToCart}
         </Button>
       </div>
       {disabled && disabledReason && <p className="text-xs text-foreground/65">{disabledReason}</p>}
       {status === "success" && (
         <p role="status" className="text-xs text-brand-700">
-          Added to cart.
+          {dict.addedToCart}
         </p>
       )}
       {status === "error" && error && (

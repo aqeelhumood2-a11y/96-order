@@ -1,14 +1,17 @@
 import Link from "next/link";
 import type { PublicBrand } from "@/core/storefront/dto";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Container } from "@/ui/layout/container";
 
-export function FeaturedBrands({ brands }: { brands: PublicBrand[] }) {
+export function FeaturedBrands({ brands, locale = DEFAULT_LOCALE }: { brands: PublicBrand[]; locale?: Locale }) {
+  const dict = getDictionary(locale).storefront.home;
   if (brands.length === 0) return null;
 
   return (
     <section className="py-12 sm:py-16">
       <Container>
-        <h2 className="font-display text-2xl text-brand-950">Brands we carry</h2>
+        <h2 className="font-display text-2xl text-brand-950">{dict.brandsWeCarry}</h2>
         <ul className="mt-6 flex flex-wrap gap-3">
           {brands.map((brand) => (
             <li key={brand.id}>

@@ -1,6 +1,8 @@
 import { ACTIVE_CURRENCY } from "@/core/money/money";
 import type { PublicBrand, PublicCategory } from "@/core/storefront/dto";
 import type { ParsedListProductsQuery } from "@/core/storefront/schemas";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button, Input, Label } from "@/ui/primitives";
 
 export interface FilterPanelProps {
@@ -10,6 +12,7 @@ export interface FilterPanelProps {
   categories?: PublicCategory[];
   /** Omitted entirely when the current route already scopes to one brand — e.g. `/brands/[slug]`. */
   brands?: PublicBrand[];
+  locale?: Locale;
 }
 
 /**
@@ -25,19 +28,21 @@ export interface FilterPanelProps {
  * between the two before parsing, keeping this form's inputs in the unit a
  * shopper actually thinks in.
  */
-export function FilterPanel({ basePath, query, categories, brands }: FilterPanelProps) {
+export function FilterPanel({ basePath, query, categories, brands, locale = DEFAULT_LOCALE }: FilterPanelProps) {
+  const dict = getDictionary(locale).storefront.listing;
+
   return (
     <form action={basePath} method="get" className="flex flex-col gap-5">
       {categories && categories.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="filter-category">Category</Label>
+          <Label htmlFor="filter-category">{dict.category}</Label>
           <select
             id="filter-category"
             name="category"
             defaultValue={query.category ?? ""}
             className="h-10 rounded-md border border-brand-300 bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
-            <option value="">All categories</option>
+            <option value="">{dict.allCategories}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.slug}>
                 {category.name}
@@ -49,14 +54,14 @@ export function FilterPanel({ basePath, query, categories, brands }: FilterPanel
 
       {brands && brands.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="filter-brand">Brand</Label>
+          <Label htmlFor="filter-brand">{dict.brand}</Label>
           <select
             id="filter-brand"
             name="brand"
             defaultValue={query.brand ?? ""}
             className="h-10 rounded-md border border-brand-300 bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
-            <option value="">All brands</option>
+            <option value="">{dict.allBrands}</option>
             {brands.map((brand) => (
               <option key={brand.id} value={brand.slug}>
                 {brand.name}
@@ -67,13 +72,13 @@ export function FilterPanel({ basePath, query, categories, brands }: FilterPanel
       )}
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="filter-product-type">Product type</Label>
-        <Input id="filter-product-type" name="productType" defaultValue={query.productType ?? ""} placeholder="coffee, equipment…" />
+        <Label htmlFor="filter-product-type">{dict.productType}</Label>
+        <Input id="filter-product-type" name="productType" defaultValue={query.productType ?? ""} placeholder={dict.productTypePlaceholder} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="filter-min-price">Min price (BHD)</Label>
+          <Label htmlFor="filter-min-price">{dict.minPrice}</Label>
           <Input
             id="filter-min-price"
             name="minPriceBhd"
@@ -85,7 +90,7 @@ export function FilterPanel({ basePath, query, categories, brands }: FilterPanel
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="filter-max-price">Max price (BHD)</Label>
+          <Label htmlFor="filter-max-price">{dict.maxPrice}</Label>
           <Input
             id="filter-max-price"
             name="maxPriceBhd"
@@ -99,15 +104,15 @@ export function FilterPanel({ basePath, query, categories, brands }: FilterPanel
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="filter-availability">Availability</Label>
+        <Label htmlFor="filter-availability">{dict.availability}</Label>
         <select
           id="filter-availability"
           name="availability"
           defaultValue={query.availability ?? "all"}
           className="h-10 rounded-md border border-brand-300 bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
         >
-          <option value="all">All items</option>
-          <option value="in_stock">In stock only</option>
+          <option value="all">{dict.allItems}</option>
+          <option value="in_stock">{dict.inStockOnly}</option>
         </select>
       </div>
 
@@ -121,29 +126,29 @@ export function FilterPanel({ basePath, query, categories, brands }: FilterPanel
           className="h-4 w-4 rounded border-brand-300 text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
         />
         <Label htmlFor="filter-featured" className="font-normal">
-          Featured only
+          {dict.featuredOnly}
         </Label>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="filter-sort">Sort by</Label>
+        <Label htmlFor="filter-sort">{dict.sortBy}</Label>
         <select
           id="filter-sort"
           name="sort"
           defaultValue={query.sort}
           className="h-10 rounded-md border border-brand-300 bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
         >
-          <option value="newest">Newest</option>
-          <option value="name">Name (A–Z)</option>
-          <option value="price_asc">Price (low to high)</option>
-          <option value="price_desc">Price (high to low)</option>
+          <option value="newest">{dict.sortNewest}</option>
+          <option value="name">{dict.sortNameAsc}</option>
+          <option value="price_asc">{dict.sortPriceAsc}</option>
+          <option value="price_desc">{dict.sortPriceDesc}</option>
         </select>
       </div>
 
       <div className="flex items-center gap-3 pt-1">
-        <Button type="submit">Apply filters</Button>
+        <Button type="submit">{dict.applyFilters}</Button>
         <a href={basePath} className="text-sm font-medium text-brand-700 hover:text-brand-900 hover:underline">
-          Clear all
+          {dict.clearAll}
         </a>
       </div>
     </form>

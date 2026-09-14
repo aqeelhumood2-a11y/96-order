@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { reorderAction } from "@/features/customer-orders/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 
-export function ReorderButton({ orderNumber }: { orderNumber: string }) {
+export function ReorderButton({ orderNumber, locale = DEFAULT_LOCALE }: { orderNumber: string; locale?: Locale }) {
+  const dict = getDictionary(locale).storefront.account.pages;
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -21,8 +24,8 @@ export function ReorderButton({ orderNumber }: { orderNumber: string }) {
       }
       setMessage(
         result.data.skippedCount > 0
-          ? `Added ${result.data.addedCount} item(s) to your cart (${result.data.skippedCount} no longer available).`
-          : `Added ${result.data.addedCount} item(s) to your cart.`,
+          ? dict.addedToCartWithSkipped.replace("{added}", String(result.data.addedCount)).replace("{skipped}", String(result.data.skippedCount))
+          : dict.addedToCartMessage.replace("{count}", String(result.data.addedCount)),
       );
       router.refresh();
     } finally {
@@ -33,7 +36,7 @@ export function ReorderButton({ orderNumber }: { orderNumber: string }) {
   return (
     <div className="flex flex-col items-start gap-1">
       <Button type="button" size="sm" onClick={handleClick} disabled={isSubmitting}>
-        {isSubmitting ? "Adding to cart…" : "Reorder"}
+        {isSubmitting ? dict.addingToCart : dict.reorder}
       </Button>
       {message && (
         <p role="status" className="text-xs text-foreground/70">

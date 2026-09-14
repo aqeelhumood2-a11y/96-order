@@ -8,9 +8,12 @@ import { removeFromWishlistAction, moveWishlistItemToCartAction } from "@/featur
 import { ProductImage } from "@/features/storefront/shared/product-image";
 import { PriceDisplay } from "@/features/storefront/shared/price-display";
 import { AvailabilityBadge } from "@/features/storefront/shared/availability-badge";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 
-export function WishlistGrid({ items }: { items: WishlistItemView[] }) {
+export function WishlistGrid({ items, locale = DEFAULT_LOCALE }: { items: WishlistItemView[]; locale?: Locale }) {
+  const dict = getDictionary(locale);
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
@@ -41,7 +44,7 @@ export function WishlistGrid({ items }: { items: WishlistItemView[] }) {
   }
 
   if (items.length === 0) {
-    return <p className="text-sm text-foreground/69">Your wishlist is empty. Browse products and tap the heart to save them here.</p>;
+    return <p className="text-sm text-foreground/69">{dict.storefront.account.pages.wishlistEmpty}</p>;
   }
 
   return (
@@ -62,15 +65,15 @@ export function WishlistGrid({ items }: { items: WishlistItemView[] }) {
                 {item.product.name}
               </Link>
               <div className="mt-1 flex items-center justify-between">
-                <PriceDisplay price={price} compareAtPrice={compareAtPrice} />
-                <AvailabilityBadge availability={availability} />
+                <PriceDisplay price={price} compareAtPrice={compareAtPrice} locale={locale} />
+                <AvailabilityBadge availability={availability} locale={locale} />
               </div>
               <div className="mt-auto flex flex-col gap-2 pt-3">
                 <Button size="sm" disabled={busyId === item.id || !availability.inStock} onClick={() => handleMoveToCart(item)}>
-                  {availability.inStock ? "Move to cart" : "Out of stock"}
+                  {availability.inStock ? dict.storefront.account.pages.moveToCart : dict.product.outOfStock}
                 </Button>
                 <Button size="sm" variant="outline" disabled={busyId === item.id} onClick={() => handleRemove(item)}>
-                  Remove
+                  {dict.storefront.cart.remove}
                 </Button>
                 {messages[item.id] && (
                   <p role="alert" className="text-xs text-danger-600">
