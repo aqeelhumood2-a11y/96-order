@@ -7,14 +7,12 @@ export const dynamic = "force-dynamic";
 /**
  * Proxies a Google Drive file's bytes through this app's own server using
  * the official Drive API (`files.get?alt=media`), rather than the browser
- * hitting `lh3.googleusercontent.com` directly — see
- * `core/catalog/rules.ts#toDriveProxyUrl`'s doc comment for why: that
- * undocumented hotlink trick can return a genuine 403 from Google for a
- * file with fully correct "anyone with the link" sharing, for reasons
- * outside this app's control, while the Drive API's own documented
- * `alt=media` download (authenticated with a plain API key — no OAuth, no
- * service-account needed for a publicly-shared file) does not share that
- * failure mode.
+ * hitting `drive.google.com`'s direct-view link directly — see
+ * `core/catalog/rules.ts#toDriveProxyUrl`'s doc comment. This is an optional
+ * upgrade path (only reached when `GOOGLE_DRIVE_API_KEY` is configured),
+ * not the default: this app's default direct-link behavior already works,
+ * and this route exists for whoever wants Drive images to also be
+ * server-cached and never dependent on Google's own hotlink serving at all.
  *
  * Unauthenticated by design, same as the file it serves: anyone who already
  * has the Drive file id (baked into the storefront's own HTML) could fetch

@@ -123,41 +123,43 @@ describe("isDriveFileId", () => {
 });
 
 describe("normalizeImageUrl", () => {
-  it("rewrites a Google Drive 'view this file' share link (mobile app share sheet form) to the googleusercontent CDN form", () => {
+  it("rewrites a Google Drive 'view this file' share link (mobile app share sheet form) to the direct-view form", () => {
     expect(normalizeImageUrl("https://drive.google.com/file/d/1AbC-XyZ_9rq1g2/view?usp=drivesdk")).toBe(
-      "https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2",
+      "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2",
     );
   });
 
-  it("rewrites a Google Drive 'view this file' share link (desktop share dialog form) to the googleusercontent CDN form", () => {
+  it("rewrites a Google Drive 'view this file' share link (desktop share dialog form) to the direct-view form", () => {
     expect(normalizeImageUrl("https://drive.google.com/file/d/1AbC-XyZ_9rq1g2/view?usp=sharing")).toBe(
-      "https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2",
+      "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2",
     );
   });
 
   it("rewrites Drive's older 'open?id=' link shape too", () => {
-    expect(normalizeImageUrl("https://drive.google.com/open?id=1AbC-XyZ_9rq1g2")).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
-  });
-
-  it("upgrades an older direct-view ('uc?export=view') link saved before this format was used", () => {
-    expect(normalizeImageUrl("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2")).toBe(
-      "https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2",
+    expect(normalizeImageUrl("https://drive.google.com/open?id=1AbC-XyZ_9rq1g2")).toBe(
+      "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2",
     );
   });
 
-  it("re-normalizes an already-converted googleusercontent URL idempotently", () => {
-    const url = "https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2";
+  it("re-normalizes an already-converted direct-view URL idempotently", () => {
+    const url = "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2";
     expect(normalizeImageUrl(url)).toBe(url);
   });
 
-  it("upgrades an older, size-suffixed googleusercontent URL (this app's own earlier '=w1600' format) to the current suffix-less form", () => {
+  it("upgrades an older googleusercontent CDN URL (this app's abandoned lh3 experiment) back to the direct-view form", () => {
+    expect(normalizeImageUrl("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2")).toBe(
+      "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2",
+    );
+  });
+
+  it("upgrades an older, size-suffixed googleusercontent URL (this app's even earlier '=w1600' format) back to the direct-view form", () => {
     expect(normalizeImageUrl("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2=w1600")).toBe(
-      "https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2",
+      "https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2",
     );
   });
 
   it("converts a bare Google Drive file id (pasted directly, not as part of a URL)", () => {
-    expect(normalizeImageUrl("1AbC-XyZ_9rq1g2")).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
+    expect(normalizeImageUrl("1AbC-XyZ_9rq1g2")).toBe("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2");
   });
 
   it("leaves a non-Drive URL unchanged", () => {
@@ -166,13 +168,13 @@ describe("normalizeImageUrl", () => {
   });
 
   it("trims surrounding whitespace before matching", () => {
-    expect(normalizeImageUrl("  1AbC-XyZ_9rq1g2  ")).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
+    expect(normalizeImageUrl("  1AbC-XyZ_9rq1g2  ")).toBe("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2");
   });
 });
 
 describe("toDriveProxyUrl", () => {
-  it("rewrites this app's canonical Drive hotlink URL to the same-origin proxy path", () => {
-    expect(toDriveProxyUrl("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2")).toBe("/api/drive-image/1AbC-XyZ_9rq1g2");
+  it("rewrites this app's canonical Drive direct-view URL to the same-origin proxy path", () => {
+    expect(toDriveProxyUrl("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2")).toBe("/api/drive-image/1AbC-XyZ_9rq1g2");
   });
 
   it("leaves a non-Drive URL unchanged", () => {
@@ -180,8 +182,8 @@ describe("toDriveProxyUrl", () => {
     expect(toDriveProxyUrl(url)).toBe(url);
   });
 
-  it("leaves a stale, not-yet-re-normalized Drive URL shape unchanged (only the current hotlink shape is proxied)", () => {
-    const url = "https://drive.google.com/uc?export=view&id=abc123";
+  it("leaves a stale, not-yet-re-normalized googleusercontent URL shape unchanged (only the current direct-view shape is proxied)", () => {
+    const url = "https://lh3.googleusercontent.com/d/abc123";
     expect(toDriveProxyUrl(url)).toBe(url);
   });
 });
