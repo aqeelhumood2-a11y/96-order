@@ -176,7 +176,7 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
                 </svg>
               </button>
             </DialogTrigger>
-            <DialogContent className="top-0 left-0 flex max-w-none translate-x-0 translate-y-0 flex-col rounded-none p-6 sm:max-w-xs">
+            <DialogContent className="top-0 left-0 flex h-dvh max-w-none translate-x-0 translate-y-0 flex-col rounded-none p-6 sm:max-w-xs">
               <div className="flex items-center justify-between">
                 <DialogTitle>Admin menu</DialogTitle>
                 <DialogClose asChild>

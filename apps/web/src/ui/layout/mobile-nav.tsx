@@ -30,7 +30,7 @@ export function MobileNav({ links, locale = DEFAULT_LOCALE, signedIn = false }: 
           </svg>
         </button>
       </DialogTrigger>
-      <DialogContent className="left-0 top-0 max-w-none translate-x-0 translate-y-0 rounded-none p-6 sm:max-w-sm">
+      <DialogContent className="left-0 top-0 h-dvh max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none p-6 sm:max-w-sm">
         <div className="flex items-center justify-between">
           <DialogTitle>{dict.nav.menu}</DialogTitle>
           <DialogClose asChild>
