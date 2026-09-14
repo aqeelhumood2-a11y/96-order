@@ -109,7 +109,7 @@ describe("addProductImageByUrl", () => {
     expect(deps.auditLogs.record).toHaveBeenCalledWith(expect.objectContaining({ type: "product_image_uploaded" }));
   });
 
-  it("normalizes a raw Google Drive share link to the direct-view form before saving", async () => {
+  it("normalizes a raw Google Drive share link to the googleusercontent CDN form before saving", async () => {
     const deps = createMockCatalogDeps();
     deps.products.findById = vi.fn().mockResolvedValue(PRODUCT);
     const actor = makeSession({ effectivePermissions: new Set(["products:edit"]) });
@@ -120,17 +120,17 @@ describe("addProductImageByUrl", () => {
       deps,
     );
 
-    expect(image.storagePath).toBe("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2");
+    expect(image.storagePath).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
   });
 
-  it("accepts a bare Google Drive file id (no URL at all) and converts it to the direct-view form", async () => {
+  it("accepts a bare Google Drive file id (no URL at all) and converts it to the googleusercontent CDN form", async () => {
     const deps = createMockCatalogDeps();
     deps.products.findById = vi.fn().mockResolvedValue(PRODUCT);
     const actor = makeSession({ effectivePermissions: new Set(["products:edit"]) });
 
     const image = await addProductImageByUrl(actor, { productId: "prod-1", imageUrl: "1AbC-XyZ_9rq1g2", altText: "", isPrimary: false }, deps);
 
-    expect(image.storagePath).toBe("https://drive.google.com/uc?export=view&id=1AbC-XyZ_9rq1g2");
+    expect(image.storagePath).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
   });
 
   it("the first image added becomes primary automatically", async () => {

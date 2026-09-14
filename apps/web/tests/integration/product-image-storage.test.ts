@@ -55,16 +55,16 @@ describe("FirebaseProductImageStorage (emulator)", () => {
     await expect(storage.getDownloadUrl(externalUrl)).resolves.toBe(externalUrl);
   });
 
-  it("getDownloadUrl() re-normalizes an already-saved Drive URL (this app's abandoned lh3 experiment) to the current direct-view format, without touching the bucket", async () => {
-    const staleUrl = "https://lh3.googleusercontent.com/d/abc123";
-    await expect(storage.getDownloadUrl(staleUrl)).resolves.toBe("https://drive.google.com/uc?export=view&id=abc123");
+  it("getDownloadUrl() re-normalizes an already-saved Drive URL to the current googleusercontent CDN format, without touching the bucket", async () => {
+    const staleUrl = "https://drive.google.com/uc?export=view&id=abc123";
+    await expect(storage.getDownloadUrl(staleUrl)).resolves.toBe("https://lh3.googleusercontent.com/d/abc123");
   });
 
   it("getDownloadUrl() routes a Drive image through the /api/drive-image proxy once GOOGLE_DRIVE_API_KEY is configured", async () => {
     const original = process.env.GOOGLE_DRIVE_API_KEY;
     process.env.GOOGLE_DRIVE_API_KEY = "test-key";
     try {
-      const url = "https://drive.google.com/uc?export=view&id=abc123";
+      const url = "https://lh3.googleusercontent.com/d/abc123";
       await expect(storage.getDownloadUrl(url)).resolves.toBe("/api/drive-image/abc123");
     } finally {
       process.env.GOOGLE_DRIVE_API_KEY = original;

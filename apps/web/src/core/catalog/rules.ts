@@ -28,24 +28,20 @@ export function isDriveFileId(value: string): boolean {
   return DRIVE_FILE_ID_PATTERN.test(value);
 }
 
-// This app tried three different hotlink shapes across several rounds of
-// "this one is more reliable" changes — `uc?export=view`, Drive's
-// `thumbnail` endpoint, then `lh3.googleusercontent.com/d/<id>` (matching
-// maawoon-menu's own admin uploader). The last of those, deployed live,
-// regressed a real product photo from "slow but displaying" to "not
-// displaying at all" — confirmed directly, not assumed. This reverts to the
-// very first shape (`uc?export=view&id=<id>`), the one actually observed
-// working end-to-end in this app, and stops here: any further format change
-// needs to be verified against a real deployed image before shipping again,
-// not swapped speculatively.
+// The exact file-id extraction patterns and output URL shape used by
+// maawoon-menu's own `ImageUploader.tsx#getGoogleDriveImageUrl` — this app's
+// explicit, final instruction is to match that project byte-for-byte rather
+// than maintain a separately-evolved conversion, so this is ported as-is,
+// not re-derived. `lh3.googleusercontent.com` is Google's photo/image CDN
+// host, not the Drive UI host (`drive.google.com`) this app used earlier.
 const DRIVE_SHARE_LINK_PATTERNS = [
   /\/file\/d\/([^/?]+)/, // .../file/d/<id>/view?usp=...
-  /[?&]id=([^&]+)/, // .../open?id=<id>, .../uc?id=<id> or .../uc?export=view&id=<id> — also matches this function's own output, and an old =w1600-suffixed lh3 URL's id portion, both idempotently
-  /googleusercontent\.com\/d\/([^/?=]+)/, // self-heals a record saved under either now-abandoned lh3 format (with or without the old `=w1600` suffix) back to the current form below
+  /[?&]id=([^&]+)/, // .../open?id=<id>, .../uc?id=<id> or .../uc?export=view&id=<id> — also self-heals a record saved under this app's earlier drive.google.com-hosted format
+  /googleusercontent\.com\/d\/([^/?=]+)/, // already in this app's own output form — stops at "=" so a record saved under a still-earlier `=w1600`-suffixed attempt self-heals to the current suffix-less form
 ];
 
 function driveImageUrl(fileId: string): string {
-  return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  return `https://lh3.googleusercontent.com/d/${fileId}`;
 }
 
 /**
@@ -78,17 +74,15 @@ export function normalizeImageUrl(url: string): string {
   return trimmed;
 }
 
-const DRIVE_HOTLINK_PATTERN = /^https:\/\/drive\.google\.com\/uc\?export=view&id=([^&]+)$/;
+const DRIVE_HOTLINK_PATTERN = /^https:\/\/lh3\.googleusercontent\.com\/d\/([^/?]+)$/;
 
 /**
- * Rewrites this app's own canonical Drive URL (what `normalizeImageUrl`
- * above produces/stores) to a same-origin proxy path served by
- * `app/api/drive-image/[fileId]/route.ts`. That route re-fetches the file
- * through the official, documented Drive API (`files.get?alt=media`)
- * instead of the browser hitting Drive directly — an optional upgrade path,
- * not currently relied on by default (see the comment above
- * `DRIVE_SHARE_LINK_PATTERNS` for why this app reverted to the plain
- * hotlink as its baseline).
+ * Rewrites this app's own canonical Drive hotlink URL (what
+ * `normalizeImageUrl` above produces/stores) to a same-origin proxy path
+ * served by `app/api/drive-image/[fileId]/route.ts`. That route re-fetches
+ * the file through the official, documented Drive API (`files.get?alt=media`)
+ * instead of the browser hitting `lh3.googleusercontent.com` directly — an
+ * optional upgrade path, not currently relied on by default.
  *
  * Only ever applied by a caller that has confirmed `GOOGLE_DRIVE_API_KEY`
  * (server) / `NEXT_PUBLIC_GOOGLE_DRIVE_IMAGE_PROXY_ENABLED` (client) is
