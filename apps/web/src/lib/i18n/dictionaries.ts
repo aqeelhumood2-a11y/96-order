@@ -569,6 +569,10 @@ export interface Dictionary {
     };
     orderStatus: Record<"pending_payment" | "confirmed" | "accepted" | "preparing" | "ready" | "out_for_delivery" | "completed" | "cancelled", string>;
     paymentStatus: Record<"pending" | "authorized" | "paid" | "failed" | "cancelled" | "refunded" | "cash_pending" | "cash_confirmed", string>;
+    orderAlert: {
+      enable: string;
+      enabled: string;
+    };
     ordersPage: {
       heading: string;
       noOrders: string;
@@ -1565,6 +1569,10 @@ export const en: Dictionary = {
       out_for_delivery: "Out for delivery",
       completed: "Completed",
       cancelled: "Cancelled",
+    },
+    orderAlert: {
+      enable: "🔔 Enable order sound alerts",
+      enabled: "🔔 Order sound alerts are on",
     },
     paymentStatus: {
       pending: "Pending",
@@ -2599,6 +2607,10 @@ export const ar: Dictionary = {
       out_for_delivery: "قيد التوصيل",
       completed: "مكتمل",
       cancelled: "ملغى",
+    },
+    orderAlert: {
+      enable: "🔔 فعّل صوت التنبيه للطلبات",
+      enabled: "🔔 صوت التنبيه شغّال",
     },
     paymentStatus: {
       pending: "بانتظار الدفع",
