@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 
-export function LogoutButton({ children }: { children?: string }) {
+export function LogoutButton({ children, locale = DEFAULT_LOCALE }: { children?: string; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleLogout() {
@@ -21,7 +24,7 @@ export function LogoutButton({ children }: { children?: string }) {
 
   return (
     <Button type="button" variant="outline" size="sm" onClick={handleLogout} disabled={isSubmitting}>
-      {isSubmitting ? "Signing out…" : (children ?? "Sign out")}
+      {isSubmitting ? dict.signingOut : (children ?? dict.signOut)}
     </Button>
   );
 }

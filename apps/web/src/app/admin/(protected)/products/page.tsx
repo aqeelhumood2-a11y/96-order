@@ -33,7 +33,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   }
 
   if (!products) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   const canManage = hasPermission(session, "products:create");

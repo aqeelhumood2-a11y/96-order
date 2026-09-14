@@ -144,13 +144,13 @@ export function ProductForm({
     setSuccessMessage(null);
 
     if (!name.trim() || !primaryCategoryId) {
-      setFormError("Name and a category are required.");
+      setFormError(dict.nameAndCategoryRequired);
       return;
     }
 
     const basePriceNumber = bhdToFils(basePrice);
     if (basePriceNumber === undefined) {
-      setFormError("Price is required.");
+      setFormError(dict.priceRequired);
       return;
     }
 
@@ -244,7 +244,7 @@ export function ProductForm({
           setFormError(result.message);
           return;
         }
-        setSuccessMessage("Product saved.");
+        setSuccessMessage(dict.productSaved);
         router.refresh();
         return;
       }
@@ -264,14 +264,14 @@ export function ProductForm({
           reason: "initial_stock",
           quantityDelta: Math.round(stockQty),
         });
-        if (!inventoryResult.ok) warnings.push(`Stock quantity wasn't saved (${inventoryResult.message}) — set it from the product page.`);
+        if (!inventoryResult.ok) warnings.push(dict.stockNotSaved.replace("{message}", inventoryResult.message));
       }
       if (imageUrl.trim()) {
         const imageResult = await addProductImageByUrlAction(result.data.id, imageUrl.trim(), "", true);
-        if (!imageResult.ok) warnings.push(`Image wasn't added (${imageResult.message}) — add it from the product page.`);
+        if (!imageResult.ok) warnings.push(dict.imageNotAdded.replace("{message}", imageResult.message));
       }
 
-      setSuccessMessage(warnings.length > 0 ? `Product created. ${warnings.join(" ")}` : "Product created.");
+      setSuccessMessage(warnings.length > 0 ? `${dict.productCreated} ${warnings.join(" ")}` : dict.productCreated);
       router.push(`/admin/products/${result.data.id}`);
     } finally {
       setIsSubmitting(false);
@@ -356,29 +356,29 @@ export function ProductForm({
 
         <div className="mt-6 flex flex-col gap-8">
           <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold text-brand-950">Basics</h2>
+            <h2 className="text-lg font-semibold text-brand-950">{dict.basicsHeading}</h2>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-slug">Slug (optional — derived from name if left blank)</Label>
+              <Label htmlFor="product-slug">{dict.slug}</Label>
               <Input id="product-slug" value={slug} onChange={(event) => setSlug(event.target.value)} disabled={isSubmitting} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-type">Product type (e.g. coffee_beans, grinder)</Label>
+              <Label htmlFor="product-type">{dict.productType}</Label>
               <Input id="product-type" value={productType} onChange={(event) => setProductType(event.target.value)} disabled={isSubmitting} placeholder={DEFAULT_PRODUCT_TYPE} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-short-description">Short description</Label>
+              <Label htmlFor="product-short-description">{dict.shortDescription}</Label>
               <Textarea id="product-short-description" value={shortDescription} onChange={(event) => setShortDescription(event.target.value)} disabled={isSubmitting} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-full-description">Full description</Label>
+              <Label htmlFor="product-full-description">{dict.fullDescription}</Label>
               <Textarea id="product-full-description" className="min-h-40" value={fullDescription} onChange={(event) => setFullDescription(event.target.value)} disabled={isSubmitting} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-brand">Brand</Label>
+                <Label htmlFor="product-brand">{dict.brand}</Label>
                 <Select id="product-brand" value={brandId} onChange={(event) => setBrandId(event.target.value)} disabled={isSubmitting}>
-                  <option value="">No brand</option>
+                  <option value="">{dict.noBrand}</option>
                   {brands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
                       {brand.name}
@@ -387,7 +387,7 @@ export function ProductForm({
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-status">Status</Label>
+                <Label htmlFor="product-status">{dict.status}</Label>
                 <Select id="product-status" value={status} onChange={(event) => setStatus(event.target.value as (typeof PRODUCT_STATUSES)[number])} disabled={isSubmitting}>
                   {PRODUCT_STATUSES.map((value) => (
                     <option key={value} value={value}>
@@ -399,7 +399,7 @@ export function ProductForm({
             </div>
 
             <fieldset className="flex flex-col gap-1.5">
-              <legend className="text-sm font-medium text-foreground">Additional categories</legend>
+              <legend className="text-sm font-medium text-foreground">{dict.additionalCategories}</legend>
               <div className="flex flex-wrap gap-3">
                 {categories
                   .filter((category) => category.id !== primaryCategoryId)
@@ -414,7 +414,7 @@ export function ProductForm({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-visibility">Visibility</Label>
+                <Label htmlFor="product-visibility">{dict.visibility}</Label>
                 <Select id="product-visibility" value={visibility} onChange={(event) => setVisibility(event.target.value as (typeof PRODUCT_VISIBILITIES)[number])} disabled={isSubmitting}>
                   {PRODUCT_VISIBILITIES.map((value) => (
                     <option key={value} value={value}>
@@ -425,167 +425,169 @@ export function ProductForm({
               </div>
               <label className="flex items-center gap-2 self-end pb-2 text-sm">
                 <input type="checkbox" checked={featured} onChange={(event) => setFeatured(event.target.checked)} disabled={isSubmitting} />
-                Featured
+                {dict.featured}
               </label>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-tags">Tags (comma-separated)</Label>
+              <Label htmlFor="product-tags">{dict.tags}</Label>
               <Input id="product-tags" value={tags} onChange={(event) => setTags(event.target.value)} disabled={isSubmitting} />
             </div>
           </section>
 
           <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold text-brand-950">SEO</h2>
+            <h2 className="text-lg font-semibold text-brand-950">{dict.seoHeading}</h2>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-seo-title">SEO title</Label>
+              <Label htmlFor="product-seo-title">{dict.seoTitle}</Label>
               <Input id="product-seo-title" value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} disabled={isSubmitting} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-seo-description">SEO description</Label>
+              <Label htmlFor="product-seo-description">{dict.seoDescription}</Label>
               <Textarea id="product-seo-description" value={seoDescription} onChange={(event) => setSeoDescription(event.target.value)} disabled={isSubmitting} />
             </div>
           </section>
 
           <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold text-brand-950">Identifiers &amp; pricing</h2>
+            <h2 className="text-lg font-semibold text-brand-950">{dict.identifiersHeading}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-sku">SKU {!isEditing && "(auto-generated if left blank)"}</Label>
+                <Label htmlFor="product-sku">
+                  {dict.sku} {!isEditing && dict.skuAutoGenerated}
+                </Label>
                 <Input id="product-sku" value={sku} onChange={(event) => setSku(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-barcode">Barcode (optional)</Label>
+                <Label htmlFor="product-barcode">{dict.barcode}</Label>
                 <Input id="product-barcode" value={barcode} onChange={(event) => setBarcode(event.target.value)} disabled={isSubmitting} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-compare-price">Compare-at price (BHD)</Label>
+                <Label htmlFor="product-compare-price">{dict.compareAtPrice}</Label>
                 <Input id="product-compare-price" type="number" step="0.001" min={0} value={compareAtPrice} onChange={(event) => setCompareAtPrice(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-cost-price">Cost price (BHD)</Label>
+                <Label htmlFor="product-cost-price">{dict.costPrice}</Label>
                 <Input id="product-cost-price" type="number" step="0.001" min={0} value={costPrice} onChange={(event) => setCostPrice(event.target.value)} disabled={isSubmitting} />
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-tax-class">Tax classification (for your records)</Label>
+              <Label htmlFor="product-tax-class">{dict.taxClass}</Label>
               <Input id="product-tax-class" value={taxClass} onChange={(event) => setTaxClass(event.target.value)} disabled={isSubmitting} />
             </div>
           </section>
 
           <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold text-brand-950">Inventory</h2>
+            <h2 className="text-lg font-semibold text-brand-950">{dict.inventoryHeading}</h2>
             <div className="flex gap-6 text-sm">
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={trackInventory} onChange={(event) => setTrackInventory(event.target.checked)} disabled={isSubmitting} />
-                Track inventory
+                {dict.trackInventory}
               </label>
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={allowBackorder} onChange={(event) => setAllowBackorder(event.target.checked)} disabled={isSubmitting} />
-                Allow backorder
+                {dict.allowBackorder}
               </label>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-low-stock">Low-stock threshold</Label>
+              <Label htmlFor="product-low-stock">{dict.lowStockThreshold}</Label>
               <Input id="product-low-stock" type="number" value={lowStockThreshold} onChange={(event) => setLowStockThreshold(event.target.value)} disabled={isSubmitting} className="max-w-40" />
             </div>
           </section>
 
           <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold text-brand-950">Shipping</h2>
+            <h2 className="text-lg font-semibold text-brand-950">{dict.shippingHeading}</h2>
             <div className="grid grid-cols-4 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-weight">Weight (g)</Label>
+                <Label htmlFor="product-weight">{dict.weight}</Label>
                 <Input id="product-weight" type="number" value={weightGrams} onChange={(event) => setWeightGrams(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-length">Length (cm)</Label>
+                <Label htmlFor="product-length">{dict.length}</Label>
                 <Input id="product-length" type="number" value={lengthCm} onChange={(event) => setLengthCm(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-width">Width (cm)</Label>
+                <Label htmlFor="product-width">{dict.width}</Label>
                 <Input id="product-width" type="number" value={widthCm} onChange={(event) => setWidthCm(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-height">Height (cm)</Label>
+                <Label htmlFor="product-height">{dict.height}</Label>
                 <Input id="product-height" type="number" value={heightCm} onChange={(event) => setHeightCm(event.target.value)} disabled={isSubmitting} />
               </div>
             </div>
           </section>
 
           <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold text-brand-950">Coffee attributes (optional)</h2>
+            <h2 className="text-lg font-semibold text-brand-950">{dict.coffeeAttributesHeading}</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-1.5">
-                <Label>Bean type</Label>
+                <Label>{dict.beanType}</Label>
                 <Input value={beanType} onChange={(event) => setBeanType(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Roast level</Label>
+                <Label>{dict.roastLevel}</Label>
                 <Input value={roastLevel} onChange={(event) => setRoastLevel(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Origin country</Label>
+                <Label>{dict.originCountry}</Label>
                 <Input value={originCountry} onChange={(event) => setOriginCountry(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Region</Label>
+                <Label>{dict.region}</Label>
                 <Input value={region} onChange={(event) => setRegion(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Farm or producer</Label>
+                <Label>{dict.farmOrProducer}</Label>
                 <Input value={farmOrProducer} onChange={(event) => setFarmOrProducer(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Processing method</Label>
+                <Label>{dict.processingMethod}</Label>
                 <Input value={processingMethod} onChange={(event) => setProcessingMethod(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Variety</Label>
+                <Label>{dict.variety}</Label>
                 <Input value={variety} onChange={(event) => setVariety(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Grind type</Label>
+                <Label>{dict.grindType}</Label>
                 <Input value={grindType} onChange={(event) => setGrindType(event.target.value)} disabled={isSubmitting} />
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Tasting notes (comma-separated)</Label>
+              <Label>{dict.tastingNotes}</Label>
               <Input value={tastingNotes} onChange={(event) => setTastingNotes(event.target.value)} disabled={isSubmitting} />
             </div>
           </section>
 
           <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold text-brand-950">Equipment attributes (optional)</h2>
+            <h2 className="text-lg font-semibold text-brand-950">{dict.equipmentAttributesHeading}</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-1.5">
-                <Label>Manufacturer</Label>
+                <Label>{dict.manufacturer}</Label>
                 <Input value={manufacturer} onChange={(event) => setManufacturer(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Model</Label>
+                <Label>{dict.model}</Label>
                 <Input value={model} onChange={(event) => setModel(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Material</Label>
+                <Label>{dict.material}</Label>
                 <Input value={material} onChange={(event) => setMaterial(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Color</Label>
+                <Label>{dict.color}</Label>
                 <Input value={color} onChange={(event) => setColor(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Capacity</Label>
+                <Label>{dict.capacity}</Label>
                 <Input value={capacity} onChange={(event) => setCapacity(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Voltage</Label>
+                <Label>{dict.voltage}</Label>
                 <Input value={voltage} onChange={(event) => setVoltage(event.target.value)} disabled={isSubmitting} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Warranty period</Label>
+                <Label>{dict.warrantyPeriod}</Label>
                 <Input value={warrantyPeriod} onChange={(event) => setWarrantyPeriod(event.target.value)} disabled={isSubmitting} />
               </div>
             </div>
@@ -593,13 +595,13 @@ export function ProductForm({
 
           <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-brand-950">Variants</h2>
+              <h2 className="text-lg font-semibold text-brand-950">{dict.variantsHeading}</h2>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={hasVariants} onChange={(event) => setHasVariants(event.target.checked)} disabled={isSubmitting} />
-                This product has variants
+                {dict.hasVariantsLabel}
               </label>
             </div>
-            {hasVariants && <VariantEditor variants={variants} onChange={setVariants} disabled={isSubmitting} />}
+            {hasVariants && <VariantEditor variants={variants} onChange={setVariants} disabled={isSubmitting} locale={locale} />}
           </section>
         </div>
       </details>

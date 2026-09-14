@@ -38,7 +38,7 @@ export function ProductsTable({ products, canManage, locale = DEFAULT_LOCALE }: 
               <Link href={`/admin/products/${product.id}`} className="text-sm font-medium text-brand-700 hover:underline">
                 {dict.edit}
               </Link>
-              {product.status !== "archived" && <ArchiveProductButton productId={product.id} />}
+              {product.status !== "archived" && <ArchiveProductButton productId={product.id} locale={locale} />}
             </div>
           )}
         </li>

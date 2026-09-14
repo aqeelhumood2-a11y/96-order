@@ -22,16 +22,18 @@ export function CategoriesManager({ categories, canManage, locale = DEFAULT_LOCA
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.categoriesPage.heading}</h1>
-        <CategoriesTree categories={categories} canManage={canManage} onEdit={setEditing} />
+        <CategoriesTree categories={categories} canManage={canManage} onEdit={setEditing} locale={locale} />
       </div>
 
       {canManage && (
         <div className="flex flex-col gap-4 border-t border-brand-100 pt-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-brand-950">{editing ? `Edit "${editing.name}"` : dict.categoryForm.createCategory}</h2>
+            <h2 className="text-lg font-semibold text-brand-950">
+              {editing ? dict.categoriesPage.editCategory.replace("{name}", editing.name) : dict.categoryForm.createCategory}
+            </h2>
             {editing && (
               <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
-                Cancel edit
+                {dict.categoriesPage.cancelEdit}
               </Button>
             )}
           </div>

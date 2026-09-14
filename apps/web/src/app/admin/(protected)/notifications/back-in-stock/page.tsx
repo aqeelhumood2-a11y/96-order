@@ -27,7 +27,7 @@ export default async function AdminBackInStockPage({ searchParams }: PageProps) 
   }
 
   if (!page) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   const cursorState = parseCursorState(cursor, cursorsParam);
@@ -36,7 +36,7 @@ export default async function AdminBackInStockPage({ searchParams }: PageProps) 
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{getDictionary(locale).admin.backInStockPage.heading}</h1>
       <BackInStockTable subscriptions={page.items} locale={locale} />
-      <CursorPagination basePath="/admin/notifications/back-in-stock" baseQueryString="" cursorState={cursorState} nextCursor={page.nextCursor} />
+      <CursorPagination basePath="/admin/notifications/back-in-stock" baseQueryString="" cursorState={cursorState} nextCursor={page.nextCursor} locale={locale} />
     </div>
   );
 }

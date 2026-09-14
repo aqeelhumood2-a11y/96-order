@@ -36,7 +36,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
   }
 
   if (!detail) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   const { customer, orders } = detail;

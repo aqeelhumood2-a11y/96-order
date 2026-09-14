@@ -94,9 +94,19 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavLinks({ groups, pathname, onNavigate }: { groups: NavGroup[]; pathname: string; onNavigate?: () => void }) {
+function NavLinks({
+  groups,
+  pathname,
+  onNavigate,
+  ariaLabel,
+}: {
+  groups: NavGroup[];
+  pathname: string;
+  onNavigate?: () => void;
+  ariaLabel: string;
+}) {
   return (
-    <nav aria-label="Admin" className="flex flex-1 flex-col gap-5 overflow-y-auto">
+    <nav aria-label={ariaLabel} className="flex flex-1 flex-col gap-5 overflow-y-auto">
       {groups.map((group, index) => {
         const visibleLinks = group.links.filter((link) => link.visible);
         if (visibleLinks.length === 0) return null;
@@ -141,16 +151,16 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
       <aside className="hidden w-60 shrink-0 flex-col gap-6 border-r border-surface-border bg-background p-4 md:flex">
         <Link href="/admin" aria-label="Ninety Six Degrees Cafe admin" className="flex items-center gap-2 px-1">
           <Logo variant="mark" color="purple" height={28} />
-          <span className="text-sm font-semibold text-brand-950">Admin</span>
+          <span className="text-sm font-semibold text-brand-950">{dict.admin.brandLabel}</span>
         </Link>
 
         <LanguageSwitcher locale={locale} className="rounded-md border border-surface-border px-2 py-1.5 text-sm" />
 
-        <NavLinks groups={groups} pathname={pathname} />
+        <NavLinks groups={groups} pathname={pathname} ariaLabel={dict.admin.brandLabel} />
 
         <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
           <span className="truncate px-1 text-xs text-foreground/65">{session.email}</span>
-          <LogoutButton>{dict.admin.signOut}</LogoutButton>
+          <LogoutButton locale={locale}>{dict.admin.signOut}</LogoutButton>
         </div>
       </aside>
 
@@ -158,7 +168,7 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
       <div className="flex items-center justify-between border-b border-surface-border bg-background px-4 py-3 md:hidden">
         <Link href="/admin" aria-label="Ninety Six Degrees Cafe admin" className="flex items-center gap-2">
           <Logo variant="mark" color="purple" height={24} />
-          <span className="text-sm font-semibold text-brand-950">Admin</span>
+          <span className="text-sm font-semibold text-brand-950">{dict.admin.brandLabel}</span>
         </Link>
 
         <div className="flex items-center gap-2">
@@ -168,7 +178,7 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
             <DialogTrigger asChild>
               <button
                 type="button"
-                aria-label="Open admin menu"
+                aria-label={dict.admin.openMenu}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-md text-brand-900 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6" aria-hidden="true">
@@ -178,11 +188,11 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
             </DialogTrigger>
             <DialogContent className="top-0 left-0 flex h-dvh max-w-none translate-x-0 translate-y-0 flex-col rounded-none p-6 sm:max-w-xs">
               <div className="flex items-center justify-between">
-                <DialogTitle>Admin menu</DialogTitle>
+                <DialogTitle>{dict.admin.menuTitle}</DialogTitle>
                 <DialogClose asChild>
                   <button
                     type="button"
-                    aria-label="Close menu"
+                    aria-label={dict.admin.closeMenu}
                     className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground/69 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5" aria-hidden="true">
@@ -192,11 +202,11 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
                 </DialogClose>
               </div>
               <div className="mt-4 flex flex-1 flex-col overflow-hidden">
-                <NavLinks groups={groups} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                <NavLinks groups={groups} pathname={pathname} onNavigate={() => setMobileOpen(false)} ariaLabel={dict.admin.brandLabel} />
               </div>
               <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
                 <span className="truncate px-1 text-xs text-foreground/65">{session.email}</span>
-                <LogoutButton>{dict.admin.signOut}</LogoutButton>
+                <LogoutButton locale={locale}>{dict.admin.signOut}</LogoutButton>
               </div>
             </DialogContent>
           </Dialog>

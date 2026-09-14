@@ -85,7 +85,7 @@ export function CategoryForm({
         return;
       }
 
-      setSuccessMessage(isEditing ? "Category updated." : `Category "${parsed.data.name}" created.`);
+      setSuccessMessage(isEditing ? dict.categoryUpdated : dict.categoryCreated.replace("{name}", parsed.data.name));
       if (!isEditing) {
         setName("");
         setSlug("");
@@ -118,19 +118,19 @@ export function CategoryForm({
         <summary className="cursor-pointer text-sm font-medium text-brand-800 select-none">{dict.advancedOptions}</summary>
         <div className="mt-4 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="category-slug">Slug (optional — derived from name if left blank)</Label>
+            <Label htmlFor="category-slug">{dict.slug}</Label>
             <Input id="category-slug" value={slug} onChange={(event) => setSlug(event.target.value)} disabled={isSubmitting} />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="category-description">Description</Label>
+            <Label htmlFor="category-description">{dict.description}</Label>
             <Textarea id="category-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={isSubmitting} />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="category-parent">Parent category</Label>
+            <Label htmlFor="category-parent">{dict.parentCategory}</Label>
             <Select id="category-parent" value={parentId} onChange={(event) => setParentId(event.target.value)} disabled={isSubmitting}>
-              <option value="">No parent (top-level)</option>
+              <option value="">{dict.noParent}</option>
               {availableParents.map((candidate) => (
                 <option key={candidate.id} value={candidate.id}>
                   {candidate.name}
@@ -140,17 +140,17 @@ export function CategoryForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="category-sort-order">Sort order</Label>
+            <Label htmlFor="category-sort-order">{dict.sortOrder}</Label>
             <Input id="category-sort-order" type="number" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} disabled={isSubmitting} className="max-w-40" />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="category-seo-title">SEO title</Label>
+            <Label htmlFor="category-seo-title">{dict.seoTitle}</Label>
             <Input id="category-seo-title" value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} disabled={isSubmitting} />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="category-seo-description">SEO description</Label>
+            <Label htmlFor="category-seo-description">{dict.seoDescription}</Label>
             <Textarea id="category-seo-description" value={seoDescription} onChange={(event) => setSeoDescription(event.target.value)} disabled={isSubmitting} />
           </div>
         </div>
@@ -173,7 +173,7 @@ export function CategoryForm({
       )}
 
       <Button type="submit" disabled={isSubmitting} className="w-fit">
-        {isSubmitting ? "Saving…" : isEditing ? dict.saveChanges : dict.createCategory}
+        {isSubmitting ? dict.saving : isEditing ? dict.saveChanges : dict.createCategory}
       </Button>
     </form>
   );

@@ -30,7 +30,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   }
 
   if (!detail) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   const { order, events, reservations } = detail;

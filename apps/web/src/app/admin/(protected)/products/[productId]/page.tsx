@@ -42,7 +42,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ pr
   }
 
   if (forbidden) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
   if (!data) {
     notFound();

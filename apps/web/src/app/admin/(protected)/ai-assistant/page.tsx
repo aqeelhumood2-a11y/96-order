@@ -11,7 +11,7 @@ export default async function AiAssistantPage() {
     requirePermission(session, "reports:view");
   } catch (error) {
     if (!(error instanceof ForbiddenError)) throw error;
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   const dict = getDictionary(locale).admin.aiAssistantPage;

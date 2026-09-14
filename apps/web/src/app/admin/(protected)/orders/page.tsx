@@ -26,7 +26,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   }
 
   if (!page) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   const filterQueryString = buildOrdersFilterQueryString(query);
@@ -38,7 +38,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
       <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.heading}</h1>
       <OrdersFilters query={query} locale={locale} />
       <OrdersTable orders={page.items} locale={locale} />
-      <CursorPagination basePath="/admin/orders" baseQueryString={filterQueryString} cursorState={cursorState} nextCursor={page.nextCursor} />
+      <CursorPagination basePath="/admin/orders" baseQueryString={filterQueryString} cursorState={cursorState} nextCursor={page.nextCursor} locale={locale} />
     </div>
   );
 }

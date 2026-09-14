@@ -2,6 +2,8 @@
 
 import type { ProductStatus } from "@/core/catalog/entities";
 import { PRODUCT_STATUSES } from "@/core/catalog/entities";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -47,6 +49,7 @@ interface VariantEditorProps {
   variants: VariantFormState[];
   onChange: (variants: VariantFormState[]) => void;
   disabled?: boolean;
+  locale?: Locale;
 }
 
 /**
@@ -57,7 +60,9 @@ interface VariantEditorProps {
  * section), so hardcoding a closed set of attribute names here would
  * undercut that.
  */
-export function VariantEditor({ variants, onChange, disabled }: VariantEditorProps) {
+export function VariantEditor({ variants, onChange, disabled, locale = DEFAULT_LOCALE }: VariantEditorProps) {
+  const dict = getDictionary(locale).admin.variantEditor;
+
   function updateVariant(index: number, patch: Partial<VariantFormState>) {
     onChange(variants.map((variant, i) => (i === index ? { ...variant, ...patch } : variant)));
   }
@@ -91,27 +96,27 @@ export function VariantEditor({ variants, onChange, disabled }: VariantEditorPro
       {variants.map((variant, index) => (
         <div key={index} className="flex flex-col gap-3 rounded-md border border-brand-200 p-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">Variant {index + 1}</span>
+            <span className="text-sm font-medium text-foreground">{dict.variantLabel.replace("{n}", String(index + 1))}</span>
             <Button type="button" variant="outline" size="sm" onClick={() => removeVariant(index)} disabled={disabled}>
-              Remove
+              {dict.remove}
             </Button>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="flex flex-col gap-1">
-              <Label>SKU</Label>
+              <Label>{dict.sku}</Label>
               <Input value={variant.sku} onChange={(event) => updateVariant(index, { sku: event.target.value })} disabled={disabled} />
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Barcode</Label>
+              <Label>{dict.barcode}</Label>
               <Input value={variant.barcode} onChange={(event) => updateVariant(index, { barcode: event.target.value })} disabled={disabled} />
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Price override</Label>
+              <Label>{dict.priceOverride}</Label>
               <Input type="number" value={variant.priceOverride} onChange={(event) => updateVariant(index, { priceOverride: event.target.value })} disabled={disabled} />
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Compare-at override</Label>
+              <Label>{dict.compareAtOverride}</Label>
               <Input
                 type="number"
                 value={variant.compareAtPriceOverride}
@@ -120,11 +125,11 @@ export function VariantEditor({ variants, onChange, disabled }: VariantEditorPro
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Cost override</Label>
+              <Label>{dict.costOverride}</Label>
               <Input type="number" value={variant.costOverride} onChange={(event) => updateVariant(index, { costOverride: event.target.value })} disabled={disabled} />
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Weight override (g)</Label>
+              <Label>{dict.weightOverride}</Label>
               <Input
                 type="number"
                 value={variant.weightGramsOverride}
@@ -133,7 +138,7 @@ export function VariantEditor({ variants, onChange, disabled }: VariantEditorPro
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Status</Label>
+              <Label>{dict.status}</Label>
               <Select value={variant.status} onChange={(event) => updateVariant(index, { status: event.target.value as ProductStatus })} disabled={disabled}>
                 {PRODUCT_STATUSES.map((status) => (
                   <option key={status} value={status}>
@@ -143,7 +148,7 @@ export function VariantEditor({ variants, onChange, disabled }: VariantEditorPro
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Low-stock threshold</Label>
+              <Label>{dict.lowStockThreshold}</Label>
               <Input
                 type="number"
                 value={variant.lowStockThreshold}
@@ -156,34 +161,44 @@ export function VariantEditor({ variants, onChange, disabled }: VariantEditorPro
           <div className="flex gap-4 text-sm">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={variant.trackInventory} onChange={(event) => updateVariant(index, { trackInventory: event.target.checked })} disabled={disabled} />
-              Track inventory
+              {dict.trackInventory}
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={variant.allowBackorder} onChange={(event) => updateVariant(index, { allowBackorder: event.target.checked })} disabled={disabled} />
-              Allow backorder
+              {dict.allowBackorder}
             </label>
           </div>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="text-xs font-medium text-foreground/69">Attribute selections (e.g. Bag size = 500g)</legend>
+            <legend className="text-xs font-medium text-foreground/69">{dict.attributeSelectionsLegend}</legend>
             {variant.attributeSelections.map((attr, attrIndex) => (
               <div key={attrIndex} className="flex items-center gap-2">
-                <Input placeholder="Attribute" value={attr.key} onChange={(event) => updateAttribute(index, attrIndex, { key: event.target.value })} disabled={disabled} />
-                <Input placeholder="Value" value={attr.value} onChange={(event) => updateAttribute(index, attrIndex, { value: event.target.value })} disabled={disabled} />
+                <Input
+                  placeholder={dict.attributePlaceholder}
+                  value={attr.key}
+                  onChange={(event) => updateAttribute(index, attrIndex, { key: event.target.value })}
+                  disabled={disabled}
+                />
+                <Input
+                  placeholder={dict.valuePlaceholder}
+                  value={attr.value}
+                  onChange={(event) => updateAttribute(index, attrIndex, { value: event.target.value })}
+                  disabled={disabled}
+                />
                 <Button type="button" variant="ghost" size="sm" onClick={() => removeAttribute(index, attrIndex)} disabled={disabled}>
                   &times;
                 </Button>
               </div>
             ))}
             <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => addAttribute(index)} disabled={disabled}>
-              Add attribute
+              {dict.addAttribute}
             </Button>
           </fieldset>
         </div>
       ))}
 
       <Button type="button" variant="secondary" size="sm" className="w-fit" onClick={addVariant} disabled={disabled}>
-        Add variant
+        {dict.addVariant}
       </Button>
     </div>
   );

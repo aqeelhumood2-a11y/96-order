@@ -1,6 +1,7 @@
 import { ForbiddenError } from "@/core/errors";
 import { hasPermission } from "@/core/auth/permissions";
 import { BrandsManager } from "@/features/catalog/brands/components/brands-manager";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/locale";
 import { listBrands } from "@/services/catalog/list-brands";
 import { requireSession } from "@/services/auth/session";
@@ -16,7 +17,7 @@ export default async function BrandsPage() {
   }
 
   if (!brandsPage) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   return <BrandsManager brands={brandsPage.items} canManage={hasPermission(session, "brands:create")} locale={locale} />;

@@ -35,7 +35,7 @@ export default async function AdminQuestionsPage({ searchParams }: PageProps) {
   }
 
   if (!page) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   const cursorState = parseCursorState(cursor, cursorsParam);
@@ -57,7 +57,7 @@ export default async function AdminQuestionsPage({ searchParams }: PageProps) {
         ))}
       </div>
       <AdminQuestionsTable questions={page.items} locale={locale} />
-      <CursorPagination basePath="/admin/questions" baseQueryString={baseQueryString} cursorState={cursorState} nextCursor={page.nextCursor} />
+      <CursorPagination basePath="/admin/questions" baseQueryString={baseQueryString} cursorState={cursorState} nextCursor={page.nextCursor} locale={locale} />
     </div>
   );
 }

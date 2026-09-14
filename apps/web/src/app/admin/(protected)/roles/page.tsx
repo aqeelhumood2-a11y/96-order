@@ -20,7 +20,7 @@ export default async function RolesPage() {
   }
 
   if (!rolesPage) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   const canManage = hasPermission(session, "staff:manage");

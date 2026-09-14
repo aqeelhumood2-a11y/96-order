@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { archiveProductAction } from "@/features/catalog/products/actions";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 
-export function ArchiveProductButton({ productId }: { productId: string }) {
+export function ArchiveProductButton({ productId, locale = DEFAULT_LOCALE }: { productId: string; locale?: Locale }) {
   const router = useRouter();
+  const dict = getDictionary(locale).admin.productsPage;
   const [error, setError] = useState<string | null>(null);
   const [isArchiving, setIsArchiving] = useState(false);
 
@@ -28,7 +31,7 @@ export function ArchiveProductButton({ productId }: { productId: string }) {
   return (
     <div className="flex flex-col items-end gap-1">
       <Button variant="outline" size="sm" onClick={handleArchive} disabled={isArchiving}>
-        {isArchiving ? "Archiving…" : "Archive"}
+        {isArchiving ? dict.archiving : dict.archive}
       </Button>
       {error && (
         <p role="alert" className="max-w-48 text-right text-xs text-danger-600">

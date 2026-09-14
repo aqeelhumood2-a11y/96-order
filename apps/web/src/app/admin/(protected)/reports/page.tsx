@@ -44,7 +44,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   }
 
   if (!data) {
-    return <p className="text-sm text-foreground/70">You don&apos;t have permission to view this page.</p>;
+    return <p className="text-sm text-foreground/70">{getDictionary(locale).admin.noPermissionPage}</p>;
   }
 
   const dict = getDictionary(locale).admin.reportsPage;
