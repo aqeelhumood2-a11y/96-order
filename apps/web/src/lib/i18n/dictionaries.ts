@@ -427,6 +427,7 @@ export interface Dictionary {
     noPermissionPage: string;
     pagination: { label: string; previous: string; next: string };
     brandLabel: string;
+    pendingBadgeLabel: string;
     openMenu: string;
     closeMenu: string;
     menuTitle: string;
@@ -569,10 +570,6 @@ export interface Dictionary {
     };
     orderStatus: Record<"pending_payment" | "confirmed" | "accepted" | "preparing" | "ready" | "out_for_delivery" | "completed" | "cancelled", string>;
     paymentStatus: Record<"pending" | "authorized" | "paid" | "failed" | "cancelled" | "refunded" | "cash_pending" | "cash_confirmed", string>;
-    orderAlert: {
-      enable: string;
-      enabled: string;
-    };
     ordersPage: {
       heading: string;
       noOrders: string;
@@ -1425,6 +1422,7 @@ export const en: Dictionary = {
     noPermissionPage: "You don't have permission to view this page.",
     pagination: { label: "Pagination", previous: "Previous", next: "Next" },
     brandLabel: "Admin",
+    pendingBadgeLabel: "Needs attention",
     openMenu: "Open admin menu",
     closeMenu: "Close menu",
     menuTitle: "Admin menu",
@@ -1569,10 +1567,6 @@ export const en: Dictionary = {
       out_for_delivery: "Out for delivery",
       completed: "Completed",
       cancelled: "Cancelled",
-    },
-    orderAlert: {
-      enable: "🔔 Enable order sound alerts",
-      enabled: "🔔 Order sound alerts are on",
     },
     paymentStatus: {
       pending: "Pending",
@@ -2463,6 +2457,7 @@ export const ar: Dictionary = {
     noPermissionPage: "ليس لديك صلاحية لعرض هذه الصفحة.",
     pagination: { label: "تصفح الصفحات", previous: "السابق", next: "التالي" },
     brandLabel: "الإدارة",
+    pendingBadgeLabel: "يحتاج انتباه",
     openMenu: "فتح قائمة الإدارة",
     closeMenu: "إغلاق القائمة",
     menuTitle: "قائمة الإدارة",
@@ -2607,10 +2602,6 @@ export const ar: Dictionary = {
       out_for_delivery: "قيد التوصيل",
       completed: "مكتمل",
       cancelled: "ملغى",
-    },
-    orderAlert: {
-      enable: "🔔 فعّل صوت التنبيه للطلبات",
-      enabled: "🔔 صوت التنبيه شغّال",
     },
     paymentStatus: {
       pending: "بانتظار الدفع",

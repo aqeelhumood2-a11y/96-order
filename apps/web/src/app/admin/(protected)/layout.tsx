@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <div className="flex min-h-full flex-1 flex-col md:flex-row">
       <AdminNav session={session} locale={locale} />
-      <NewOrderAlert session={session} locale={locale} />
+      <NewOrderAlert session={session} />
       <main className="flex flex-1 flex-col overflow-x-hidden p-4 sm:p-6">{children}</main>
     </div>
   );

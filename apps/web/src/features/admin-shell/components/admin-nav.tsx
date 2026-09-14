@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Session } from "@/core/auth/entities";
 import { hasPermission } from "@/core/auth/permissions";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "@/ui/primitives";
@@ -14,10 +14,56 @@ import { LanguageSwitcher } from "@/lib/i18n/language-switcher";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { LogoutButton } from "./logout-button";
 
+const PENDING_BADGE_POLL_INTERVAL_MS = 20_000;
+
+type PendingBadgeKey = "orders" | "questions" | "reviews";
+type PendingBadges = Record<PendingBadgeKey, boolean>;
+
+const NO_PENDING_BADGES: PendingBadges = { orders: false, questions: false, reviews: false };
+
+/**
+ * Polls the same signal `NewOrderAlert` uses for the sound (plus the
+ * equivalent "needs attention" check for questions and reviews) so a small
+ * dot lights up next to Orders/Questions/Reviews whenever that section has
+ * something waiting — an unaccepted order, an unanswered question, an
+ * unmoderated review — and disappears once staff actually handles it.
+ * A slower cadence than the sound's own poll: a badge dot updating a few
+ * seconds late is unnoticeable, unlike a delayed ring.
+ */
+function usePendingBadges(): PendingBadges {
+  const [badges, setBadges] = useState<PendingBadges>(NO_PENDING_BADGES);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function poll() {
+      try {
+        const response = await fetch("/api/admin/notifications/pending", { cache: "no-store" });
+        if (!response.ok || cancelled) return;
+        const data = (await response.json()) as PendingBadges;
+        if (!cancelled) setBadges(data);
+      } catch {
+        // A transient network hiccup just leaves the last-known badges in
+        // place until the next tick.
+      }
+    }
+
+    void poll();
+    const interval = setInterval(() => void poll(), PENDING_BADGE_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  return badges;
+}
+
 interface NavLinkItem {
   href: string;
   label: string;
   visible: boolean;
+  badgeKey?: PendingBadgeKey;
 }
 
 interface NavGroup {
@@ -50,7 +96,7 @@ function buildNavGroups(session: Session, dict: Dictionary): NavGroup[] {
     {
       title: dict.admin.sales,
       links: [
-        { href: "/admin/orders", label: dict.admin.orders, visible: hasPermission(session, "orders:view") },
+        { href: "/admin/orders", label: dict.admin.orders, visible: hasPermission(session, "orders:view"), badgeKey: "orders" },
         { href: "/admin/customers", label: dict.admin.customers, visible: hasPermission(session, "customers:view") },
       ],
     },
@@ -59,8 +105,8 @@ function buildNavGroups(session: Session, dict: Dictionary): NavGroup[] {
       links: [
         { href: "/admin/promotions", label: dict.admin.promotions, visible: hasPermission(session, "promotions:view") },
         { href: "/admin/coupons", label: dict.admin.coupons, visible: hasPermission(session, "promotions:view") },
-        { href: "/admin/reviews", label: dict.admin.reviews, visible: hasPermission(session, "reviews:view") },
-        { href: "/admin/questions", label: dict.admin.questions, visible: hasPermission(session, "questions:view") },
+        { href: "/admin/reviews", label: dict.admin.reviews, visible: hasPermission(session, "reviews:view"), badgeKey: "reviews" },
+        { href: "/admin/questions", label: dict.admin.questions, visible: hasPermission(session, "questions:view"), badgeKey: "questions" },
       ],
     },
     {
@@ -99,11 +145,15 @@ function NavLinks({
   pathname,
   onNavigate,
   ariaLabel,
+  badges,
+  pendingBadgeLabel,
 }: {
   groups: NavGroup[];
   pathname: string;
   onNavigate?: () => void;
   ariaLabel: string;
+  badges: PendingBadges;
+  pendingBadgeLabel: string;
 }) {
   return (
     <nav aria-label={ariaLabel} className="flex flex-1 flex-col gap-5 overflow-y-auto">
@@ -117,6 +167,7 @@ function NavLinks({
             )}
             {visibleLinks.map((link) => {
               const active = isActive(pathname, link.href);
+              const hasPendingBadge = link.badgeKey ? badges[link.badgeKey] : false;
               return (
                 <Link
                   key={link.href}
@@ -124,11 +175,14 @@ function NavLinks({
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     active ? "bg-brand-100 text-brand-950" : "text-brand-800 hover:bg-brand-50 hover:text-brand-950",
                   )}
                 >
                   {link.label}
+                  {hasPendingBadge && (
+                    <span aria-label={pendingBadgeLabel} className="h-2 w-2 shrink-0 rounded-full bg-danger-600" />
+                  )}
                 </Link>
               );
             })}
@@ -144,6 +198,7 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
   const dict = getDictionary(locale);
   const groups = buildNavGroups(session, dict);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const badges = usePendingBadges();
 
   return (
     <>
@@ -156,7 +211,7 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
 
         <LanguageSwitcher locale={locale} className="rounded-md border border-surface-border px-2 py-1.5 text-sm" />
 
-        <NavLinks groups={groups} pathname={pathname} ariaLabel={dict.admin.brandLabel} />
+        <NavLinks groups={groups} pathname={pathname} ariaLabel={dict.admin.brandLabel} badges={badges} pendingBadgeLabel={dict.admin.pendingBadgeLabel} />
 
         <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
           <span className="truncate px-1 text-xs text-foreground/65">{session.email}</span>
@@ -202,7 +257,14 @@ export function AdminNav({ session, locale = DEFAULT_LOCALE }: { session: Sessio
                 </DialogClose>
               </div>
               <div className="mt-4 flex flex-1 flex-col overflow-hidden">
-                <NavLinks groups={groups} pathname={pathname} onNavigate={() => setMobileOpen(false)} ariaLabel={dict.admin.brandLabel} />
+                <NavLinks
+                  groups={groups}
+                  pathname={pathname}
+                  onNavigate={() => setMobileOpen(false)}
+                  ariaLabel={dict.admin.brandLabel}
+                  badges={badges}
+                  pendingBadgeLabel={dict.admin.pendingBadgeLabel}
+                />
               </div>
               <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
                 <span className="truncate px-1 text-xs text-foreground/65">{session.email}</span>

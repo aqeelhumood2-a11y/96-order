@@ -1,87 +1,83 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { Session } from "@/core/auth/entities";
 import { hasPermission } from "@/core/auth/permissions";
-import { getDictionary } from "@/lib/i18n/dictionaries";
-import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 
-const POLL_INTERVAL_MS = 15_000;
+const POLL_INTERVAL_MS = 4_000;
+const RINGS_PER_BURST = 3;
+const RING_SPACING_SECONDS = 0.5;
 
 /**
  * Polls for any order still sitting `confirmed` (placed and paid, but not
- * yet accepted by staff) and plays a short chime on every tick one exists —
- * a repeating alarm, not a one-shot chime, so it can't be missed by a
- * single distracted moment and keeps going until someone actually accepts
- * or declines the order from its detail page. Mounted once in the
- * protected admin layout, so it keeps running across every admin page
- * navigation, not just the orders list.
+ * yet accepted by staff) and plays a burst of rings on every tick one
+ * exists — repeated ring-ring-ring, back to back, like a delivery app's
+ * incoming-order alert, not a single soft chime — so it keeps going until
+ * someone actually accepts or declines the order from its detail page.
+ * Mounted once in the protected admin layout, so it keeps running across
+ * every admin page navigation, not just the orders list.
  *
- * Synthesizes the chime with the Web Audio API instead of shipping an
- * audio file asset. Browsers only allow an `AudioContext` to actually make
- * sound after it's created/resumed *synchronously inside* a real user
- * gesture handler (click/tap) — not from an `async` callback like
- * `setInterval`. iOS Safari enforces this strictly and, critically, does
- * NOT carry an unlock over from a previous page load — a staff member who
- * opens the orders page and then just watches it, without ever tapping
- * anything on the page itself, gets total silence forever, since no
- * incidental gesture ever arrives to unlock a fresh `AudioContext`. Rather
- * than gambling on an incidental tap (the old approach — a plain
- * `pointerdown` listener that could go unfired all shift), this renders a
- * visible, explicit "enable sound" control so staff always has one deliberate
- * tap to confirm it's on, with a persistent label reflecting the real state.
+ * Renders nothing (`null`) — this is a background side effect, not UI.
  *
- * A background/unfocused browser tab is still enough for this to work once
- * enabled — browsers throttle `setInterval` timers in inactive tabs
- * (commonly to once a minute) but don't stop them outright, and don't block
- * audio playback from an already-unlocked `AudioContext`. A fully locked
- * phone screen or a closed tab cannot run any of this — that would need a
- * native app or push notifications, well beyond an in-page poll.
+ * Synthesizes the ring with the Web Audio API instead of shipping an audio
+ * file asset. Browsers only allow an `AudioContext` to actually make sound
+ * after it's created/resumed *synchronously inside* a real user gesture
+ * handler (click/tap) — not from an `async` callback like `setInterval`.
+ * iOS Safari enforces this strictly, so the context is unlocked here on the
+ * first tap anywhere in the admin section and kept in a ref; once unlocked,
+ * that same instance can keep playing later from the polling loop below
+ * without needing another gesture.
+ *
+ * A background/unfocused browser tab is still enough for this to work —
+ * browsers throttle `setInterval` timers in inactive tabs (commonly to
+ * once a minute) but don't stop them outright, and don't block audio
+ * playback from an already-unlocked `AudioContext`. A fully locked phone
+ * screen or a closed tab cannot run any of this — that would need a native
+ * app or push notifications, well beyond an in-page poll.
  */
-export function NewOrderAlert({ session, locale = DEFAULT_LOCALE }: { session: Session; locale?: Locale }) {
-  const dict = getDictionary(locale).admin.orderAlert;
+export function NewOrderAlert({ session }: { session: Session }) {
   const audioContextRef = useRef<AudioContext | null>(null);
-  const [audioEnabled, setAudioEnabled] = useState(false);
-
-  function unlockAudio() {
-    audioContextRef.current ??= new AudioContext();
-    if (audioContextRef.current.state === "suspended") void audioContextRef.current.resume();
-    setAudioEnabled(true);
-  }
 
   useEffect(() => {
     if (!hasPermission(session, "orders:view")) return;
 
-    // Kept as a fallback in addition to the explicit button below — any
-    // real tap anywhere on the page unlocks audio too, so staff who happen
-    // to click something before noticing the button still get sound.
-    document.addEventListener("pointerdown", unlockAudio, { once: true });
+    function unlockAudio() {
+      audioContextRef.current ??= new AudioContext();
+      if (audioContextRef.current.state === "suspended") void audioContextRef.current.resume();
+    }
 
-    function playChime() {
+    // Several event types, not just one, to catch whatever the first real
+    // interaction on the page happens to be.
+    const unlockEvents = ["pointerdown", "click", "keydown"] as const;
+    unlockEvents.forEach((eventName) => document.addEventListener(eventName, unlockAudio, { once: true }));
+
+    function playRingBurst() {
       const context = audioContextRef.current;
-      // Not unlocked yet — nothing can play until staff taps the enable
-      // button (or anywhere else on the page) once, same as before any
-      // browser lets audio through.
+      // Not unlocked by a tap yet — nothing can play until staff interacts
+      // with the page once, same as before any browser lets audio through.
       if (!context) return;
       if (context.state === "suspended") void context.resume();
 
       const now = context.currentTime;
-      // Two short rising tones read as a distinct "new order" chime rather
-      // than a generic beep, without needing an audio file asset.
-      [660, 880].forEach((frequency, index) => {
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-        oscillator.type = "sine";
-        oscillator.frequency.value = frequency;
-        const start = now + index * 0.15;
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.3, start + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start(start);
-        oscillator.stop(start + 0.35);
-      });
+      for (let ring = 0; ring < RINGS_PER_BURST; ring++) {
+        const ringStart = now + ring * RING_SPACING_SECONDS;
+        // Two short rising tones read as a distinct "ring" rather than a
+        // generic beep, without needing an audio file asset.
+        [660, 880].forEach((frequency, index) => {
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.type = "sine";
+          oscillator.frequency.value = frequency;
+          const start = ringStart + index * 0.12;
+          gain.gain.setValueAtTime(0, start);
+          gain.gain.linearRampToValueAtTime(0.35, start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+          oscillator.connect(gain);
+          gain.connect(context.destination);
+          oscillator.start(start);
+          oscillator.stop(start + 0.22);
+        });
+      }
     }
 
     async function checkForOrdersNeedingAcceptance() {
@@ -89,7 +85,7 @@ export function NewOrderAlert({ session, locale = DEFAULT_LOCALE }: { session: S
         const response = await fetch("/api/admin/orders/latest", { cache: "no-store" });
         if (!response.ok) return;
         const data = (await response.json()) as { hasOrdersAwaitingAcceptance: boolean };
-        if (data.hasOrdersAwaitingAcceptance) playChime();
+        if (data.hasOrdersAwaitingAcceptance) playRingBurst();
       } catch {
         // A transient network hiccup shouldn't stop future polls — the
         // next interval tick just tries again.
@@ -99,21 +95,10 @@ export function NewOrderAlert({ session, locale = DEFAULT_LOCALE }: { session: S
     void checkForOrdersNeedingAcceptance();
     const interval = setInterval(() => void checkForOrdersNeedingAcceptance(), POLL_INTERVAL_MS);
     return () => {
-      document.removeEventListener("pointerdown", unlockAudio);
+      unlockEvents.forEach((eventName) => document.removeEventListener(eventName, unlockAudio));
       clearInterval(interval);
     };
   }, [session]);
 
-  if (!hasPermission(session, "orders:view")) return null;
-
-  return (
-    <button
-      type="button"
-      onClick={unlockAudio}
-      disabled={audioEnabled}
-      className="fixed bottom-4 end-4 z-50 rounded-full border border-brand-200 bg-white px-4 py-2 text-sm font-medium text-brand-950 shadow-lg disabled:cursor-default disabled:border-success-200 disabled:bg-success-50 disabled:text-success-700"
-    >
-      {audioEnabled ? dict.enabled : dict.enable}
-    </button>
-  );
+  return null;
 }
