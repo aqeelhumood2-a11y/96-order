@@ -1,19 +1,23 @@
 import { NextResponse } from "next/server";
 import { isDriveFileId } from "@/core/catalog/rules";
-import { logger } from "@/lib/logger";
+import { fetchDriveImage } from "@/services/catalog/fetch-drive-image";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Proxies a Google Drive file's bytes through this app's own server using
- * the official Drive API (`files.get?alt=media`), rather than the browser
- * hitting `lh3.googleusercontent.com` directly — see
- * `core/catalog/rules.ts#toDriveProxyUrl`'s doc comment. This is an optional
- * upgrade path (only reached when `GOOGLE_DRIVE_API_KEY` is configured),
- * not the default: this app's default hotlink behavior (matching this
- * project's other Google-Drive-backed site byte-for-byte) already works,
- * and this route exists for whoever wants Drive images to also be
- * server-cached and never dependent on Google's own hotlink serving at all.
+ * the official Drive API (`fetchDriveImage`, authenticated with this app's
+ * existing Firebase Admin service account) — rather than the browser
+ * hitting `lh3.googleusercontent.com` directly, which this app has
+ * confirmed can return a 403 for a specific product photo despite fully
+ * correct "anyone with the link" sharing, for reasons outside this app's
+ * control (see `core/catalog/rules.ts#toDriveProxyUrl`'s doc comment).
+ *
+ * Always falls back to a redirect to the direct hotlink — never a hard
+ * error — when no service-account credential is configured (local dev) or
+ * the Drive API call itself fails for any reason, so a misconfigured or
+ * unusual environment degrades to this app's original, always-worked
+ * behavior instead of breaking every product image.
  *
  * Unauthenticated by design, same as the file it serves: anyone who already
  * has the Drive file id (baked into the storefront's own HTML) could fetch
@@ -26,28 +30,15 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
     return NextResponse.json({ error: "Invalid Google Drive file id" }, { status: 400 });
   }
 
-  const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
-  if (!apiKey) {
-    logger.error("GOOGLE_DRIVE_API_KEY is not set — /api/drive-image cannot proxy Drive files without it");
-    return NextResponse.json({ error: "Google Drive image proxy is not configured" }, { status: 503 });
+  const directHotlinkUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+  const result = await fetchDriveImage(fileId);
+  if (!result.ok || !result.body) {
+    return NextResponse.redirect(directHotlinkUrl);
   }
 
-  let driveResponse: Response;
-  try {
-    driveResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`);
-  } catch (error) {
-    logger.error("Failed to reach the Google Drive API", { fileId, error: error instanceof Error ? error.message : String(error) });
-    return NextResponse.json({ error: "Could not reach Google Drive" }, { status: 502 });
-  }
-
-  if (!driveResponse.ok || !driveResponse.body) {
-    logger.error("Google Drive API returned an error for a product image", { fileId, status: driveResponse.status });
-    return NextResponse.json({ error: "Google Drive did not return this file" }, { status: 502 });
-  }
-
-  return new NextResponse(driveResponse.body, {
+  return new NextResponse(result.body, {
     headers: {
-      "Content-Type": driveResponse.headers.get("content-type") ?? "application/octet-stream",
+      "Content-Type": result.contentType ?? "application/octet-stream",
       // Drive file ids are effectively immutable content (replacing a
       // product photo uploads a new file/id rather than overwriting bytes
       // in place), so a long, cacheable lifetime is safe — this also

@@ -106,13 +106,13 @@ export class FirebaseProductImageStorage implements ProductImageStoragePort {
     // (not just at add-time) means a record saved before that function
     // existed, or saved with an older/less reliable Drive URL shape, gets
     // transparently upgraded to the current format on every read — no
-    // migration, no re-adding the image by hand. When `GOOGLE_DRIVE_API_KEY`
-    // is configured, a Drive-hosted URL is additionally rewritten to this
-    // app's own `/api/drive-image` proxy (see `toDriveProxyUrl`'s doc
-    // comment) — with no key set, this is a no-op and behavior is unchanged.
+    // migration, no re-adding the image by hand. A Drive-hosted URL is
+    // additionally rewritten to this app's own `/api/drive-image` proxy
+    // (see `toDriveProxyUrl`'s doc comment) — that route itself falls back
+    // to a redirect to the direct hotlink whenever it can't authenticate,
+    // so this is always safe to apply unconditionally.
     if (isExternalImageUrl(storagePath)) {
-      const normalized = normalizeImageUrl(storagePath);
-      return process.env.GOOGLE_DRIVE_API_KEY ? toDriveProxyUrl(normalized) : normalized;
+      return toDriveProxyUrl(normalizeImageUrl(storagePath));
     }
 
     const file = this.bucket().file(storagePath);

@@ -34,19 +34,12 @@ export function ProductImages({
   // will be (see `addProductImageByUrl`) — so what the admin sees here
   // before saving is exactly what will actually be stored and displayed
   // afterward, not just a guess at what the pasted link might resolve to.
-  // `NEXT_PUBLIC_GOOGLE_DRIVE_IMAGE_PROXY_ENABLED` mirrors whether the
-  // server has `GOOGLE_DRIVE_API_KEY` configured (see
-  // `product-image-storage.ts#getDownloadUrl`) — a client component can't
-  // read that server secret directly, so this flag is how it learns
-  // whether to preview through the reliable `/api/drive-image` proxy
-  // instead of the raw, occasionally-403 Drive hotlink.
+  // Routed through `/api/drive-image` the same as the saved-image list
+  // below (see `product-image-storage.ts#getDownloadUrl`) — that route
+  // itself falls back to the direct hotlink whenever it can't authenticate,
+  // so applying it here unconditionally is always safe.
   const trimmedImageUrl = imageUrl.trim();
-  const isDriveProxyEnabled = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_IMAGE_PROXY_ENABLED === "true";
-  const previewUrl = trimmedImageUrl
-    ? isDriveProxyEnabled
-      ? toDriveProxyUrl(normalizeImageUrl(trimmedImageUrl))
-      : normalizeImageUrl(trimmedImageUrl)
-    : "";
+  const previewUrl = trimmedImageUrl ? toDriveProxyUrl(normalizeImageUrl(trimmedImageUrl)) : "";
 
   async function handleAddFromUrl(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

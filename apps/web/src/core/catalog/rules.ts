@@ -80,15 +80,18 @@ const DRIVE_HOTLINK_PATTERN = /^https:\/\/lh3\.googleusercontent\.com\/d\/([^/?]
  * Rewrites this app's own canonical Drive hotlink URL (what
  * `normalizeImageUrl` above produces/stores) to a same-origin proxy path
  * served by `app/api/drive-image/[fileId]/route.ts`. That route re-fetches
- * the file through the official, documented Drive API (`files.get?alt=media`)
- * instead of the browser hitting `lh3.googleusercontent.com` directly — an
- * optional upgrade path, not currently relied on by default.
+ * the file through the official, documented Drive API (`files.get?alt=media`),
+ * authenticated with this app's existing Firebase Admin service account (see
+ * `infrastructure/google/drive-auth.ts`) — no separate Google Cloud API key
+ * needed — instead of the browser hitting `lh3.googleusercontent.com`
+ * directly, which this app confirmed can 403 for a specific file despite
+ * fully correct "anyone with the link" sharing.
  *
- * Only ever applied by a caller that has confirmed `GOOGLE_DRIVE_API_KEY`
- * (server) / `NEXT_PUBLIC_GOOGLE_DRIVE_IMAGE_PROXY_ENABLED` (client) is
- * actually configured — see `docs/environment-variables.md`. With neither
- * set, callers keep using the direct hotlink URL exactly as before, so a
- * site that hasn't configured the proxy never regresses.
+ * Safe to apply unconditionally: the route itself falls back to a redirect
+ * to the direct hotlink whenever it has no usable credential or the Drive
+ * API call fails, so an environment without `FIREBASE_ADMIN_CLIENT_EMAIL`/
+ * `FIREBASE_ADMIN_PRIVATE_KEY` configured (local dev against the emulator)
+ * behaves exactly as it did before this proxy existed.
  */
 export function toDriveProxyUrl(url: string): string {
   const fileId = url.match(DRIVE_HOTLINK_PATTERN)?.[1];

@@ -15,7 +15,7 @@ import { logger } from "@/lib/logger";
  * exchange just as completely as a malformed key, with a far more confusing
  * error message.
  */
-function cleanCredentialField(value: string): string {
+export function cleanCredentialField(value: string): string {
   const trimmed = value.trim();
   const unquoted = (trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'")) ? trimmed.slice(1, -1) : trimmed;
   return unquoted.trim();
