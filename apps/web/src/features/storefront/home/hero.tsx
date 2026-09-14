@@ -58,26 +58,21 @@ const AUTO_ADVANCE_MS = 6000;
 
 export function Hero() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
 
+  // Always advances every AUTO_ADVANCE_MS, full stop — an earlier version
+  // paused on hover/focus, which on a touchscreen (no real mouse to ever
+  // "leave") can latch into a permanently-paused state after the very first
+  // tap anywhere near the hero, which is exactly the bug this was rewritten
+  // to fix: the carousel only ever advancing when manually tapped.
   useEffect(() => {
-    if (paused) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
     const timer = setInterval(() => {
       setActiveIndex((current) => (current + 1) % SLIDES.length);
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(timer);
-  }, [paused]);
+  }, []);
 
   return (
-    <section
-      className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
-    >
+    <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800">
       <LeafAccent corner="top-right" size={480} color="white" />
       <LeafAccent corner="bottom-left" size={360} color="white" />
       <Container className="relative py-20 sm:py-28">
