@@ -86,6 +86,7 @@ export function ProductImage({ src, alt, sizes = "(min-width: 1024px) 25vw, 50vw
           alt={alt}
           className={cn("h-full w-full object-cover", loaded ? "opacity-100" : "opacity-0", className)}
           loading={priority ? undefined : "lazy"}
+          fetchPriority={priority ? "high" : undefined}
           onLoad={handleLoad}
           onError={() => setErrored(true)}
         />

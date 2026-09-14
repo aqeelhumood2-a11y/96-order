@@ -295,9 +295,31 @@
  * is used anywhere in this codebase today.
  */
 
+/**
+ * A faint, tiled repeat of the brand's own leaf mark sits behind every page
+ * — the same asset `LeafAccent` uses at hero/marketing moments, just far
+ * fainter and repeated everywhere instead of one bold accent in a corner.
+ * It's a layer behind `body`, not `body`'s own background, so it can carry
+ * its own low opacity without fading actual page content — every surface
+ * (`--color-surface`, cards, the header) still paints its own explicit
+ * background on top and reads perfectly crisp.
+ */
 body {
+  position: relative;
   background: var(--background);
   color: var(--foreground);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url("/brand/logo-mark-purple.png");
+  background-repeat: repeat;
+  background-size: 200px auto;
+  opacity: 0.035;
+  pointer-events: none;
 }
 
 /**

@@ -10,9 +10,11 @@ export interface ProductCardProps {
   product: PublicProductSummary;
   /** When set, matching words in the product name are wrapped in `<mark>` — used by search results only. */
   highlightQuery?: string;
+  /** Set on the first handful of above-the-fold cards (e.g. a homepage section's first row) so their image starts fetching immediately instead of waiting on lazy-load — see `ProductImage`'s doc comment. */
+  priority?: boolean;
 }
 
-export function ProductCard({ product, highlightQuery }: ProductCardProps) {
+export function ProductCard({ product, highlightQuery, priority }: ProductCardProps) {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-brand-100 bg-background transition-all duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-brand-500">
       <Link href={`/products/${product.slug}`} className="absolute inset-0 z-10 focus:outline-none" aria-label={product.name} />
@@ -22,6 +24,7 @@ export function ProductCard({ product, highlightQuery }: ProductCardProps) {
           alt={product.primaryImage?.altText ?? product.name}
           sizes="(min-width: 1024px) 25vw, 50vw"
           className="transition-transform duration-300 group-hover:scale-105"
+          priority={priority}
         />
         {product.featured && (
           <span className="absolute left-2 top-2 rounded-full bg-accent-600 px-2 py-0.5 text-xs font-medium text-white">Featured</span>

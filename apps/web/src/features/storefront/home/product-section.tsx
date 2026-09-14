@@ -27,8 +27,8 @@ export function ProductSection({ title, description, viewAllHref, products }: Pr
           </Link>
         </div>
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {products.map((product, index) => (
+            <ProductCard key={product.id} product={product} priority={index < 2} />
           ))}
         </div>
       </Container>
