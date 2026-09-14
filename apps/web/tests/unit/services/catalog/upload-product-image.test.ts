@@ -120,7 +120,7 @@ describe("addProductImageByUrl", () => {
       deps,
     );
 
-    expect(image.storagePath).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2=w1600");
+    expect(image.storagePath).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
   });
 
   it("accepts a bare Google Drive file id (no URL at all) and converts it to the googleusercontent CDN form", async () => {
@@ -130,7 +130,7 @@ describe("addProductImageByUrl", () => {
 
     const image = await addProductImageByUrl(actor, { productId: "prod-1", imageUrl: "1AbC-XyZ_9rq1g2", altText: "", isPrimary: false }, deps);
 
-    expect(image.storagePath).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2=w1600");
+    expect(image.storagePath).toBe("https://lh3.googleusercontent.com/d/1AbC-XyZ_9rq1g2");
   });
 
   it("the first image added becomes primary automatically", async () => {

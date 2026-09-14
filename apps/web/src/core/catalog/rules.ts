@@ -40,21 +40,23 @@ export function isDriveFileId(value: string): boolean {
 const DRIVE_SHARE_LINK_PATTERNS = [
   /\/file\/d\/([^/?]+)/, // .../file/d/<id>/view?usp=...
   /[?&]id=([^&]+)/, // .../open?id=<id>, .../uc?id=<id> or .../uc?export=view&id=<id>
-  /googleusercontent\.com\/d\/([^/?=]+)/, // already in this app's own output form (id or id=w1600) — re-normalized idempotently; stops at "=" so re-matching an already-sized URL doesn't recapture the size suffix as part of the id
+  /googleusercontent\.com\/d\/([^/?=]+)/, // already in this app's own output form — stops at "=" so a record saved under the old `=w1600`-suffixed format self-heals to the current suffix-less form on re-normalization
 ];
 
 /**
- * `=w1600` caps the served size to a sensible max for a product photo —
- * without it this CDN serves the file at its original resolution, which for
- * an unedited phone photo can be several MB and made every product image on
- * the storefront noticeably slow to load (the same URL is used for both a
- * small card thumbnail and the full product-page gallery image, so this
- * needs to be generous enough for the latter). This one addition beyond
- * maawoon-menu's ported logic is a pure CDN query suffix, not a different
- * conversion method.
+ * No size suffix — this is byte-for-byte the URL shape maawoon-menu's
+ * `ImageUploader.tsx#getGoogleDriveImageUrl` produces and serves live in
+ * production today. An earlier version of this function appended `=w1600`
+ * to cap the served resolution; that was a deviation from "the exact same
+ * code" this was supposed to be a port of, and is suspected of being what
+ * made some files 403 here that work fine unsized — Google's `lh3` host can
+ * treat a plain `/d/<id>` request and a `/d/<id>=w1600` resize request as
+ * different code paths with different reliability. Removing it trades away
+ * the resolution cap in exchange for matching the one URL shape known to
+ * actually work.
  */
 function driveImageUrl(fileId: string): string {
-  return `https://lh3.googleusercontent.com/d/${fileId}=w1600`;
+  return `https://lh3.googleusercontent.com/d/${fileId}`;
 }
 
 /**
