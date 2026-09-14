@@ -16,10 +16,13 @@ const POLL_INTERVAL_MS = 15_000;
  * Renders nothing (`null`) — this is a background side effect, not UI.
  *
  * Synthesizes the chime with the Web Audio API instead of shipping an
- * audio file asset. Browsers only allow audio playback after a user
- * gesture on the page; staff will always have interacted with the page at
- * least once (logging in) before any order can arrive, so by the time this
- * needs to actually play, the `AudioContext` is already unlocked.
+ * audio file asset. Browsers only allow an `AudioContext` to actually make
+ * sound after it's created/resumed *synchronously inside* a real user
+ * gesture handler (click/tap) — not from an `async` callback like
+ * `setInterval`. iOS Safari enforces this strictly, so the context is
+ * unlocked here on the first tap anywhere in the admin section and kept in
+ * a ref; once unlocked, that same instance can keep playing later from the
+ * polling loop below without needing another gesture.
  *
  * A background/unfocused browser tab is still enough for this to work —
  * browsers throttle `setInterval` timers in inactive tabs (commonly to
@@ -35,9 +38,18 @@ export function NewOrderAlert({ session }: { session: Session }) {
   useEffect(() => {
     if (!hasPermission(session, "orders:view")) return;
 
-    function playChime() {
+    function unlockAudio() {
       audioContextRef.current ??= new AudioContext();
+      if (audioContextRef.current.state === "suspended") void audioContextRef.current.resume();
+    }
+
+    document.addEventListener("pointerdown", unlockAudio, { once: true });
+
+    function playChime() {
       const context = audioContextRef.current;
+      // Not unlocked by a tap yet — nothing can play until staff interacts
+      // with the page once, same as before any browser lets audio through.
+      if (!context) return;
       if (context.state === "suspended") void context.resume();
 
       const now = context.currentTime;
@@ -85,7 +97,10 @@ export function NewOrderAlert({ session }: { session: Session }) {
 
     void checkForNewOrder();
     const interval = setInterval(() => void checkForNewOrder(), POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    return () => {
+      document.removeEventListener("pointerdown", unlockAudio);
+      clearInterval(interval);
+    };
   }, [session]);
 
   return null;

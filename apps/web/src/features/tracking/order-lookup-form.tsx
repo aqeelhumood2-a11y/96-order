@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { PublicOrderView } from "@/core/orders/public-view";
 import { formatMoney } from "@/core/money/money";
 import { trackOrderAction } from "@/features/tracking/actions";
+import { readCheckoutContactForLookup } from "@/features/tracking/checkout-contact-storage";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -27,22 +28,24 @@ export function OrderLookupForm({ initialOrderNumber, heading = "Track your orde
   const orderNumberId = useId();
   const contactId = useId();
   const [orderNumber, setOrderNumber] = useState(initialOrderNumber ?? "");
-  const [contact, setContact] = useState("");
+  const [contact, setContact] = useState(() => {
+    const stored = initialOrderNumber ? readCheckoutContactForLookup(initialOrderNumber) : null;
+    return stored?.email || stored?.mobile || "";
+  });
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PublicOrderView | null>(null);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function runLookup(orderNumberValue: string, contactValue: string) {
     setStatus("loading");
     setError(null);
     setView(null);
 
-    const isEmail = contact.includes("@");
+    const isEmail = contactValue.includes("@");
     const result = await trackOrderAction({
-      orderNumber: orderNumber.trim(),
-      email: isEmail ? contact.trim() : undefined,
-      mobile: isEmail ? undefined : contact.trim(),
+      orderNumber: orderNumberValue.trim(),
+      email: isEmail ? contactValue.trim() : undefined,
+      mobile: isEmail ? undefined : contactValue.trim(),
     });
 
     if (!result.ok) {
@@ -52,6 +55,31 @@ export function OrderLookupForm({ initialOrderNumber, heading = "Track your orde
     }
     setStatus("idle");
     setView(result.data);
+  }
+
+  // Right after placing an order, the checkout form stashed the same
+  // mobile/email in this tab's sessionStorage — `contact`'s initial state
+  // above already picked it up, so this only has to fire the lookup itself
+  // once on mount. A confirmation link shared or opened elsewhere has no
+  // matching entry (`contact` stays empty), so it still falls through to
+  // the manual, verified lookup below (see the checkout success page's doc
+  // comment for why that verification stays required).
+  useEffect(() => {
+    if (!initialOrderNumber || !contact) return;
+    // Deferred a tick (rather than calling runLookup directly): the effect
+    // itself must stay free of any synchronous setState call chain, which a
+    // direct call here would be even though the actual state updates only
+    // happen after runLookup's own `await`.
+    const timeoutId = setTimeout(() => void runLookup(initialOrderNumber, contact), 0);
+    return () => clearTimeout(timeoutId);
+    // Deliberately mount-only: this fires the one-time auto-lookup from the
+    // initial state, not a resubmission on every later `contact` edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await runLookup(orderNumber, contact);
   }
 
   return (

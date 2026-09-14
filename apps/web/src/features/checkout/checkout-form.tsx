@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { PaymentProviderSettings } from "@/core/site-settings/entities";
 import type { AvailableSlot } from "@/core/scheduling/rules";
 import { submitCheckoutAction } from "@/features/checkout/actions";
+import { saveCheckoutContactForLookup } from "@/features/tracking/checkout-contact-storage";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
@@ -117,6 +118,8 @@ export function CheckoutForm({ availableSlots, pickupLocationName, pickupLocatio
       idempotencyKeyRef.current = crypto.randomUUID();
       return;
     }
+
+    saveCheckoutContactForLookup(result.data.orderNumber, { mobile: String(form.get("mobile") ?? ""), email: String(form.get("email") ?? "") });
 
     if (result.data.paymentRedirectUrl) {
       window.location.href = result.data.paymentRedirectUrl;
