@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { AdminNav } from "@/features/admin-shell/components/admin-nav";
+import { NewOrderAlert } from "@/features/admin-shell/components/new-order-alert";
 import { getLocale } from "@/lib/i18n/locale";
 import { getSession } from "@/services/auth/session";
 
@@ -19,6 +20,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <div className="flex min-h-full flex-1 flex-col md:flex-row">
       <AdminNav session={session} locale={locale} />
+      <NewOrderAlert session={session} />
       <main className="flex flex-1 flex-col overflow-x-hidden p-4 sm:p-6">{children}</main>
     </div>
   );

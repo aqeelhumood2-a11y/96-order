@@ -148,6 +148,16 @@ test.describe("admin order management", () => {
     await page.getByRole("button", { name: "Apply filters" }).click();
     await expect(page.getByRole("link", { name: orderNumber })).toBeVisible();
 
+    // --- New-order alert polling: the endpoint NewOrderAlert polls reports
+    // this just-placed order as the latest one. Called via page.evaluate,
+    // not page.request, so it's a real same-origin browser fetch carrying
+    // the session cookie automatically — exactly how NewOrderAlert itself
+    // calls it client-side (page.request is a separate Node-side HTTP
+    // context that doesn't reliably share a cookie set moments earlier by
+    // a same-page form navigation). ---
+    const latestOrder = await page.evaluate(() => fetch("/api/admin/orders/latest").then((response) => response.json()));
+    expect(latestOrder.latestOrderId).toEqual(expect.any(String));
+
     // --- Order detail: customer/payment/fulfillment panels and the initial status. ---
     await page.getByRole("link", { name: orderNumber }).click();
     await expect(page).toHaveURL(/\/admin\/orders\//);
@@ -227,5 +237,10 @@ test.describe("admin order management", () => {
     await page.getByRole("button", { name: "Ask" }).click();
     await expect(page.getByText(/Total orders:/)).toBeVisible();
     await expect(page.getByText("Store data snapshot")).toBeVisible();
+  });
+
+  test("the new-order alert endpoint denies an unauthenticated request", async ({ request }) => {
+    const response = await request.get("/api/admin/orders/latest");
+    expect(response.status()).toBe(401);
   });
 });
