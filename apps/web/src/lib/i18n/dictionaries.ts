@@ -548,7 +548,6 @@ export interface Dictionary {
       imageUrlLabel: string;
       imageUrlPlaceholder: string;
       imageUrlHint: string;
-      previewLoadError: string;
       addFromUrl: string;
       addingFromUrl: string;
       enterUrlFirst: string;
@@ -1131,7 +1130,6 @@ export const en: Dictionary = {
       imageUrlLabel: "Image URL or Google Drive file ID",
       imageUrlPlaceholder: "https://… or a Drive file ID",
       imageUrlHint: "The Google Drive file must be shared as \"Anyone with the link\".",
-      previewLoadError: "Couldn't load a preview from this link.",
       addFromUrl: "Add from URL",
       addingFromUrl: "Adding…",
       enterUrlFirst: "Enter an image URL first.",
@@ -1714,7 +1712,6 @@ export const ar: Dictionary = {
       imageUrlLabel: "رابط الصورة أو معرّف ملف Google Drive",
       imageUrlPlaceholder: "https://… أو معرّف ملف من Drive",
       imageUrlHint: "لازم ملف Google Drive يكون مشارك بخيار \"أي شخص لديه الرابط\".",
-      previewLoadError: "ما قدرنا نحمّل معاينة من هذا الرابط.",
       addFromUrl: "إضافة من رابط",
       addingFromUrl: "جارٍ الإضافة…",
       enterUrlFirst: "أدخل رابط الصورة أولاً.",
