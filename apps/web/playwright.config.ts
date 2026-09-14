@@ -16,6 +16,10 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:3000",
     trace: "on-first-retry",
+    // See playwright.auth.config.ts's identical setting for why: this
+    // webServer is also a real production build, so a real service worker
+    // would otherwise register during these tests too.
+    serviceWorkers: "block",
   },
   projects: [
     {

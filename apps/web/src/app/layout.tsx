@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Geist, Geist_Mono, Noto_Sans_Arabic } from "next/font/google";
 import { SITE_NAME, SITE_URL } from "@/config/site";
 import { dirForLocale, getLocale } from "@/lib/i18n/locale";
+import { RegisterImageCacheWorker } from "@/ui/layout/register-image-cache-worker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -69,7 +70,10 @@ export default async function RootLayout({
       dir={dir}
       className={`${geistSans.variable} ${geistMono.variable} ${notoSansArabic.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className={dir === "rtl" ? "flex min-h-full flex-col font-arabic" : "flex min-h-full flex-col font-sans"}>{children}</body>
+      <body className={dir === "rtl" ? "flex min-h-full flex-col font-arabic" : "flex min-h-full flex-col font-sans"}>
+        <RegisterImageCacheWorker />
+        {children}
+      </body>
     </html>
   );
 }

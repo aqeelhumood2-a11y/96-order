@@ -4,6 +4,7 @@ import { listFeaturedProducts } from "@/services/storefront/list-featured";
 import { listNewArrivals } from "@/services/storefront/list-new-arrivals";
 import { listProducts } from "@/services/storefront/list-products";
 import { listActiveBrands } from "@/services/storefront/get-brand";
+import { listActiveCategories } from "@/services/storefront/get-category";
 import { buildStaticPageMetadata } from "@/services/storefront/seo";
 import { getPublicSiteSettings } from "@/services/site-settings/get-public-settings";
 
@@ -25,16 +26,25 @@ export const dynamic = "force-dynamic";
 
 const HOMEPAGE_SECTION_LIMIT = 8;
 const HOMEPAGE_BRAND_LIMIT = 12;
+// Matches `(storefront)/layout.tsx`'s NAV_CATEGORY_LIMIT — same "Browse"
+// intent (a manageable, non-scrolling set of top-level categories), just a
+// separate query since a page can't read its layout's already-fetched data.
+const HOMEPAGE_CATEGORY_LIMIT = 20;
 
 export default async function Home() {
-  const [settings, featuredProducts, newArrivals, coffeeProducts, equipmentProducts, featuredBrands] = await Promise.all([
+  const [settings, featuredProducts, newArrivals, coffeeProducts, equipmentProducts, featuredBrands, categories] = await Promise.all([
     getPublicSiteSettings(),
     listFeaturedProducts(HOMEPAGE_SECTION_LIMIT),
     listNewArrivals(HOMEPAGE_SECTION_LIMIT),
     listProducts({ productType: "coffee", sort: "newest", limit: HOMEPAGE_SECTION_LIMIT }).then((page) => page.items),
     listProducts({ productType: "equipment", sort: "newest", limit: HOMEPAGE_SECTION_LIMIT }).then((page) => page.items),
     listActiveBrands(HOMEPAGE_BRAND_LIMIT),
+    listActiveCategories(HOMEPAGE_CATEGORY_LIMIT),
   ]);
+
+  const categoryLinks = categories
+    .filter((category) => category.parent === null)
+    .map((category) => ({ href: `/categories/${category.slug}`, label: category.name }));
 
   return (
     <HomePage
@@ -44,6 +54,7 @@ export default async function Home() {
       coffeeProducts={coffeeProducts}
       equipmentProducts={equipmentProducts}
       featuredBrands={featuredBrands}
+      categoryLinks={categoryLinks}
     />
   );
 }

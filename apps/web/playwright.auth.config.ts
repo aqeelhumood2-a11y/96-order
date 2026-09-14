@@ -67,6 +67,14 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:3000",
     trace: "on-first-retry",
+    // This webServer is a real production build (`next build && next
+    // start`), so `RegisterImageCacheWorker`'s NODE_ENV check can't tell an
+    // e2e run apart from a real deploy — block service workers at the
+    // Playwright level instead, since a real one only interferes here (e.g.
+    // intercepting a `page.route()`-mocked image request) and every test's
+    // own fresh browser context means there was never anything for it to
+    // usefully cache across tests anyway.
+    serviceWorkers: "block",
   },
   projects: [
     {

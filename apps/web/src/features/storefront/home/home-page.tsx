@@ -12,6 +12,7 @@ export interface HomePageProps {
   coffeeProducts: PublicProductSummary[];
   equipmentProducts: PublicProductSummary[];
   featuredBrands: PublicBrand[];
+  categoryLinks: { href: string; label: string }[];
 }
 
 const DEFAULT_TITLES: Record<HomepageSectionKey, { title: string; description?: string; viewAllHref: string }> = {
@@ -30,7 +31,7 @@ const DEFAULT_TITLES: Record<HomepageSectionKey, { title: string; description?: 
  * doc comment) — category browsing lives in the header/hamburger nav only,
  * per the Phase 7 spec.
  */
-export function HomePage({ sections, featuredProducts, newArrivals, coffeeProducts, equipmentProducts, featuredBrands }: HomePageProps) {
+export function HomePage({ sections, featuredProducts, newArrivals, coffeeProducts, equipmentProducts, featuredBrands, categoryLinks }: HomePageProps) {
   const productsByKey: Partial<Record<HomepageSectionKey, PublicProductSummary[]>> = {
     featured: featuredProducts,
     new_arrivals: newArrivals,
@@ -58,7 +59,7 @@ export function HomePage({ sections, featuredProducts, newArrivals, coffeeProduc
           />
         );
       })}
-      <DiscoveryLinks />
+      <DiscoveryLinks categoryLinks={categoryLinks} />
     </>
   );
 }
