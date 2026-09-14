@@ -543,7 +543,6 @@ export interface Dictionary {
       primary: string;
       delete: string;
       deleting: string;
-      altText: string;
       setAsPrimary: string;
       imageUrlLabel: string;
       imageUrlPlaceholder: string;
@@ -1125,7 +1124,6 @@ export const en: Dictionary = {
       primary: "Primary",
       delete: "Delete",
       deleting: "Deleting…",
-      altText: "Alt text (optional — a short description of the photo)",
       setAsPrimary: "Set as primary",
       imageUrlLabel: "Image URL or Google Drive file ID",
       imageUrlPlaceholder: "https://… or a Drive file ID",
@@ -1707,7 +1705,6 @@ export const ar: Dictionary = {
       primary: "الصورة الرئيسية",
       delete: "حذف",
       deleting: "جارٍ الحذف…",
-      altText: "نص بديل (اختياري — وصف مختصر للصورة)",
       setAsPrimary: "اجعلها الصورة الرئيسية",
       imageUrlLabel: "رابط الصورة أو معرّف ملف Google Drive",
       imageUrlPlaceholder: "https://… أو معرّف ملف من Drive",

@@ -25,7 +25,6 @@ export function ProductImages({
   const dict = getDictionary(locale).admin.productImages;
   const router = useRouter();
   const [imageUrl, setImageUrl] = useState("");
-  const [urlAltText, setUrlAltText] = useState("");
   const [urlIsPrimary, setUrlIsPrimary] = useState(images.length === 0);
   const [error, setError] = useState<string | null>(null);
   const [isAddingFromUrl, setIsAddingFromUrl] = useState(false);
@@ -60,13 +59,12 @@ export function ProductImages({
 
     setIsAddingFromUrl(true);
     try {
-      const result = await addProductImageByUrlAction(productId, imageUrl.trim(), urlAltText, urlIsPrimary);
+      const result = await addProductImageByUrlAction(productId, imageUrl.trim(), "", urlIsPrimary);
       if (!result.ok) {
         setError(result.message);
         return;
       }
       setImageUrl("");
-      setUrlAltText("");
       setUrlIsPrimary(false);
       router.refresh();
     } finally {
@@ -134,10 +132,6 @@ export function ProductImages({
               placeholder={dict.imageUrlPlaceholder}
               className="w-64"
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-image-url-alt">{dict.altText}</Label>
-            <Input id="product-image-url-alt" value={urlAltText} onChange={(event) => setUrlAltText(event.target.value)} disabled={isAddingFromUrl} className="w-48" />
           </div>
           <label className="flex items-center gap-2 pb-2 text-sm">
             <input type="checkbox" checked={urlIsPrimary} onChange={(event) => setUrlIsPrimary(event.target.checked)} disabled={isAddingFromUrl} />
