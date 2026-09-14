@@ -39,9 +39,10 @@ import { defaultOrderManagementDeps, type OrderManagementDeps } from "./dependen
  * inventory was committed is a data-integrity edge case that needs a
  * manual inventory correction, not an automatic reversal — see README's
  * Known limitations) and reverses this order's contribution to its
- * customer's `totalSpent`; `ready` (pickup) and `out_for_delivery`
- * (delivery) each send the matching Phase 5 email template that existed
- * but was never wired up until now.
+ * customer's `totalSpent`; `accepted` sends an acknowledgment email;
+ * `ready` (pickup) and `out_for_delivery` (delivery) each send the
+ * matching Phase 5 email template that existed but was never wired up
+ * until now.
  */
 export async function changeOrderStatus(actor: Session, rawInput: ChangeOrderStatusInput, deps: OrderManagementDeps = defaultOrderManagementDeps): Promise<Order> {
   requirePermission(actor, "orders:manage");
@@ -93,6 +94,9 @@ export async function changeOrderStatus(actor: Session, rawInput: ChangeOrderSta
     metadata: { orderId: order.id, orderNumber: order.orderNumber, fromStatus: order.status, toStatus: input.toStatus },
   });
 
+  if (input.toStatus === "accepted") {
+    await sendTransactionalEmail({ to: order.customer.email, template: "order_accepted", data: { orderNumber: order.orderNumber } }, deps.email);
+  }
   if (input.toStatus === "ready" && order.fulfillment.method === "pickup") {
     await sendTransactionalEmail(
       {

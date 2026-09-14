@@ -97,10 +97,20 @@ describe("changeOrderStatus", () => {
     const deps = createMockOrderManagementDeps();
     deps.orders.findById = vi.fn().mockResolvedValue(makeOrder({ status: "confirmed", version: 1 }));
     const actor = makeSession({ uid: "staff-1", email: "staff@96order.test", effectivePermissions: new Set(["orders:manage"]) });
-    await changeOrderStatus(actor, { orderId: "order-1", toStatus: "preparing", expectedVersion: 1 }, deps);
+    await changeOrderStatus(actor, { orderId: "order-1", toStatus: "accepted", expectedVersion: 1 }, deps);
 
     expect(deps.auditLogs.record).toHaveBeenCalledWith(
       expect.objectContaining({ type: "order_status_changed", actorUid: "staff-1", actorEmail: "staff@96order.test" }),
     );
+  });
+
+  it("sends an order_accepted email when a confirmed order is accepted", async () => {
+    const deps = createMockOrderManagementDeps();
+    deps.orders.findById = vi.fn().mockResolvedValue(makeOrder({ status: "confirmed", version: 1 }));
+    const actor = makeSession({ effectivePermissions: new Set(["orders:manage"]) });
+    const result = await changeOrderStatus(actor, { orderId: "order-1", toStatus: "accepted", expectedVersion: 1 }, deps);
+
+    expect(result.status).toBe("accepted");
+    expect(deps.email.email.send).toHaveBeenCalledWith(expect.objectContaining({ template: "order_accepted" }));
   });
 });

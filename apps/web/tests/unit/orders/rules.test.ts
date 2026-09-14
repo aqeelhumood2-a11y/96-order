@@ -125,8 +125,9 @@ describe("isValidOrderStatusTransition", () => {
     expect(isValidOrderStatusTransition("pending_payment", "cancelled")).toBe(true);
   });
 
-  it("allows the full Phase 6 admin workflow forward chain", () => {
-    expect(isValidOrderStatusTransition("confirmed", "preparing")).toBe(true);
+  it("allows the full Phase 6 admin workflow forward chain, including the confirmed -> accepted acknowledgment step", () => {
+    expect(isValidOrderStatusTransition("confirmed", "accepted")).toBe(true);
+    expect(isValidOrderStatusTransition("accepted", "preparing")).toBe(true);
     expect(isValidOrderStatusTransition("preparing", "ready")).toBe(true);
     expect(isValidOrderStatusTransition("ready", "out_for_delivery")).toBe(true);
     expect(isValidOrderStatusTransition("ready", "completed")).toBe(true);
@@ -135,6 +136,7 @@ describe("isValidOrderStatusTransition", () => {
 
   it("allows cancellation from every non-terminal status", () => {
     expect(isValidOrderStatusTransition("confirmed", "cancelled")).toBe(true);
+    expect(isValidOrderStatusTransition("accepted", "cancelled")).toBe(true);
     expect(isValidOrderStatusTransition("preparing", "cancelled")).toBe(true);
     expect(isValidOrderStatusTransition("ready", "cancelled")).toBe(true);
     expect(isValidOrderStatusTransition("out_for_delivery", "cancelled")).toBe(true);
@@ -144,11 +146,14 @@ describe("isValidOrderStatusTransition", () => {
     expect(isValidOrderStatusTransition("cancelled", "confirmed")).toBe(false);
     expect(isValidOrderStatusTransition("completed", "pending_payment")).toBe(false);
     expect(isValidOrderStatusTransition("confirmed", "ready")).toBe(false);
+    // A `confirmed` order can no longer skip straight to `preparing` — it
+    // must be explicitly `accepted` first.
+    expect(isValidOrderStatusTransition("confirmed", "preparing")).toBe(false);
     expect(isValidOrderStatusTransition("preparing", "out_for_delivery")).toBe(false);
   });
 
   it("rejects every transition out of a terminal status", () => {
-    for (const to of ["pending_payment", "confirmed", "preparing", "ready", "out_for_delivery", "completed"] as const) {
+    for (const to of ["pending_payment", "confirmed", "accepted", "preparing", "ready", "out_for_delivery", "completed"] as const) {
       expect(isValidOrderStatusTransition("completed", to)).toBe(false);
       expect(isValidOrderStatusTransition("cancelled", to)).toBe(false);
     }
@@ -162,7 +167,7 @@ describe("isTerminalOrderStatus", () => {
   });
 
   it("treats every other status as non-terminal", () => {
-    for (const status of ["pending_payment", "confirmed", "preparing", "ready", "out_for_delivery"] as const) {
+    for (const status of ["pending_payment", "confirmed", "accepted", "preparing", "ready", "out_for_delivery"] as const) {
       expect(isTerminalOrderStatus(status)).toBe(false);
     }
   });

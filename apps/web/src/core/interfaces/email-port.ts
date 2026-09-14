@@ -4,6 +4,7 @@ export const EMAIL_TEMPLATES = [
   "payment_failure",
   "pickup_confirmation",
   "delivery_confirmation",
+  "order_accepted",
   // Phase 7 (customer accounts, CMS, wishlist, reviews, promotions)
   "customer_email_verification",
   "back_in_stock",

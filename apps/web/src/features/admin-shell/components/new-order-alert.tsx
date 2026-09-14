@@ -7,10 +7,12 @@ import { hasPermission } from "@/core/auth/permissions";
 const POLL_INTERVAL_MS = 15_000;
 
 /**
- * Polls for the most recently placed order and plays a short chime the
- * moment a new one appears — lets staff notice an incoming order without
- * needing the admin tab focused or the orders page open. Mounted once in
- * the protected admin layout, so it keeps running across every admin page
+ * Polls for any order still sitting `confirmed` (placed and paid, but not
+ * yet accepted by staff) and plays a short chime on every tick one exists —
+ * a repeating alarm, not a one-shot chime, so it can't be missed by a
+ * single distracted moment and keeps going until someone actually accepts
+ * or declines the order from its detail page. Mounted once in the
+ * protected admin layout, so it keeps running across every admin page
  * navigation, not just the orders list.
  *
  * Renders nothing (`null`) — this is a background side effect, not UI.
@@ -32,7 +34,6 @@ const POLL_INTERVAL_MS = 15_000;
  * app or push notifications, well beyond an in-page poll.
  */
 export function NewOrderAlert({ session }: { session: Session }) {
-  const lastSeenOrderId = useRef<string | null | undefined>(undefined);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
@@ -71,32 +72,20 @@ export function NewOrderAlert({ session }: { session: Session }) {
       });
     }
 
-    async function checkForNewOrder() {
+    async function checkForOrdersNeedingAcceptance() {
       try {
         const response = await fetch("/api/admin/orders/latest", { cache: "no-store" });
         if (!response.ok) return;
-        const data = (await response.json()) as { latestOrderId: string | null };
-
-        if (lastSeenOrderId.current === undefined) {
-          // The first check after mount/reload establishes the baseline —
-          // never chimes for an order that already existed before this
-          // page load.
-          lastSeenOrderId.current = data.latestOrderId;
-          return;
-        }
-
-        if (data.latestOrderId && data.latestOrderId !== lastSeenOrderId.current) {
-          lastSeenOrderId.current = data.latestOrderId;
-          playChime();
-        }
+        const data = (await response.json()) as { hasOrdersAwaitingAcceptance: boolean };
+        if (data.hasOrdersAwaitingAcceptance) playChime();
       } catch {
         // A transient network hiccup shouldn't stop future polls — the
         // next interval tick just tries again.
       }
     }
 
-    void checkForNewOrder();
-    const interval = setInterval(() => void checkForNewOrder(), POLL_INTERVAL_MS);
+    void checkForOrdersNeedingAcceptance();
+    const interval = setInterval(() => void checkForOrdersNeedingAcceptance(), POLL_INTERVAL_MS);
     return () => {
       document.removeEventListener("pointerdown", unlockAudio);
       clearInterval(interval);

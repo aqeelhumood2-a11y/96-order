@@ -95,7 +95,7 @@ describe("computeOrdersByStatus", () => {
     expect(byStatus.cancelled).toBe(1);
     expect(byStatus.pending_payment).toBe(0);
     expect(byStatus.completed).toBe(0);
-    expect(rows).toHaveLength(7);
+    expect(rows).toHaveLength(8);
   });
 });
 

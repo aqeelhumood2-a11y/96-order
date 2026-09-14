@@ -7,6 +7,7 @@ import { Badge, type BadgeProps } from "@/ui/primitives/badge";
 const STATUS_VARIANTS: Record<OrderStatus, BadgeProps["variant"]> = {
   pending_payment: "warning",
   confirmed: "accent",
+  accepted: "accent",
   preparing: "accent",
   ready: "accent",
   out_for_delivery: "accent",

@@ -6,7 +6,7 @@ import { runAction, type ActionResult } from "@/lib/action-result";
 import { requireSession } from "@/services/auth/session";
 import { confirmCashPayment } from "@/services/payments/confirm-cash-payment";
 import { confirmOrderPayment } from "@/services/orders/confirm-order-payment";
-import { cancelOrder, completeOrder, markOutForDelivery, markPreparing, markReady } from "@/services/orders/order-actions";
+import { acceptOrder, cancelOrder, completeOrder, markOutForDelivery, markPreparing, markReady } from "@/services/orders/order-actions";
 import { releaseOrderReservation } from "@/services/orders/release-order-reservation";
 
 function revalidateOrderPaths(orderId: string) {
@@ -25,6 +25,16 @@ export async function cancelOrderAction(orderId: string, expectedVersion: number
   const result = await runAction(async () => {
     const actor = await requireSession();
     const order = await cancelOrder(actor, orderId, expectedVersion, note);
+    return toOrderActionResult(order);
+  });
+  if (result.ok) revalidateOrderPaths(orderId);
+  return result;
+}
+
+export async function acceptOrderAction(orderId: string, expectedVersion: number): Promise<OrderActionResult> {
+  const result = await runAction(async () => {
+    const actor = await requireSession();
+    const order = await acceptOrder(actor, orderId, expectedVersion);
     return toOrderActionResult(order);
   });
   if (result.ok) revalidateOrderPaths(orderId);

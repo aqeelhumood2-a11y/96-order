@@ -21,7 +21,7 @@ describe("getOrdersByStatusReport", () => {
     const actor = makeSession({ effectivePermissions: new Set(["reports:view"]) });
 
     const rows = await getOrdersByStatusReport(actor, new Date(), new Date(), deps);
-    expect(rows).toHaveLength(7);
+    expect(rows).toHaveLength(8);
     expect(rows.find((row) => row.status === "confirmed")?.count).toBe(2);
     expect(rows.find((row) => row.status === "cancelled")?.count).toBe(0);
   });

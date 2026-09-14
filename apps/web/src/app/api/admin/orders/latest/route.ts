@@ -8,18 +8,24 @@ export const dynamic = "force-dynamic";
 
 /**
  * Polled by `NewOrderAlert` (admin shell) to detect a newly placed order so
- * it can play a sound — deliberately returns just the one id the client
- * needs to notice "this is a different order than last time", not a full
- * order representation. `listOrders` itself enforces `orders:view`, so a
- * staff member without it gets the same 403 every other order-management
- * surface already gives them.
+ * it can play a sound, and to know whether any order is still sitting
+ * `confirmed` (placed, paid, but not yet accepted by staff) so that sound
+ * can keep repeating until someone deals with it, not just chime once and
+ * risk being missed. `listOrders` itself enforces `orders:view`, so a staff
+ * member without it gets the same 403 every other order-management surface
+ * already gives them.
  */
 export async function GET() {
   try {
     const actor = await requireSession();
-    const query = listOrdersQuerySchema.parse({ limit: 1 });
-    const page = await listOrders(actor, query);
-    return NextResponse.json({ latestOrderId: page.items[0]?.id ?? null });
+    const [latestPage, pendingAcceptancePage] = await Promise.all([
+      listOrders(actor, listOrdersQuerySchema.parse({ limit: 1 })),
+      listOrders(actor, listOrdersQuerySchema.parse({ limit: 1, status: "confirmed" })),
+    ]);
+    return NextResponse.json({
+      latestOrderId: latestPage.items[0]?.id ?? null,
+      hasOrdersAwaitingAcceptance: pendingAcceptancePage.items.length > 0,
+    });
   } catch (error) {
     const { status, body } = toErrorResponse(error);
     return NextResponse.json(body, { status });

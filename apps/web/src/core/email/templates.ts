@@ -108,6 +108,17 @@ export function renderDeliveryConfirmationEmail(data: DeliveryConfirmationEmailD
   };
 }
 
+export interface OrderAcceptedEmailData {
+  orderNumber: string;
+}
+
+export function renderOrderAcceptedEmail(data: OrderAcceptedEmailData): RenderedEmail {
+  return {
+    subject: `Your order ${data.orderNumber} has been accepted`,
+    text: `Good news — we've accepted your order ${data.orderNumber} and are getting it ready.\n\n— Ninety Six Degrees Cafe`,
+  };
+}
+
 export interface CustomerEmailVerificationEmailData {
   verifyUrl: string;
 }
@@ -193,6 +204,8 @@ export function renderEmailTemplate(template: EmailTemplate, data: Record<string
       return renderPickupConfirmationEmail(data as unknown as PickupConfirmationEmailData);
     case "delivery_confirmation":
       return renderDeliveryConfirmationEmail(data as unknown as DeliveryConfirmationEmailData);
+    case "order_accepted":
+      return renderOrderAcceptedEmail(data as unknown as OrderAcceptedEmailData);
     case "customer_email_verification":
       return renderCustomerEmailVerificationEmail(data as unknown as CustomerEmailVerificationEmailData);
     case "back_in_stock":

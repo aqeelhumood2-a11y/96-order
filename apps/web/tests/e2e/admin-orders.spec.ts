@@ -157,6 +157,9 @@ test.describe("admin order management", () => {
     // a same-page form navigation). ---
     const latestOrder = await page.evaluate(() => fetch("/api/admin/orders/latest").then((response) => response.json()));
     expect(latestOrder.latestOrderId).toEqual(expect.any(String));
+    // This order is still `confirmed` (not yet accepted) — the repeating
+    // sound alert has something to chime about.
+    expect(latestOrder.hasOrdersAwaitingAcceptance).toBe(true);
 
     // --- Order detail: customer/payment/fulfillment panels and the initial status. ---
     await page.getByRole("link", { name: orderNumber }).click();
@@ -166,9 +169,12 @@ test.describe("admin order management", () => {
     await expect(page.getByText(email)).toBeVisible();
     await expect(page.getByText("Confirmed", { exact: true })).toBeVisible();
 
-    // --- Confirm cash payment, then walk the full status workflow to completion. ---
+    // --- Confirm cash payment, accept the order, then walk the full status workflow to completion. ---
     await page.getByRole("button", { name: "Confirm cash payment" }).click();
     await expect(page.getByText("cash confirmed")).toBeVisible();
+
+    await page.getByRole("button", { name: "Accept order" }).click();
+    await expect(page.getByText("Accepted", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Mark preparing" }).click();
     await expect(page.getByText("Preparing", { exact: true })).toBeVisible();
@@ -186,7 +192,7 @@ test.describe("admin order management", () => {
     // badge/action buttons rendered elsewhere on the same page.
     const timeline = page.locator("ol").filter({ hasText: "Created as" });
     await expect(timeline.getByText(/Created as\s*confirmed/i)).toBeVisible();
-    await expect(timeline.locator("li")).toHaveCount(4);
+    await expect(timeline.locator("li")).toHaveCount(5);
 
     // --- Customer management: the order rolled up into the customer aggregate. ---
     await page.goto("/admin/customers");

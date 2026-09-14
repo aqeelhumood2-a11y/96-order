@@ -8,6 +8,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import {
+  acceptOrderAction,
   cancelOrderAction,
   completeOrderAction,
   confirmCashPaymentAction,
@@ -58,6 +59,7 @@ export function OrderActionsPanel({ order, canManageOrders, canManagePayments, l
           return cancelOrderAction(order.id, order.version, note || undefined);
         });
     }
+    if (toStatus === "accepted") return () => run(toStatus, () => acceptOrderAction(order.id, order.version));
     if (toStatus === "preparing") return () => run(toStatus, () => markPreparingAction(order.id, order.version));
     if (toStatus === "ready") return () => run(toStatus, () => markReadyAction(order.id, order.version));
     if (toStatus === "out_for_delivery") return () => run(toStatus, () => markOutForDeliveryAction(order.id, order.version));

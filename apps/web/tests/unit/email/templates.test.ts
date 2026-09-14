@@ -3,6 +3,7 @@ import { money } from "@/core/money/money";
 import {
   renderDeliveryConfirmationEmail,
   renderEmailTemplate,
+  renderOrderAcceptedEmail,
   renderOrderConfirmationEmail,
   renderPaymentConfirmationEmail,
   renderPaymentFailureEmail,
@@ -77,6 +78,14 @@ describe("renderDeliveryConfirmationEmail", () => {
     const email = renderDeliveryConfirmationEmail({ orderNumber: "ORD-1", scheduleDate: "2026-02-01", scheduleTimeWindow: "10:00-12:00" });
     expect(email.text).toContain("2026-02-01");
     expect(email.text).toContain("10:00-12:00");
+  });
+});
+
+describe("renderOrderAcceptedEmail", () => {
+  it("includes the order number", () => {
+    const email = renderOrderAcceptedEmail({ orderNumber: "ORD-1" });
+    expect(email.subject).toContain("ORD-1");
+    expect(email.text).toContain("ORD-1");
   });
 });
 

@@ -567,7 +567,7 @@ export interface Dictionary {
       /** `{name}` replaced */
       categoryCreated: string;
     };
-    orderStatus: Record<"pending_payment" | "confirmed" | "preparing" | "ready" | "out_for_delivery" | "completed" | "cancelled", string>;
+    orderStatus: Record<"pending_payment" | "confirmed" | "accepted" | "preparing" | "ready" | "out_for_delivery" | "completed" | "cancelled", string>;
     paymentStatus: Record<"pending" | "authorized" | "paid" | "failed" | "cancelled" | "refunded" | "cash_pending" | "cash_confirmed", string>;
     ordersPage: {
       heading: string;
@@ -611,7 +611,7 @@ export interface Dictionary {
         cancelReasonPrompt: string;
         noPermission: string;
         markDelivered: string;
-        statusAction: Record<"pending_payment" | "confirmed" | "preparing" | "ready" | "out_for_delivery" | "completed" | "cancelled", string>;
+        statusAction: Record<"pending_payment" | "confirmed" | "accepted" | "preparing" | "ready" | "out_for_delivery" | "completed" | "cancelled", string>;
       };
       customerInfo: { title: string; name: string; mobile: string; email: string; company: string; note: string };
       paymentInfo: { title: string; method: string; cash: string; card: string; status: string; subtotal: string; delivery: string; discount: string; grandTotal: string };
@@ -1559,6 +1559,7 @@ export const en: Dictionary = {
     orderStatus: {
       pending_payment: "Pending payment",
       confirmed: "Confirmed",
+      accepted: "Accepted",
       preparing: "Preparing",
       ready: "Ready",
       out_for_delivery: "Out for delivery",
@@ -1620,6 +1621,7 @@ export const en: Dictionary = {
         statusAction: {
           pending_payment: "Move to pending payment",
           confirmed: "Confirm order",
+          accepted: "Accept order",
           preparing: "Mark preparing",
           ready: "Mark ready",
           out_for_delivery: "Mark out for delivery",
@@ -2591,6 +2593,7 @@ export const ar: Dictionary = {
     orderStatus: {
       pending_payment: "بانتظار الدفع",
       confirmed: "مؤكد",
+      accepted: "مقبول",
       preparing: "قيد التحضير",
       ready: "جاهز",
       out_for_delivery: "قيد التوصيل",
@@ -2652,6 +2655,7 @@ export const ar: Dictionary = {
         statusAction: {
           pending_payment: "نقل لبانتظار الدفع",
           confirmed: "تأكيد الطلب",
+          accepted: "قبول الطلب",
           preparing: "تحديد كقيد التحضير",
           ready: "تحديد كجاهز",
           out_for_delivery: "تحديد كقيد التوصيل",

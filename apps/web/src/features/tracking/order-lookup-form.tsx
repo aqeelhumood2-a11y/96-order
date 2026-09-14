@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { isTerminalOrderStatus } from "@/core/orders/rules";
 import type { PublicOrderView } from "@/core/orders/public-view";
 import { formatMoney } from "@/core/money/money";
 import { trackOrderAction } from "@/features/tracking/actions";
@@ -10,6 +11,8 @@ import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
+
+const STATUS_POLL_INTERVAL_MS = 10_000;
 
 export interface OrderLookupFormProps {
   initialOrderNumber?: string;
@@ -30,6 +33,7 @@ export function OrderLookupForm({ initialOrderNumber, heading, locale = DEFAULT_
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PublicOrderView | null>(null);
+  const lastVerifiedLookupRef = useRef<{ orderNumber: string; contact: string } | null>(null);
 
   async function runLookup(orderNumberValue: string, contactValue: string) {
     setStatus("loading");
@@ -50,7 +54,30 @@ export function OrderLookupForm({ initialOrderNumber, heading, locale = DEFAULT_
     }
     setStatus("idle");
     setView(result.data);
+    lastVerifiedLookupRef.current = { orderNumber: orderNumberValue, contact: contactValue };
   }
+
+  // Once a lookup succeeds, keep refreshing that same order's status in the
+  // background — e.g. a customer sitting on this page right after checkout
+  // sees it move from "Confirmed" to "Accepted" on its own, without needing
+  // to resubmit the form. Stops once the order reaches a terminal status
+  // (nothing left to change) or the view is cleared.
+  useEffect(() => {
+    if (!view?.status || isTerminalOrderStatus(view.status)) return;
+    const interval = setInterval(() => {
+      const lastVerified = lastVerifiedLookupRef.current;
+      if (!lastVerified) return;
+      const isEmail = lastVerified.contact.includes("@");
+      void trackOrderAction({
+        orderNumber: lastVerified.orderNumber.trim(),
+        email: isEmail ? lastVerified.contact.trim() : undefined,
+        mobile: isEmail ? undefined : lastVerified.contact.trim(),
+      }).then((result) => {
+        if (result.ok) setView(result.data);
+      });
+    }, STATUS_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [view?.status]);
 
   // Right after placing an order, the checkout form stashed the same
   // mobile/email in this tab's sessionStorage — `contact`'s initial state

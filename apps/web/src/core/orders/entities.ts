@@ -10,10 +10,19 @@ import type { AppliedDiscount } from "@/core/pricing/apply-discounts";
  * `completed`) are modeled now so Phase 6's admin order-management screen
  * has a stable enum to build against, not something this phase transitions
  * an order through itself. See README's Order statuses section.
+ *
+ * `accepted` (added later): `confirmed` means the order is real and paid
+ * for (cash committed to, or card actually charged) — it says nothing
+ * about whether staff have actually seen and taken on the order yet. This
+ * status is the explicit "yes, we're making this" acknowledgment a staff
+ * member gives from the order detail screen before it can move to
+ * `preparing`; declining it goes through the existing `cancelled` path
+ * instead of a separate status.
  */
 export const ORDER_STATUSES = [
   "pending_payment",
   "confirmed",
+  "accepted",
   "preparing",
   "ready",
   "out_for_delivery",

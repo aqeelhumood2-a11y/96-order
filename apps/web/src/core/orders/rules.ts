@@ -70,6 +70,13 @@ export function buildOrderLinesFromPricedCart(pricedLines: readonly PricedCartLi
  * edge here is new in Phase 6, driven exclusively by an authorized staff
  * member acting through `services/orders/change-order-status.ts`.
  *
+ * `confirmed -> accepted` is the staff acknowledgment step: a `confirmed`
+ * order is real and paid for, but nothing prepares it until a staff
+ * member explicitly accepts it (or declines it via the same `cancelled`
+ * path every other status can reach). See `entities.ts#ORDER_STATUSES`'s
+ * doc comment for why this is a separate status from `confirmed` rather
+ * than folded into it.
+ *
  * `ready -> completed` exists directly (skipping `out_for_delivery`)
  * because a pickup order is "completed" the moment the customer collects
  * it from `ready` — `out_for_delivery` only ever applies to a delivery
@@ -78,7 +85,8 @@ export function buildOrderLinesFromPricedCart(pricedLines: readonly PricedCartLi
  */
 const ALLOWED_TRANSITIONS: Partial<Record<OrderStatus, readonly OrderStatus[]>> = {
   pending_payment: ["confirmed", "cancelled"],
-  confirmed: ["preparing", "cancelled"],
+  confirmed: ["accepted", "cancelled"],
+  accepted: ["preparing", "cancelled"],
   preparing: ["ready", "cancelled"],
   ready: ["out_for_delivery", "completed", "cancelled"],
   out_for_delivery: ["completed", "cancelled"],

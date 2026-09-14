@@ -21,6 +21,11 @@ export function cancelOrder(actor: Session, orderId: string, expectedVersion: nu
   return changeOrderStatus(actor, { orderId, toStatus: "cancelled", expectedVersion, note }, deps);
 }
 
+/** Staff's explicit "yes, we're making this" acknowledgment of a `confirmed` order — see `core/orders/entities.ts#ORDER_STATUSES`'s doc comment for why this is a distinct status. */
+export function acceptOrder(actor: Session, orderId: string, expectedVersion: number, deps: OrderManagementDeps = defaultOrderManagementDeps): Promise<Order> {
+  return changeOrderStatus(actor, { orderId, toStatus: "accepted", expectedVersion }, deps);
+}
+
 export function markPreparing(actor: Session, orderId: string, expectedVersion: number, deps: OrderManagementDeps = defaultOrderManagementDeps): Promise<Order> {
   return changeOrderStatus(actor, { orderId, toStatus: "preparing", expectedVersion }, deps);
 }
