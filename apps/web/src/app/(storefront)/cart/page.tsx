@@ -22,7 +22,7 @@ export default async function CartPage() {
   if (!priced || priced.lines.length === 0) {
     return (
       <Container className="py-12">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Your cart</h1>
+        <h1 className="font-display text-2xl text-brand-950">Your cart</h1>
         <p className="mt-4 text-sm text-foreground/70">Your cart is empty.</p>
         <Button asChild className="mt-6">
           <Link href="/products">Continue shopping</Link>
@@ -33,7 +33,7 @@ export default async function CartPage() {
 
   return (
     <Container className="py-8 sm:py-12">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">Your cart</h1>
+      <h1 className="font-display text-2xl text-brand-950">Your cart</h1>
 
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
         <div>
