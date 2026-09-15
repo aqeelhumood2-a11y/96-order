@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Brand, Category } from "@/core/catalog/entities";
 import { ForbiddenError } from "@/core/errors";
 import { ProductForm } from "@/features/catalog/products/components/product-form";
@@ -30,7 +31,12 @@ export default async function NewProductPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.productsPage.addProduct}</h1>
+      <div className="flex items-center gap-3">
+        <Link href="/admin/products" className="text-sm text-brand-700 hover:underline">
+          {dict.productsPage.backToProducts}
+        </Link>
+        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{dict.productsPage.addProduct}</h1>
+      </div>
       <ProductForm categories={data.categories} brands={data.brands} locale={locale} />
     </div>
   );

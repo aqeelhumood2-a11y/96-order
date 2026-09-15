@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Brand, Category, Product } from "@/core/catalog/entities";
 import { ForbiddenError } from "@/core/errors";
@@ -50,7 +51,12 @@ export default async function EditProductPage({ params }: { params: Promise<{ pr
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{data.product.name}</h1>
+      <div className="flex items-center gap-3">
+        <Link href="/admin/products" className="text-sm text-brand-700 hover:underline">
+          {getDictionary(locale).admin.productsPage.backToProducts}
+        </Link>
+        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">{data.product.name}</h1>
+      </div>
       <ProductImages productId={data.product.id} images={data.product.images} imageUrls={data.imageUrls} locale={locale} />
       {data.inventory.length > 0 && (
         <section className="flex flex-col gap-3">

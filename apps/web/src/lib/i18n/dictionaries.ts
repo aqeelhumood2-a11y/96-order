@@ -433,6 +433,7 @@ export interface Dictionary {
     menuTitle: string;
     productsPage: {
       heading: string;
+      backToProducts: string;
       addProduct: string;
       status: string;
       allStatuses: string;
@@ -808,6 +809,7 @@ export interface Dictionary {
     };
     cmsPagesPage: {
       heading: string;
+      backToPages: string;
       newPage: string;
       editPage: string;
       noPages: string;
@@ -1428,6 +1430,7 @@ export const en: Dictionary = {
     menuTitle: "Admin menu",
     productsPage: {
       heading: "Products",
+      backToProducts: "← Products",
       addProduct: "Add product",
       status: "Status",
       allStatuses: "All statuses",
@@ -1846,6 +1849,7 @@ export const en: Dictionary = {
     },
     cmsPagesPage: {
       heading: "CMS pages",
+      backToPages: "← Pages",
       newPage: "New page",
       editPage: "Edit page",
       noPages: "No pages yet.",
@@ -2463,6 +2467,7 @@ export const ar: Dictionary = {
     menuTitle: "قائمة الإدارة",
     productsPage: {
       heading: "المنتجات",
+      backToProducts: "← المنتجات",
       addProduct: "إضافة منتج",
       status: "الحالة",
       allStatuses: "كل الحالات",
@@ -2881,6 +2886,7 @@ export const ar: Dictionary = {
     },
     cmsPagesPage: {
       heading: "صفحات المحتوى",
+      backToPages: "← الصفحات",
       newPage: "صفحة جديدة",
       editPage: "تعديل الصفحة",
       noPages: "لا توجد صفحات بعد.",
