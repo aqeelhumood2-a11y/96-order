@@ -11,6 +11,7 @@ interface BrandDoc {
   slug: string;
   description?: string;
   website?: string;
+  brandType?: PublicBrand["brandType"];
   isActive: boolean;
   seoTitle?: string;
   seoDescription?: string;
@@ -24,6 +25,7 @@ function toPublic(doc: QueryDocumentSnapshot): PublicBrand {
     name: data.name,
     description: data.description,
     website: data.website,
+    brandType: data.brandType ?? "coffee",
     seoTitle: data.seoTitle,
     seoDescription: data.seoDescription,
   };

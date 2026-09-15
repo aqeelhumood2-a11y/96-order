@@ -23,6 +23,7 @@ export async function createBrand(actor: Session, input: CreateBrandInput, deps:
     description: parsed.description,
     logoRef: parsed.logoRef,
     website: parsed.website,
+    brandType: parsed.brandType,
     isActive: parsed.isActive,
     seoTitle: parsed.seoTitle,
     seoDescription: parsed.seoDescription,

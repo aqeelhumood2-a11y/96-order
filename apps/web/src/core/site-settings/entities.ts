@@ -89,6 +89,9 @@ export interface SiteSettings {
   hamburgerItems: NavLinkItem[];
   showCategoryMenu: boolean;
   showBrandMenu: boolean;
+  /** Adds a "Featured"/"New Arrivals" link to the main nav, pointing at `/products?featured=true` / `/products?sort=newest` — see `app/(storefront)/layout.tsx`. Off by default: an admin turns these on deliberately rather than every store getting them unasked. */
+  showFeaturedMenu: boolean;
+  showNewArrivalsMenu: boolean;
   homepageSections: HomepageSectionConfig[];
   paymentProviders: PaymentProviderSettings;
   updatedAt: Date;
@@ -114,6 +117,8 @@ export function defaultSiteSettings(): Omit<SiteSettings, "updatedAt" | "updated
     hamburgerItems: [],
     showCategoryMenu: true,
     showBrandMenu: true,
+    showFeaturedMenu: false,
+    showNewArrivalsMenu: false,
     homepageSections: defaultHomepageSections(),
     paymentProviders: defaultPaymentProviderSettings(),
   };

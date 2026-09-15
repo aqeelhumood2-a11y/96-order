@@ -36,6 +36,8 @@ export const siteSettingsInputSchema = z.object({
   hamburgerItems: z.array(navLinkItemSchema),
   showCategoryMenu: z.boolean(),
   showBrandMenu: z.boolean(),
+  showFeaturedMenu: z.boolean(),
+  showNewArrivalsMenu: z.boolean(),
   homepageSections: z.array(homepageSectionSchema),
   paymentProviders: paymentProviderSettingsSchema,
 });

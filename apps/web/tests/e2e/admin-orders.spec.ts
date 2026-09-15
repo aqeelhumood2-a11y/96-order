@@ -51,6 +51,7 @@ async function seedOrderableProduct(): Promise<Product> {
     id: randomUUID(),
     name: `Admin Orders Roasters ${suffix}`,
     slug: `admin-orders-roasters-${suffix}`,
+    brandType: "coffee",
     isActive: true,
     createdAt: now,
     updatedAt: now,

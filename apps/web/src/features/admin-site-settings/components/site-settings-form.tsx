@@ -57,6 +57,8 @@ export function SiteSettingsForm({ settings, locale = DEFAULT_LOCALE }: { settin
   const [maintenanceMessage, setMaintenanceMessage] = useState(settings.maintenanceMessage);
   const [showCategoryMenu, setShowCategoryMenu] = useState(settings.showCategoryMenu);
   const [showBrandMenu, setShowBrandMenu] = useState(settings.showBrandMenu);
+  const [showFeaturedMenu, setShowFeaturedMenu] = useState(settings.showFeaturedMenu);
+  const [showNewArrivalsMenu, setShowNewArrivalsMenu] = useState(settings.showNewArrivalsMenu);
   const [hamburgerItemsText, setHamburgerItemsText] = useState(formatLinkLines(settings.hamburgerItems));
   const [socialLinksText, setSocialLinksText] = useState(formatLinkLines(settings.socialLinks.map((link) => ({ label: link.platform, href: link.url }))));
   const [paymentLogosText, setPaymentLogosText] = useState(settings.paymentLogos.join("\n"));
@@ -102,6 +104,8 @@ export function SiteSettingsForm({ settings, locale = DEFAULT_LOCALE }: { settin
         hamburgerItems: parseLinkLines(hamburgerItemsText),
         showCategoryMenu,
         showBrandMenu,
+        showFeaturedMenu,
+        showNewArrivalsMenu,
         homepageSections: sections,
         paymentProviders,
       };
@@ -221,7 +225,7 @@ export function SiteSettingsForm({ settings, locale = DEFAULT_LOCALE }: { settin
             <legend className="text-sm font-semibold text-brand-950">{dict.navigationAndFooter}</legend>
             <div className="flex flex-col gap-1.5">
               <Label>{dict.headerLinks}</Label>
-              <Textarea value={hamburgerItemsText} onChange={(event) => setHamburgerItemsText(event.target.value)} disabled={isSubmitting} rows={3} />
+              <Textarea value={hamburgerItemsText} onChange={(event) => setHamburgerItemsText(event.target.value)} disabled={isSubmitting} rows={6} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>{dict.socialLinks}</Label>
@@ -243,6 +247,14 @@ export function SiteSettingsForm({ settings, locale = DEFAULT_LOCALE }: { settin
               <label className="flex items-center gap-2 text-sm text-foreground/80">
                 <input type="checkbox" checked={showBrandMenu} onChange={(event) => setShowBrandMenu(event.target.checked)} disabled={isSubmitting} />
                 {dict.showBrandMenu}
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground/80">
+                <input type="checkbox" checked={showFeaturedMenu} onChange={(event) => setShowFeaturedMenu(event.target.checked)} disabled={isSubmitting} />
+                {dict.showFeaturedMenu}
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground/80">
+                <input type="checkbox" checked={showNewArrivalsMenu} onChange={(event) => setShowNewArrivalsMenu(event.target.checked)} disabled={isSubmitting} />
+                {dict.showNewArrivalsMenu}
               </label>
             </div>
           </fieldset>

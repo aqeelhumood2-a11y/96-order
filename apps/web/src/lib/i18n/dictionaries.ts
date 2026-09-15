@@ -19,6 +19,8 @@ export interface Dictionary {
   };
   nav: {
     shop: string;
+    featured: string;
+    newArrivals: string;
     search: string;
     searchPlaceholder: string;
     searchLabel: string;
@@ -794,6 +796,8 @@ export interface Dictionary {
       footerColumnsJson: string;
       showCategoryMenu: string;
       showBrandMenu: string;
+      showFeaturedMenu: string;
+      showNewArrivalsMenu: string;
       homepageSections: string;
       titleOverride: string;
       subtitleOverride: string;
@@ -906,6 +910,9 @@ export interface Dictionary {
       slug: string;
       description: string;
       website: string;
+      brandType: string;
+      brandTypeCoffee: string;
+      brandTypeEquipment: string;
       active: string;
       saving: string;
       saveChanges: string;
@@ -1014,6 +1021,8 @@ export const en: Dictionary = {
   languageSwitcher: { label: "Language" },
   nav: {
     shop: "Shop",
+    featured: "Featured",
+    newArrivals: "New Arrivals",
     search: "Search",
     searchPlaceholder: "Search coffee, brewers, brands…",
     searchLabel: "Search products",
@@ -1834,6 +1843,8 @@ export const en: Dictionary = {
       footerColumnsJson: "Footer columns (JSON: [{title, links:[{label,href}]}])",
       showCategoryMenu: "Show category menu",
       showBrandMenu: "Show brand menu",
+      showFeaturedMenu: "Show \"Featured\" in the main menu",
+      showNewArrivalsMenu: "Show \"New Arrivals\" in the main menu",
       homepageSections: "Homepage sections",
       titleOverride: "Title override",
       subtitleOverride: "Subtitle override",
@@ -1944,6 +1955,9 @@ export const en: Dictionary = {
       slug: "Slug (optional — derived from name if left blank)",
       description: "Description",
       website: "Website",
+      brandType: "Brand type",
+      brandTypeCoffee: "Coffee",
+      brandTypeEquipment: "Equipment",
       active: "Active",
       saving: "Saving…",
       saveChanges: "Save changes",
@@ -2051,6 +2065,8 @@ export const ar: Dictionary = {
   languageSwitcher: { label: "اللغة" },
   nav: {
     shop: "المتجر",
+    featured: "المميزة",
+    newArrivals: "وصل حديثاً",
     search: "بحث",
     searchPlaceholder: "ابحث عن القهوة، أدوات التحضير، العلامات التجارية…",
     searchLabel: "ابحث عن المنتجات",
@@ -2871,6 +2887,8 @@ export const ar: Dictionary = {
       footerColumnsJson: "أعمدة التذييل (JSON: [{title, links:[{label,href}]}])",
       showCategoryMenu: "إظهار قائمة الفئات",
       showBrandMenu: "إظهار قائمة العلامات التجارية",
+      showFeaturedMenu: "إظهار \"المميزة\" في القائمة الرئيسية",
+      showNewArrivalsMenu: "إظهار \"وصل حديثاً\" في القائمة الرئيسية",
       homepageSections: "أقسام الصفحة الرئيسية",
       titleOverride: "تخصيص العنوان",
       subtitleOverride: "تخصيص العنوان الفرعي",
@@ -2981,6 +2999,9 @@ export const ar: Dictionary = {
       slug: "الرابط (اختياري — يُشتق من الاسم إذا تُرك فارغاً)",
       description: "الوصف",
       website: "الموقع الإلكتروني",
+      brandType: "نوع العلامة التجارية",
+      brandTypeCoffee: "قهوة",
+      brandTypeEquipment: "أدوات",
       active: "نشط",
       saving: "جارٍ الحفظ…",
       saveChanges: "حفظ التغييرات",

@@ -77,7 +77,7 @@ describe("buildCategoryMetadata", () => {
 
 describe("buildBrandMetadata", () => {
   it("builds a canonical URL and title from the brand", () => {
-    const brand: PublicBrand = { id: "brand-1", slug: "acme", name: "Acme" };
+    const brand: PublicBrand = { id: "brand-1", slug: "acme", name: "Acme", brandType: "coffee" };
     const metadata = buildBrandMetadata(brand);
     expect(metadata.title).toBe("Acme | Ninety Six Degrees Cafe");
     expect(metadata.alternates?.canonical).toBe("http://localhost:3000/brands/acme");

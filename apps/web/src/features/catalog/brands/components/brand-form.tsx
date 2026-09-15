@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
-import type { Brand } from "@/core/catalog/entities";
+import { BRAND_TYPES, type Brand } from "@/core/catalog/entities";
 import { createBrandAction, updateBrandAction } from "@/features/catalog/brands/actions";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
+import { Select } from "@/ui/primitives/select";
 import { Textarea } from "@/ui/primitives/textarea";
 
 const formSchema = z.object({
@@ -17,6 +18,7 @@ const formSchema = z.object({
   slug: z.string().trim().optional(),
   description: z.string().trim().optional(),
   website: z.string().trim().url("Enter a valid URL.").optional().or(z.literal("")),
+  brandType: z.enum(BRAND_TYPES),
   isActive: z.boolean(),
 });
 
@@ -28,6 +30,7 @@ export function BrandForm({ brand, onSaved, locale = DEFAULT_LOCALE }: { brand?:
   const [slug, setSlug] = useState(brand?.slug ?? "");
   const [description, setDescription] = useState(brand?.description ?? "");
   const [website, setWebsite] = useState(brand?.website ?? "");
+  const [brandType, setBrandType] = useState<(typeof BRAND_TYPES)[number]>(brand?.brandType ?? "coffee");
   const [isActive, setIsActive] = useState(brand?.isActive ?? true);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -39,7 +42,7 @@ export function BrandForm({ brand, onSaved, locale = DEFAULT_LOCALE }: { brand?:
     setFormError(null);
     setSuccessMessage(null);
 
-    const parsed = formSchema.safeParse({ name, slug: slug || undefined, description: description || undefined, website, isActive });
+    const parsed = formSchema.safeParse({ name, slug: slug || undefined, description: description || undefined, website, brandType, isActive });
     if (!parsed.success) {
       setFieldError(parsed.error.issues[0]?.message ?? "Invalid input.");
       return;
@@ -51,6 +54,7 @@ export function BrandForm({ brand, onSaved, locale = DEFAULT_LOCALE }: { brand?:
       slug: parsed.data.slug,
       description: parsed.data.description,
       website: parsed.data.website || undefined,
+      brandType: parsed.data.brandType,
       isActive: parsed.data.isActive,
     };
 
@@ -97,6 +101,14 @@ export function BrandForm({ brand, onSaved, locale = DEFAULT_LOCALE }: { brand?:
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="brand-website">{dict.website}</Label>
         <Input id="brand-website" type="url" value={website} onChange={(event) => setWebsite(event.target.value)} disabled={isSubmitting} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="brand-type">{dict.brandType}</Label>
+        <Select id="brand-type" value={brandType} onChange={(event) => setBrandType(event.target.value as (typeof BRAND_TYPES)[number])} disabled={isSubmitting}>
+          <option value="coffee">{dict.brandTypeCoffee}</option>
+          <option value="equipment">{dict.brandTypeEquipment}</option>
+        </Select>
       </div>
 
       <label className="flex items-center gap-2 text-sm">

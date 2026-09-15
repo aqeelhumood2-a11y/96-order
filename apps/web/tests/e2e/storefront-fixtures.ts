@@ -71,6 +71,7 @@ export async function seedStorefrontFixtures(): Promise<StorefrontFixtures> {
     id: randomUUID(),
     name: `Storefront Roasters ${suffix}`,
     slug: `storefront-roasters-${suffix}`,
+    brandType: "coffee",
     isActive: true,
     createdAt: now,
     updatedAt: now,

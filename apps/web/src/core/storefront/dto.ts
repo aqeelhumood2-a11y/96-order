@@ -1,4 +1,4 @@
-import type { CoffeeAttributes, Dimensions, EquipmentAttributes } from "@/core/catalog/entities";
+import type { BrandType, CoffeeAttributes, Dimensions, EquipmentAttributes } from "@/core/catalog/entities";
 
 /**
  * Public read-model DTOs — deliberately separate types from
@@ -121,6 +121,7 @@ export interface PublicBrand {
   name: string;
   description?: string;
   website?: string;
+  brandType: BrandType;
   seoTitle?: string;
   seoDescription?: string;
 }

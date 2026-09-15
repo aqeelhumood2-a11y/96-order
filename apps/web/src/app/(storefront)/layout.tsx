@@ -41,7 +41,12 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
   // with no separate "add it to the menu" step.
   const topLevelCategories = categories.filter((category) => category.parent === null);
   const categoryLinks = topLevelCategories.map((category) => ({ href: `/categories/${category.slug}`, label: category.name }));
-  const baseNavLinks = [{ href: "/products", label: dict.nav.shop }, ...categoryLinks];
+  const baseNavLinks = [
+    { href: "/products", label: dict.nav.shop },
+    ...(settings.showFeaturedMenu ? [{ href: "/products?featured=true", label: dict.nav.featured }] : []),
+    ...(settings.showNewArrivalsMenu ? [{ href: "/products?sort=newest", label: dict.nav.newArrivals }] : []),
+    ...categoryLinks,
+  ];
   const navLinks = [...baseNavLinks, ...settings.hamburgerItems, ...navPages.map((page) => ({ href: `/pages/${page.slug}`, label: page.title }))];
 
   return (

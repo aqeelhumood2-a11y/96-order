@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { INVENTORY_ADJUSTMENT_REASONS, PRODUCT_STATUSES, PRODUCT_VISIBILITIES } from "./entities";
+import { BRAND_TYPES, INVENTORY_ADJUSTMENT_REASONS, PRODUCT_STATUSES, PRODUCT_VISIBILITIES } from "./entities";
 import { isDriveFileId } from "./rules";
 
 /**
@@ -157,6 +157,7 @@ const brandFields = {
   description: z.string().trim().max(2000).optional(),
   logoRef: z.string().trim().min(1).optional(),
   website: z.string().trim().url().optional(),
+  brandType: z.enum(BRAND_TYPES).default("coffee"),
   isActive: z.boolean().default(true),
   seoTitle: z.string().trim().max(200).optional(),
   seoDescription: z.string().trim().max(500).optional(),

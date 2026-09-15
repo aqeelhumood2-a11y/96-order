@@ -9,7 +9,15 @@ async function fetchPublicSiteSettings(): Promise<SiteSettings> {
     // `paymentProviders` (Phase 8) is missing from any settings doc saved
     // before this field existed — treat that the same as "every provider
     // on", matching the app's actual behavior before this field existed.
-    return { ...stored, paymentProviders: stored.paymentProviders ?? defaultPaymentProviderSettings() };
+    // `showFeaturedMenu`/`showNewArrivalsMenu` are missing the same way for
+    // any doc saved before those fields existed — default them off, same
+    // as a store that has never touched this setting.
+    return {
+      ...stored,
+      paymentProviders: stored.paymentProviders ?? defaultPaymentProviderSettings(),
+      showFeaturedMenu: stored.showFeaturedMenu ?? false,
+      showNewArrivalsMenu: stored.showNewArrivalsMenu ?? false,
+    };
   }
   return { ...defaultSiteSettings(), updatedAt: new Date(0), updatedBy: "system" };
 }

@@ -10,6 +10,10 @@ export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
 export const PRODUCT_VISIBILITIES = ["visible", "hidden"] as const;
 export type ProductVisibility = (typeof PRODUCT_VISIBILITIES)[number];
 
+/** Which shelf a brand belongs on when the storefront groups "brands we carry" into separate sections. */
+export const BRAND_TYPES = ["coffee", "equipment"] as const;
+export type BrandType = (typeof BRAND_TYPES)[number];
+
 export interface Dimensions {
   lengthCm: number;
   widthCm: number;
@@ -174,6 +178,8 @@ export interface Brand {
   description?: string;
   logoRef?: string;
   website?: string;
+  /** Defaults to `"coffee"` for brands created before this field existed — see `FirestoreBrandRepository`'s read mapping. */
+  brandType: BrandType;
   isActive: boolean;
   seoTitle?: string;
   seoDescription?: string;

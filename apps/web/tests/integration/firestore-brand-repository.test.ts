@@ -13,6 +13,7 @@ function makeBrand(overrides: Partial<Brand> = {}): Brand {
     id,
     name: `Brand ${id}`,
     slug: `brand-${id}`,
+    brandType: "coffee",
     isActive: true,
     createdAt: now,
     updatedAt: now,

@@ -13,7 +13,12 @@ export async function getSiteSettingsForAdmin(actor: Session, deps: SiteSettings
     // See `services/site-settings/get-public-settings.ts`'s doc comment —
     // same pre-Phase-8-doc fallback, so the admin form always has a value
     // to bind its checkboxes to.
-    return { ...stored, paymentProviders: stored.paymentProviders ?? defaultPaymentProviderSettings() };
+    return {
+      ...stored,
+      paymentProviders: stored.paymentProviders ?? defaultPaymentProviderSettings(),
+      showFeaturedMenu: stored.showFeaturedMenu ?? false,
+      showNewArrivalsMenu: stored.showNewArrivalsMenu ?? false,
+    };
   }
   return { ...defaultSiteSettings(), updatedAt: new Date(0), updatedBy: "system" };
 }
