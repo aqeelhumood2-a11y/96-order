@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { slugify } from "@96order/shared";
 import type { Session } from "@/core/auth/entities";
 import type { Product, ProductVariant } from "@/core/catalog/entities";
 import { buildSearchTokens } from "@/core/catalog/rules";
@@ -8,6 +7,7 @@ import { NotFoundError, ValidationError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
 import { defaultCatalogDeps, type CatalogDeps } from "./dependencies";
 import { assertNoDuplicateCategoryAssignment, validateVariantsInput } from "./product-validation";
+import { withUniqueSlug } from "./unique-slug";
 
 export async function updateProduct(
   actor: Session,
@@ -71,8 +71,6 @@ export async function updateProduct(
     throw new ValidationError("A product marked as having variants needs at least one variant.");
   }
 
-  const slug = fields.slug ?? (fields.name !== undefined ? slugify(fields.name) : undefined);
-
   // Recomputed on every update (cheap pure string processing) rather than
   // only when a search-relevant field changed — simpler and can't drift
   // out of sync with whichever fields actually changed. One extra doc read
@@ -96,15 +94,21 @@ export async function updateProduct(
     coffeeRegion: nextAttributes?.coffee?.region,
   });
 
-  const patch: Partial<Product> = {
-    ...fields,
-    ...(slug !== undefined ? { slug } : {}),
-    ...(nextVariants !== undefined ? { variants: nextVariants } : {}),
-    searchTokens,
-    updatedBy: actor.uid,
-  };
+  function buildPatch(slug: string | undefined): Partial<Product> {
+    return {
+      ...fields,
+      ...(slug !== undefined ? { slug } : {}),
+      ...(nextVariants !== undefined ? { variants: nextVariants } : {}),
+      searchTokens,
+      updatedBy: actor.uid,
+    };
+  }
 
-  await deps.products.update(productId, patch, version);
+  if (fields.slug === undefined && fields.name === undefined) {
+    await deps.products.update(productId, buildPatch(undefined), version);
+  } else {
+    await withUniqueSlug(fields.name ?? existing.name, fields.slug, (slug) => deps.products.update(productId, buildPatch(slug), version));
+  }
 
   await deps.auditLogs.record({
     type: "product_updated",

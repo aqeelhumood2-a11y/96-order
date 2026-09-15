@@ -6,6 +6,7 @@ import { type CreateCategoryInput, createCategorySchema } from "@/core/catalog/s
 import { ValidationError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
 import { defaultCatalogDeps, type CatalogDeps } from "./dependencies";
+import { withUniqueSlug } from "./unique-slug";
 
 export async function createCategory(
   actor: Session,
@@ -14,8 +15,7 @@ export async function createCategory(
 ): Promise<Category> {
   requirePermission(actor, "categories:create");
   const parsed = createCategorySchema.parse(input);
-  const slug = parsed.slug ?? slugify(parsed.name);
-  if (!slug) {
+  if (!(parsed.slug ?? slugify(parsed.name))) {
     throw new ValidationError("Could not derive a slug from this name — provide one explicitly.");
   }
 
@@ -27,29 +27,32 @@ export async function createCategory(
   }
 
   const now = new Date();
-  const category: Category = {
-    id: randomUUID(),
-    name: parsed.name,
-    slug,
-    description: parsed.description,
-    parentId: parsed.parentId,
-    sortOrder: parsed.sortOrder,
-    isActive: parsed.isActive,
-    imageRef: parsed.imageRef,
-    seoTitle: parsed.seoTitle,
-    seoDescription: parsed.seoDescription,
-    createdAt: now,
-    updatedAt: now,
-    createdBy: actor.uid,
-    updatedBy: actor.uid,
-  };
+  const category = await withUniqueSlug(parsed.name, parsed.slug, async (slug) => {
+    const candidate: Category = {
+      id: randomUUID(),
+      name: parsed.name,
+      slug,
+      description: parsed.description,
+      parentId: parsed.parentId,
+      sortOrder: parsed.sortOrder,
+      isActive: parsed.isActive,
+      imageRef: parsed.imageRef,
+      seoTitle: parsed.seoTitle,
+      seoDescription: parsed.seoDescription,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: actor.uid,
+      updatedBy: actor.uid,
+    };
+    await deps.categories.create(candidate);
+    return candidate;
+  });
 
-  await deps.categories.create(category);
   await deps.auditLogs.record({
     type: "category_created",
     actorUid: actor.uid,
     actorEmail: actor.email,
-    metadata: { categoryId: category.id, slug },
+    metadata: { categoryId: category.id, slug: category.slug },
   });
 
   return category;

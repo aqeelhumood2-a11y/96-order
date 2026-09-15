@@ -1,10 +1,10 @@
-import { slugify } from "@96order/shared";
 import type { Session } from "@/core/auth/entities";
 import { type UpdateCategoryInput, updateCategorySchema } from "@/core/catalog/schemas";
 import { wouldCreateCircularCategoryReference } from "@/core/catalog/rules";
 import { NotFoundError, ValidationError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
 import { defaultCatalogDeps, type CatalogDeps } from "./dependencies";
+import { withUniqueSlug } from "./unique-slug";
 
 export async function updateCategory(
   actor: Session,
@@ -37,13 +37,13 @@ export async function updateCategory(
   }
 
   // An explicit `slug` in the input wins; otherwise a renamed category gets
-  // a freshly derived slug; otherwise the slug is left untouched.
-  const slug = parsed.slug ?? (parsed.name !== undefined ? slugify(parsed.name) : undefined);
-
-  await deps.categories.update(categoryId, {
-    ...parsed,
-    ...(slug !== undefined ? { slug } : {}),
-  });
+  // a freshly derived slug (retried with a suffix on collision — see
+  // `withUniqueSlug`'s doc comment); otherwise the slug is left untouched.
+  if (parsed.slug === undefined && parsed.name === undefined) {
+    await deps.categories.update(categoryId, parsed);
+  } else {
+    await withUniqueSlug(parsed.name ?? existing.name, parsed.slug, (slug) => deps.categories.update(categoryId, { ...parsed, slug }));
+  }
 
   await deps.auditLogs.record({
     type: "category_updated",

@@ -1,9 +1,9 @@
-import { slugify } from "@96order/shared";
 import type { Session } from "@/core/auth/entities";
 import { type UpdateBrandInput, updateBrandSchema } from "@/core/catalog/schemas";
 import { NotFoundError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
 import { defaultCatalogDeps, type CatalogDeps } from "./dependencies";
+import { withUniqueSlug } from "./unique-slug";
 
 export async function updateBrand(
   actor: Session,
@@ -19,12 +19,11 @@ export async function updateBrand(
     throw new NotFoundError("Brand not found.");
   }
 
-  const slug = parsed.slug ?? (parsed.name !== undefined ? slugify(parsed.name) : undefined);
-
-  await deps.brands.update(brandId, {
-    ...parsed,
-    ...(slug !== undefined ? { slug } : {}),
-  });
+  if (parsed.slug === undefined && parsed.name === undefined) {
+    await deps.brands.update(brandId, parsed);
+  } else {
+    await withUniqueSlug(parsed.name ?? existing.name, parsed.slug, (slug) => deps.brands.update(brandId, { ...parsed, slug }));
+  }
 
   await deps.auditLogs.record({
     type: "brand_updated",

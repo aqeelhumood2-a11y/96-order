@@ -8,6 +8,7 @@ import { ValidationError } from "@/core/errors";
 import { requirePermission } from "@/services/auth/session";
 import { defaultCatalogDeps, type CatalogDeps } from "./dependencies";
 import { assertNoDuplicateCategoryAssignment, validateVariantsInput } from "./product-validation";
+import { withUniqueSlug } from "./unique-slug";
 
 /** Returns the fetched primary category (needed for `searchTokens`) after confirming every referenced category exists. */
 async function assertCategoriesExist(
@@ -32,8 +33,7 @@ export async function createProduct(
   requirePermission(actor, "products:create");
   const parsed = createProductSchema.parse(input);
 
-  const slug = parsed.slug ?? slugify(parsed.name);
-  if (!slug) {
+  if (!(parsed.slug ?? slugify(parsed.name))) {
     throw new ValidationError("Could not derive a slug from this name — provide one explicitly.");
   }
 
@@ -65,57 +65,60 @@ export async function createProduct(
     lowStockThreshold: variant.lowStockThreshold,
   }));
 
-  const product: Product = {
-    id: randomUUID(),
-    name: parsed.name,
-    slug,
-    shortDescription: parsed.shortDescription,
-    fullDescription: parsed.fullDescription,
-    brandId: parsed.brandId,
-    primaryCategoryId: parsed.primaryCategoryId,
-    additionalCategoryIds: parsed.additionalCategoryIds,
-    productType: parsed.productType,
-    status: parsed.status,
-    visibility: parsed.visibility,
-    featured: parsed.featured,
-    sku: parsed.sku,
-    barcode: parsed.barcode,
-    basePrice: parsed.basePrice,
-    compareAtPrice: parsed.compareAtPrice,
-    costPrice: parsed.costPrice,
-    taxClass: parsed.taxClass,
-    trackInventory: parsed.trackInventory,
-    allowBackorder: parsed.allowBackorder,
-    lowStockThreshold: parsed.lowStockThreshold,
-    weightGrams: parsed.weightGrams,
-    dimensions: parsed.dimensions,
-    tags: parsed.tags,
-    seoTitle: parsed.seoTitle,
-    seoDescription: parsed.seoDescription,
-    hasVariants: parsed.hasVariants,
-    variants,
-    attributes: parsed.attributes,
-    images: [],
-    searchTokens: buildSearchTokens({
+  const product = await withUniqueSlug(parsed.name, parsed.slug, async (slug) => {
+    const candidate: Product = {
+      id: randomUUID(),
       name: parsed.name,
+      slug,
+      shortDescription: parsed.shortDescription,
+      fullDescription: parsed.fullDescription,
+      brandId: parsed.brandId,
+      primaryCategoryId: parsed.primaryCategoryId,
+      additionalCategoryIds: parsed.additionalCategoryIds,
+      productType: parsed.productType,
+      status: parsed.status,
+      visibility: parsed.visibility,
+      featured: parsed.featured,
       sku: parsed.sku,
       barcode: parsed.barcode,
+      basePrice: parsed.basePrice,
+      compareAtPrice: parsed.compareAtPrice,
+      costPrice: parsed.costPrice,
+      taxClass: parsed.taxClass,
+      trackInventory: parsed.trackInventory,
+      allowBackorder: parsed.allowBackorder,
+      lowStockThreshold: parsed.lowStockThreshold,
+      weightGrams: parsed.weightGrams,
+      dimensions: parsed.dimensions,
       tags: parsed.tags,
-      productType: parsed.productType,
-      brandName: brand?.name,
-      categoryName: primaryCategory.name,
-      variantSkus: variants.map((variant) => variant.sku),
-      coffeeOriginCountry: parsed.attributes?.coffee?.originCountry,
-      coffeeRegion: parsed.attributes?.coffee?.region,
-    }),
-    version: 1,
-    createdAt: now,
-    updatedAt: now,
-    createdBy: actor.uid,
-    updatedBy: actor.uid,
-  };
+      seoTitle: parsed.seoTitle,
+      seoDescription: parsed.seoDescription,
+      hasVariants: parsed.hasVariants,
+      variants,
+      attributes: parsed.attributes,
+      images: [],
+      searchTokens: buildSearchTokens({
+        name: parsed.name,
+        sku: parsed.sku,
+        barcode: parsed.barcode,
+        tags: parsed.tags,
+        productType: parsed.productType,
+        brandName: brand?.name,
+        categoryName: primaryCategory.name,
+        variantSkus: variants.map((variant) => variant.sku),
+        coffeeOriginCountry: parsed.attributes?.coffee?.originCountry,
+        coffeeRegion: parsed.attributes?.coffee?.region,
+      }),
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: actor.uid,
+      updatedBy: actor.uid,
+    };
 
-  await deps.products.create(product);
+    await deps.products.create(candidate);
+    return candidate;
+  });
 
   // Best-effort seeding, not part of the product-creation transaction: an
   // inventory record is trivially re-creatable (`ensureExists` is
@@ -136,7 +139,7 @@ export async function createProduct(
     type: "product_created",
     actorUid: actor.uid,
     actorEmail: actor.email,
-    metadata: { productId: product.id, slug, sku: product.sku },
+    metadata: { productId: product.id, slug: product.slug, sku: product.sku },
   });
 
   return product;
