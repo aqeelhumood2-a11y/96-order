@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { IntegrationStatus } from "@/services/integrations/get-integration-status";
 import { retryFailedEmailsAction, retryFailedNotificationsAction } from "@/features/admin-integrations/actions";
+import { PosIntegrationForm } from "@/features/admin-integrations/components/pos-integration-form";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale-types";
 import { Badge } from "@/ui/primitives/badge";
@@ -73,11 +74,23 @@ function RetryQueueCard({
   );
 }
 
-export function IntegrationsPanel({ status, locale = DEFAULT_LOCALE }: { status: IntegrationStatus; locale?: Locale }) {
+export function IntegrationsPanel({
+  status,
+  posWebhookUrl,
+  posHasApiKey,
+  locale = DEFAULT_LOCALE,
+}: {
+  status: IntegrationStatus;
+  posWebhookUrl: string;
+  posHasApiKey: boolean;
+  locale?: Locale;
+}) {
   const dict = getDictionary(locale).admin.integrationsPage;
 
   return (
     <div className="flex flex-col gap-6">
+      <PosIntegrationForm webhookUrl={posWebhookUrl} hasApiKey={posHasApiKey} locale={locale} />
+
       <div className="rounded-md border border-surface-border p-4">
         <h2 className="mb-2 text-sm font-semibold text-brand-950">{dict.providersTitle}</h2>
         <StatusRow label={dict.tapPayments} configured={status.tapConfigured} envVar="TAP_SECRET_KEY" dict={dict} />

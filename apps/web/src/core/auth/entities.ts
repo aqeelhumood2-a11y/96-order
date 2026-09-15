@@ -104,6 +104,7 @@ export const AUDIT_LOG_EVENT_TYPES = [
   "cms_page_updated",
   "cms_page_published",
   "site_settings_updated",
+  "pos_integration_updated",
   "customer_data_export_requested",
   "customer_data_deletion_requested",
 ] as const;

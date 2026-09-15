@@ -22,11 +22,12 @@ afterAll(async () => {
 
 /**
  * Mirrors firestore-security-rules-phase6.test.ts's coverage for every
- * Phase 7 collection — all fourteen are written exclusively through the
- * Admin SDK, gated by `requireCustomerSession()`/`requirePermission()` in
- * `services/*`, never opened to a client SDK path (authenticated or not)
- * — see `firestore.rules`'s Phase 7 comment block for why even a
- * signed-in customer's own data isn't scoped to their uid here.
+ * Phase 7 collection (plus the later-added `posIntegrationSettings`) — all
+ * are written exclusively through the Admin SDK, gated by
+ * `requireCustomerSession()`/`requirePermission()` in `services/*`, never
+ * opened to a client SDK path (authenticated or not) — see
+ * `firestore.rules`'s Phase 7 comment block for why even a signed-in
+ * customer's own data isn't scoped to their uid here.
  */
 const PHASE_7_COLLECTIONS = [
   "customerAccounts",
@@ -43,6 +44,7 @@ const PHASE_7_COLLECTIONS = [
   "coupons",
   "couponRedemptions",
   "promotions",
+  "posIntegrationSettings",
 ];
 
 describe("firestore.rules — Phase 7 collections", () => {

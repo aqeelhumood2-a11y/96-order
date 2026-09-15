@@ -228,6 +228,16 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Holds the store's POS webhook URL and API key — Admin-SDK-only for
+    // the same reason as every collection above, but doubly so here: this
+    // is the one collection in the whole app holding a raw external-system
+    // secret (`core/integrations/entities.ts`'s doc comment explains why
+    // it isn't just a `SiteSettings` field), so it must never be reachable
+    // by the client SDK even for a signed-in customer.
+    match /posIntegrationSettings/{docId} {
+      allow read, write: if false;
+    }
+
     match /coupons/{code} {
       allow read, write: if false;
     }

@@ -962,6 +962,17 @@ export interface Dictionary {
       retrying: string;
       /** `{attempted}`, `{succeeded}`, `{stillFailing}` replaced */
       retryResult: string;
+      posIntegrationTitle: string;
+      posIntegrationDescription: string;
+      posWebhookUrl: string;
+      posApiKey: string;
+      posApiKeyPlaceholderSet: string;
+      posApiKeyPlaceholderUnset: string;
+      posApiKeyConfigured: string;
+      posApiKeyNotConfigured: string;
+      posIntegrationSaved: string;
+      posIntegrationSaving: string;
+      posIntegrationSave: string;
     };
     backInStockPage: {
       heading: string;
@@ -2006,6 +2017,17 @@ export const en: Dictionary = {
       notificationRetryButton: "Retry failed notifications now",
       retrying: "Retrying…",
       retryResult: "Retried {attempted}: {succeeded} sent, {stillFailing} still failing.",
+      posIntegrationTitle: "POS system connection",
+      posIntegrationDescription: "Save your POS system's webhook URL and API key here. Nothing is sent automatically yet — this only stores the connection details for now.",
+      posWebhookUrl: "Webhook URL",
+      posApiKey: "API key",
+      posApiKeyPlaceholderSet: "Leave blank to keep the current key",
+      posApiKeyPlaceholderUnset: "Enter the API key",
+      posApiKeyConfigured: "An API key is on file",
+      posApiKeyNotConfigured: "No API key on file",
+      posIntegrationSaved: "Saved.",
+      posIntegrationSaving: "Saving…",
+      posIntegrationSave: "Save",
     },
     backInStockPage: {
       heading: "Back-in-stock subscriptions",
@@ -3052,6 +3074,17 @@ export const ar: Dictionary = {
       notificationRetryButton: "إعادة محاولة الإشعارات الفاشلة الآن",
       retrying: "جارٍ إعادة المحاولة…",
       retryResult: "أُعيدت محاولة {attempted}: نجح {succeeded}، وما زال {stillFailing} فاشل.",
+      posIntegrationTitle: "ربط نظام نقاط البيع",
+      posIntegrationDescription: "احفظي هنا رابط الـ webhook ومفتاح الـ API مال نظام نقاط البيع عندك. حالياً ما فيه شي يُرسل تلقائياً — بس نحفظ بيانات الربط لين نجهز الخطوة الجاية.",
+      posWebhookUrl: "رابط الـ Webhook",
+      posApiKey: "مفتاح API",
+      posApiKeyPlaceholderSet: "اتركيه فارغ عشان يبقى المفتاح الحالي",
+      posApiKeyPlaceholderUnset: "اكتبي مفتاح الـ API",
+      posApiKeyConfigured: "فيه مفتاح API محفوظ",
+      posApiKeyNotConfigured: "ما فيه مفتاح API محفوظ",
+      posIntegrationSaved: "تم الحفظ.",
+      posIntegrationSaving: "جارٍ الحفظ…",
+      posIntegrationSave: "حفظ",
     },
     backInStockPage: {
       heading: "اشتراكات توفر المخزون",
