@@ -5,6 +5,13 @@ export interface ListProductsRequest extends PageRequest {
   status?: ProductStatus;
   categoryId?: string;
   brandId?: string;
+  /**
+   * Free-text search against `Product.searchTokens` (name, brand, category,
+   * SKU, etc.) — handled entirely in `services/catalog/list-products.ts`,
+   * not by `ProductRepository.list()` itself, so an implementation can
+   * safely ignore this field.
+   */
+  search?: string;
 }
 
 /**

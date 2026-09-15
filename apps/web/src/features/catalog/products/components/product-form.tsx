@@ -328,6 +328,18 @@ export function ProductForm({
           </div>
         </div>
 
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="product-brand">{dict.brand}</Label>
+          <Select id="product-brand" value={brandId} onChange={(event) => setBrandId(event.target.value)} disabled={isSubmitting}>
+            <option value="">{dict.noBrand}</option>
+            {brands.map((brand) => (
+              <option key={brand.id} value={brand.id}>
+                {brand.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+
         {!isEditing && (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="product-stock-quantity">{dict.stockQuantity}</Label>
@@ -374,28 +386,15 @@ export function ProductForm({
               <Textarea id="product-full-description" className="min-h-40" value={fullDescription} onChange={(event) => setFullDescription(event.target.value)} disabled={isSubmitting} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-brand">{dict.brand}</Label>
-                <Select id="product-brand" value={brandId} onChange={(event) => setBrandId(event.target.value)} disabled={isSubmitting}>
-                  <option value="">{dict.noBrand}</option>
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="product-status">{dict.status}</Label>
-                <Select id="product-status" value={status} onChange={(event) => setStatus(event.target.value as (typeof PRODUCT_STATUSES)[number])} disabled={isSubmitting}>
-                  {PRODUCT_STATUSES.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-status">{dict.status}</Label>
+              <Select id="product-status" value={status} onChange={(event) => setStatus(event.target.value as (typeof PRODUCT_STATUSES)[number])} disabled={isSubmitting}>
+                {PRODUCT_STATUSES.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </Select>
             </div>
 
             <fieldset className="flex flex-col gap-1.5">

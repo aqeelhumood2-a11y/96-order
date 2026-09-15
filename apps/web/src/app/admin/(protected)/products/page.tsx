@@ -8,6 +8,7 @@ import { getLocale } from "@/lib/i18n/locale";
 import { listProducts } from "@/services/catalog/list-products";
 import { requireSession } from "@/services/auth/session";
 import { Button } from "@/ui/primitives/button";
+import { Input } from "@/ui/primitives/input";
 import { Select } from "@/ui/primitives/select";
 
 interface PageProps {
@@ -24,10 +25,11 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   const raw = await searchParams;
   const statusParam = typeof raw.status === "string" ? raw.status : "";
   const status = isProductStatus(statusParam) ? statusParam : undefined;
+  const search = typeof raw.search === "string" && raw.search.trim() ? raw.search.trim() : undefined;
 
   let products;
   try {
-    products = await listProducts(session, { limit: 50, status });
+    products = await listProducts(session, { limit: 50, status, search });
   } catch (error) {
     if (!(error instanceof ForbiddenError)) throw error;
   }
@@ -49,7 +51,13 @@ export default async function ProductsPage({ searchParams }: PageProps) {
         )}
       </div>
 
-      <form action="/admin/products" method="get" className="flex items-end gap-3">
+      <form action="/admin/products" method="get" className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="product-search-filter" className="text-sm font-medium text-foreground">
+            {dict.search}
+          </label>
+          <Input id="product-search-filter" name="search" defaultValue={search ?? ""} placeholder={dict.searchPlaceholder} className="w-64" />
+        </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="product-status-filter" className="text-sm font-medium text-foreground">
             {dict.status}
@@ -66,7 +74,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
         <Button type="submit" variant="outline" size="sm">
           {dict.filter}
         </Button>
-        {status && (
+        {(status || search) && (
           <Link href="/admin/products" className="pb-2 text-sm text-brand-700 hover:underline">
             {dict.clear}
           </Link>

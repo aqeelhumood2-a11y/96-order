@@ -437,6 +437,8 @@ export interface Dictionary {
       heading: string;
       backToProducts: string;
       addProduct: string;
+      search: string;
+      searchPlaceholder: string;
       status: string;
       allStatuses: string;
       filter: string;
@@ -1441,6 +1443,8 @@ export const en: Dictionary = {
       heading: "Products",
       backToProducts: "← Products",
       addProduct: "Add product",
+      search: "Search",
+      searchPlaceholder: "Search by product name or brand…",
       status: "Status",
       allStatuses: "All statuses",
       filter: "Filter",
@@ -2485,6 +2489,8 @@ export const ar: Dictionary = {
       heading: "المنتجات",
       backToProducts: "← المنتجات",
       addProduct: "إضافة منتج",
+      search: "بحث",
+      searchPlaceholder: "ابحث باسم المنتج أو العلامة التجارية…",
       status: "الحالة",
       allStatuses: "كل الحالات",
       filter: "تصفية",
